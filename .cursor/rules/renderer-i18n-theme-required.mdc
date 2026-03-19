@@ -1,0 +1,34 @@
+---
+description: 前端改动必须同时考虑多语言与主题（apps/renderer）
+globs: apps/renderer/**/*.{ts,tsx,js,jsx,css,mdx,json}
+alwaysApply: false
+---
+
+# 前端改动必须同时考虑多语言与主题（强制）
+
+适用范围：`apps/renderer/**/*`（包含 `app/`、`components/`、`messages/`、样式文件等）。
+
+## 多语言（i18n）强制要求
+
+- **任何对用户可见的文案都必须来自 `messages/*`**（通过 `next-intl` 的 `t(...)` 获取）。
+  - 允许的例外：临时占位/调试文案（必须很快移除），以及纯技术字段（如 id、hash）。
+- **新增 UI 文案时必须同时补齐 `zh-CN` 与 `en`** 对应的 key，保持结构一致。
+- **禁止在组件/页面里硬编码中文或英文**（如 `"发布视频"`、`"Publish Video"`）。
+
+## 主题（Theming）强制要求
+
+- **样式必须使用 shadcn tokens / CSS variables 体系**，例如：
+  - `bg-background text-foreground`
+  - `border-border`
+  - `bg-muted/40`
+  - 语义色用 `text-muted-foreground`、`bg-accent`、`text-primary` 等
+- **禁止写死与主题耦合的颜色**（如 `text-black`/`bg-white`），除非这是明确的产品需求（例如“侧边栏永远纯白”），且只在必要最小范围内使用。
+- 新增组件时，必须保证在 `light/dark` 下都可读、对比度合理、hover/active 状态可辨识。
+
+## 变更自检清单（提交前）
+
+- [ ] 新增/修改的文案已写入 `apps/renderer/messages/zh-CN.json`
+- [ ] 同步补齐 `apps/renderer/messages/en.json`（key 结构一致）
+- [ ] 页面/组件没有出现新硬编码文案
+- [ ] 样式使用 tokens，light/dark 都正常
+

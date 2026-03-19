@@ -1,0 +1,22 @@
+{
+  "name": "media-auto-publish",
+  "private": true,
+  "workspaces": [
+    "apps/renderer",
+    "packages/*"
+  ],
+  "scripts": {
+    "free:port": "kill-port 13200",
+    "dev": "npm run free:port && concurrently -k -n web,desktop -c blue,magenta \"npm run dev:web\" \"wait-on http://localhost:13200 && npm run dev:desktop\"",
+    "dev:web": "npm -w apps/renderer run dev",
+    "dev:desktop": "npm --prefix apps/desktop run dev",
+    "build:web": "npm -w apps/renderer run build",
+    "build:desktop": "npm --prefix apps/desktop run build"
+  },
+  "devDependencies": {
+    "kill-port": "^2.0.1",
+    "concurrently": "^9.2.1",
+    "wait-on": "^8.0.5"
+  }
+}
+

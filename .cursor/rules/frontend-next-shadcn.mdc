@@ -1,0 +1,38 @@
+---
+description: Next(App Router)+shadcn/ui 开发规范（组件优先/拆分/可访问性）
+globs: apps/renderer/**/*.{ts,tsx,js,jsx,mdx}
+alwaysApply: false
+---
+
+# Next + shadcn/ui 规范
+
+## 组件优先策略（强制）
+
+- **能用 shadcn/ui 就不用自写**：先找 `button/input/dialog/dropdown-menu/tabs/table/form` 等。
+- shadcn/ui 不存在的 UI，再自研组件，但必须：
+  - API 形状与 shadcn 接近（`className`、`variant`、`size`、`asChild` 等）
+  - 样式 tokens 走 `bg-background text-foreground` 等体系
+  - 可访问性优先（Radix/ARIA）
+
+## App Router 基础约束
+
+- 默认用 Server Component；交互/状态才 `use client`。
+- 数据请求：优先在 Server 侧（`fetch` + cache/revalidate），客户端仅做轻交互。
+- `loading.tsx`/`error.tsx`/`not-found.tsx` 必须对用户友好，并可复用 shadcn 组件。
+
+## 文件组织
+
+- 页面推荐结构：
+  - `app/**/page.tsx` 仅做编排（composition），不要塞大量逻辑
+  - 复杂 UI 拆到同目录 `components/*`
+  - 逻辑抽到 `hooks/*`，纯函数到 `lib/*`
+- 文件超过 600 行必须拆分（强制）。
+
+## 样式与设计一致性
+
+- 只使用 Tailwind + shadcn tokens；避免写自定义全局 CSS（除非是 tokens/基础样式）。
+- 不要引入第二套设计系统（如 MUI/Antd）。
+
+## 表单与校验（推荐）
+
+- 优先用 shadcn `Form`（react-hook-form + zod）模式。

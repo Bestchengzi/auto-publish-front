@@ -1,0 +1,17 @@
+{
+  "name": "desktop",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "dev": "tsup --config tsup.config.ts --watch --onSuccess \"electron dist/main.cjs\"",
+    "build": "tsup --config tsup.config.ts",
+    "start": "electron dist/main.cjs"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2"
+  }
+}
+

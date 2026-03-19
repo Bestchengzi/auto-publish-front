@@ -1,0 +1,27 @@
+---
+description: Electron 安全与架构规范（preload/IPC/无 NodeIntegration）
+globs: apps/desktop/**/*.{ts,tsx,js,jsx,json}
+alwaysApply: false
+---
+
+# Electron 规范（强制）
+
+## 安全基线（强制）
+
+- `BrowserWindow` 必须：
+  - `contextIsolation: true`
+  - `nodeIntegration: false`
+  - 使用 `preload` 暴露最小化 API
+- renderer 访问系统能力必须通过 IPC（`ipcMain.handle` + `ipcRenderer.invoke`）。
+
+## 运行模式
+
+- Dev：加载 Next dev server（例如 `http://localhost:3000`）。
+- Prod：优先加载静态导出（`file://.../index.html`）或受控本地 server（二选一，按需求落地）。
+
+## 代码组织
+
+- `main/`：主进程
+- `preload/`：预加载桥接
+- `shared/`：共享类型（可迁到 `packages/`）
+

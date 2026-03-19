@@ -1,0 +1,60 @@
+---
+description: 产品核心规范（Next 15.5.13 + shadcn/ui + SEO + 双端）
+alwaysApply: true
+---
+
+# 产品核心规范（强制）
+
+## 技术栈锁定
+
+- **Next.js 必须使用 `15.5.13`**，不得随意升级/降级（如需升级必须先评估 Electron 端与 SEO 影响）。
+- UI 必须优先使用 **shadcn/ui** 组件与其设计体系（Radix + Tailwind + CSS Variables）。
+- 需要同时支持 **浏览器端（SEO 优先）** 与 **客户端（Electron）**，避免写“仅浏览器可用”的代码路径（如直接访问 `window`、`document`）。
+
+## 目录与架构
+
+- 根目录使用清晰分层：
+  - `apps/renderer`：Next.js 渲染层（Web + Electron 共用）
+  - `apps/desktop`：Electron 主进程与打包配置
+  - `packages/*`：可复用包（如 `ui`、`config`、`i18n`，按需添加）
+- 页面/路由（App Router）按“产品域”拆分：`app/(marketing)`、`app/(app)`、`app/api` 等。
+
+## SEO（Web 优先）
+
+- 页面默认 **Server Components**，仅在需要交互时才引入 Client Components（`"use client"`）。
+- 必须使用 `generateMetadata()`/`metadata` 配置：
+  - title/description/canonical/robots/openGraph/twitter
+  - sitemap/robots（若上线环境需要）
+- 文案与结构优先语义化 HTML；图片使用 `next/image`（若 Electron 静态导出模式需评估 `unoptimized`）。
+
+## 多语言（提前预留）
+
+- 必须从第一天就采用统一 i18n 方案，具备：
+  - 路由层 locale（如 `/zh-CN`、`/en`）
+  - 字典文件分包加载（避免一次性加载全量文案）
+  - 组件与页面不可硬编码文本（除非是占位/调试）
+
+## 主题（提前预留）
+
+- 全局主题切换使用 `next-themes`，与 shadcn 的 CSS 变量体系一致。
+- 组件主题**仅限颜色切换**不得私自发明规范，必须沿用 shadcn 的 tokens（`--background`、`--foreground`、`--primary`...）。
+
+## 代码体量与可维护性
+
+- 单文件超过 **600 行必须拆分**：
+  - 页面：拆成 `components/` 下的子组件 + `hooks/` + `lib/` 纯函数
+  - 组件：拆成 `*Parts.tsx` / `*Panel.tsx` / `*Dialog.tsx` 等
+- 避免“巨型组件”与“万能工具文件”；函数保持单一职责。
+
+## 工具函数与依赖（强制）
+
+- **常见逻辑工具函数优先从 `lodash` 引入**：例如 `debounce`、`throttle`、`cloneDeep`、`uniqBy`、`groupBy`、`orderBy` 等。
+- **禁止重复造轮子**：若已有成熟实现（尤其是边界/兼容性复杂的），不要手写简化版。
+
+## 双端适配（Web + Electron）
+
+- 任何访问平台能力（文件系统、剪贴板、shell 等）必须通过 **抽象层**：
+  - renderer 只调用 `@/lib/platform/*`
+  - Electron 通过 preload + IPC 暴露能力（禁止 renderer 直接启用 NodeIntegration）
+- 需要区分运行时：使用 `NEXT_PUBLIC_RUNTIME=web|desktop` 或等价机制，避免用脆弱的 UA 判断。
+

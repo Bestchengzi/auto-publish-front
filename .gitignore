@@ -1,0 +1,23 @@
+# dependencies (monorepo)
+node_modules/
+**/node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# env
+.env*
+
+# build outputs (common)
+dist/
+build/
+.next/
+out/
+
