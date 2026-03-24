@@ -1,7 +1,7 @@
 ---
 description: 前端改动必须同时考虑多语言与主题（apps/renderer）
 globs: apps/renderer/**/*.{ts,tsx,js,jsx,css,mdx,json}
-alwaysApply: false
+alwaysApply: true
 ---
 
 # 前端改动必须同时考虑多语言与主题（强制）

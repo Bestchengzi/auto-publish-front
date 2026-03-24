@@ -1,7 +1,7 @@
 ---
 description: Electron 安全与架构规范（preload/IPC/无 NodeIntegration）
 globs: apps/desktop/**/*.{ts,tsx,js,jsx,json}
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Electron 规范（强制）

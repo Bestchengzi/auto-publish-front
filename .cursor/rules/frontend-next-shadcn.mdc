@@ -1,7 +1,7 @@
 ---
 description: Next(App Router)+shadcn/ui 开发规范（组件优先/拆分/可访问性）
 globs: apps/renderer/**/*.{ts,tsx,js,jsx,mdx}
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Next + shadcn/ui 规范
