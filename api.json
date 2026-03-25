@@ -1,0 +1,3595 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "DeerFlow API Gateway",
+        "description": "\n## DeerFlow API Gateway\n\nAPI Gateway for DeerFlow - A LangGraph-based AI agent backend with sandbox execution capabilities.\n\n### Features\n\n- **Models Management**: Query and retrieve available AI models\n- **MCP Configuration**: Manage Model Context Protocol (MCP) server configurations\n- **Memory Management**: Access and manage global memory data for personalized conversations\n- **Skills Management**: Query and manage skills and their enabled status\n- **Artifacts**: Access thread artifacts and generated files\n- **Health Monitoring**: System health check endpoints\n\n### Architecture\n\nLangGraph requests are handled by nginx reverse proxy.\nThis gateway provides custom endpoints for models, MCP configuration, skills, and artifacts.\n        ",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/api/models": {
+            "get": {
+                "tags": [
+                    "models"
+                ],
+                "summary": "List All Models",
+                "description": "Retrieve a list of all available AI models configured in the system.",
+                "operationId": "list_models_api_models_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ModelsListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/models/{model_name}": {
+            "get": {
+                "tags": [
+                    "models"
+                ],
+                "summary": "Get Model Details",
+                "description": "Retrieve detailed information about a specific AI model by its name.",
+                "operationId": "get_model_api_models__model_name__get",
+                "parameters": [
+                    {
+                        "name": "model_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Model Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ModelResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mcp/config": {
+            "get": {
+                "tags": [
+                    "mcp"
+                ],
+                "summary": "Get MCP Configuration",
+                "description": "Retrieve the current Model Context Protocol (MCP) server configurations.",
+                "operationId": "get_mcp_configuration_api_mcp_config_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/McpConfigResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "mcp"
+                ],
+                "summary": "Update MCP Configuration",
+                "description": "Update Model Context Protocol (MCP) server configurations and save to file.",
+                "operationId": "update_mcp_configuration_api_mcp_config_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/McpConfigUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/McpConfigResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/memory": {
+            "get": {
+                "tags": [
+                    "memory"
+                ],
+                "summary": "Get Memory Data",
+                "description": "Retrieve the current global memory data including user context, history, and facts.",
+                "operationId": "get_memory_api_memory_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemoryResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/memory/reload": {
+            "post": {
+                "tags": [
+                    "memory"
+                ],
+                "summary": "Reload Memory Data",
+                "description": "Reload memory data from the storage file, refreshing the in-memory cache.",
+                "operationId": "reload_memory_api_memory_reload_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemoryResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/memory/config": {
+            "get": {
+                "tags": [
+                    "memory"
+                ],
+                "summary": "Get Memory Configuration",
+                "description": "Retrieve the current memory system configuration.",
+                "operationId": "get_memory_config_endpoint_api_memory_config_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemoryConfigResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/memory/status": {
+            "get": {
+                "tags": [
+                    "memory"
+                ],
+                "summary": "Get Memory Status",
+                "description": "Retrieve both memory configuration and current data in a single request.",
+                "operationId": "get_memory_status_api_memory_status_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MemoryStatusResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/skills": {
+            "get": {
+                "tags": [
+                    "skills"
+                ],
+                "summary": "List All Skills",
+                "description": "Retrieve a list of all available skills from both public and custom directories.",
+                "operationId": "list_skills_api_skills_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillsListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/skills/{skill_name}": {
+            "get": {
+                "tags": [
+                    "skills"
+                ],
+                "summary": "Get Skill Details",
+                "description": "Retrieve detailed information about a specific skill by its name.",
+                "operationId": "get_skill_api_skills__skill_name__get",
+                "parameters": [
+                    {
+                        "name": "skill_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Skill Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "skills"
+                ],
+                "summary": "Update Skill",
+                "description": "Update a skill's enabled status by modifying the extensions_config.json file.",
+                "operationId": "update_skill_api_skills__skill_name__put",
+                "parameters": [
+                    {
+                        "name": "skill_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Skill Name"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SkillUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/skills/install": {
+            "post": {
+                "tags": [
+                    "skills"
+                ],
+                "summary": "Install Skill",
+                "description": "Install a skill from a .skill file (ZIP archive) located in the thread's user-data directory.",
+                "operationId": "install_skill_api_skills_install_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SkillInstallRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillInstallResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/artifacts/{path}": {
+            "get": {
+                "tags": [
+                    "artifacts"
+                ],
+                "summary": "Get Artifact File",
+                "description": "Retrieve an artifact file generated by the AI agent. Supports text, HTML, and binary files.",
+                "operationId": "get_artifact_api_threads__thread_id__artifacts__path__get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "path",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Path"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/uploads": {
+            "post": {
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "Upload Files",
+                "description": "Upload multiple files to a thread's uploads directory.\n\nFor PDF, PPT, Excel, and Word files, they will be converted to markdown using markitdown.\nAll files (original and converted) are saved to /mnt/user-data/uploads.\n\nArgs:\n    thread_id: The thread ID to upload files to.\n    files: List of files to upload.\n\nReturns:\n    Upload response with success status and file information.",
+                "operationId": "upload_files_api_threads__thread_id__uploads_post",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_files_api_threads__thread_id__uploads_post"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/uploads/list": {
+            "get": {
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "List Uploaded Files",
+                "description": "List all files in a thread's uploads directory.\n\nArgs:\n    thread_id: The thread ID to list files for.\n\nReturns:\n    Dictionary containing list of files with their metadata.",
+                "operationId": "list_uploaded_files_api_threads__thread_id__uploads_list_get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response List Uploaded Files Api Threads  Thread Id  Uploads List Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/uploads/{filename}": {
+            "delete": {
+                "tags": [
+                    "uploads"
+                ],
+                "summary": "Delete Uploaded File",
+                "description": "Delete a file from a thread's uploads directory.\n\nArgs:\n    thread_id: The thread ID.\n    filename: The filename to delete.\n\nReturns:\n    Success message.",
+                "operationId": "delete_uploaded_file_api_threads__thread_id__uploads__filename__delete",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "filename",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Filename"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Delete Uploaded File Api Threads  Thread Id  Uploads  Filename  Delete"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agents": {
+            "get": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "List Custom Agents",
+                "description": "List all custom agents available in the agents directory.",
+                "operationId": "list_agents_api_agents_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AgentsListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Create Custom Agent",
+                "description": "Create a new custom agent with its config and SOUL.md.",
+                "operationId": "create_agent_endpoint_api_agents_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AgentCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AgentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agents/check": {
+            "get": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Check Agent Name",
+                "description": "Validate an agent name and check if it is available (case-insensitive).",
+                "operationId": "check_agent_name_api_agents_check_get",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Check Agent Name Api Agents Check Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/agents/{name}": {
+            "get": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Get Custom Agent",
+                "description": "Retrieve details and SOUL.md content for a specific custom agent.",
+                "operationId": "get_agent_api_agents__name__get",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AgentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Update Custom Agent",
+                "description": "Update an existing custom agent's config and/or SOUL.md.",
+                "operationId": "update_agent_api_agents__name__put",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AgentUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AgentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Delete Custom Agent",
+                "description": "Delete a custom agent and all its files (config, SOUL.md, memory).",
+                "operationId": "delete_agent_api_agents__name__delete",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user-profile": {
+            "get": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Get User Profile",
+                "description": "Read the global USER.md file that is injected into all custom agents.",
+                "operationId": "get_user_profile_api_user_profile_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Update User Profile",
+                "description": "Write the global USER.md file that is injected into all custom agents.",
+                "operationId": "update_user_profile_api_user_profile_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserProfileUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/suggestions": {
+            "post": {
+                "tags": [
+                    "suggestions"
+                ],
+                "summary": "Generate Follow-up Questions",
+                "description": "Generate short follow-up questions a user might ask next, based on recent conversation context.",
+                "operationId": "generate_suggestions_api_threads__thread_id__suggestions_post",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SuggestionsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuggestionsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/channels/": {
+            "get": {
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Get Channels Status",
+                "description": "Get the status of all IM channels.",
+                "operationId": "get_channels_status_api_channels__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChannelStatusResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/channels/{name}/restart": {
+            "post": {
+                "tags": [
+                    "channels"
+                ],
+                "summary": "Restart Channel",
+                "description": "Restart a specific IM channel.",
+                "operationId": "restart_channel_api_channels__name__restart_post",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChannelRestartResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/accounts/": {
+            "post": {
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "Create Account",
+                "operationId": "create_account_api_accounts__post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "List Accounts",
+                "operationId": "list_accounts_api_accounts__get",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "pattern": "^(offline|online)$"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "platforms",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Comma-separated platform names",
+                            "title": "Platforms"
+                        },
+                        "description": "Comma-separated platform names"
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/accounts/{account_id}": {
+            "put": {
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "Update Account",
+                "operationId": "update_account_api_accounts__account_id__put",
+                "parameters": [
+                    {
+                        "name": "account_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Account Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "Delete Account",
+                "operationId": "delete_account_api_accounts__account_id__delete",
+                "parameters": [
+                    {
+                        "name": "account_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Account Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Delete Account Api Accounts  Account Id  Delete"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account-groups/": {
+            "post": {
+                "tags": [
+                    "account_groups"
+                ],
+                "summary": "Create Group",
+                "operationId": "create_group_api_account_groups__post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GroupCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account-groups/{group_id}": {
+            "delete": {
+                "tags": [
+                    "account_groups"
+                ],
+                "summary": "Delete Group",
+                "operationId": "delete_group_api_account_groups__group_id__delete",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Delete Group Api Account Groups  Group Id  Delete"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/account-groups/aggregate": {
+            "get": {
+                "tags": [
+                    "account_groups"
+                ],
+                "summary": "Aggregate Group Counts",
+                "operationId": "aggregate_group_counts_api_account_groups_aggregate_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupAggregateResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/upload": {
+            "post": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Upload Media",
+                "operationId": "upload_media_api_media_upload_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_media_api_media_upload_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/{media_id}/download": {
+            "get": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Download Media",
+                "operationId": "download_media_api_media__media_id__download_get",
+                "parameters": [
+                    {
+                        "name": "media_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Media Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/": {
+            "get": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "List Media",
+                "operationId": "list_media_api_media__get",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Name"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Comma-separated tags",
+                            "title": "Tags"
+                        },
+                        "description": "Comma-separated tags"
+                    },
+                    {
+                        "name": "media_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "pattern": "^(image|video|document)$"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Media Type"
+                        }
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Delete Media",
+                "operationId": "delete_media_api_media__delete",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkDeleteRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Delete Media Api Media  Delete"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/{media_id}": {
+            "put": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Edit Media",
+                "operationId": "edit_media_api_media__media_id__put",
+                "parameters": [
+                    {
+                        "name": "media_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Media Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MediaUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/move-group": {
+            "post": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Move Media Group",
+                "operationId": "move_media_group_api_media_move_group_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkMoveGroupRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "title": "Response Move Media Group Api Media Move Group Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media/add-tags": {
+            "post": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Add Media Tags",
+                "operationId": "add_media_tags_api_media_add_tags_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkAddTagsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "title": "Response Add Media Tags Api Media Add Tags Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media-groups/": {
+            "post": {
+                "tags": [
+                    "media_groups"
+                ],
+                "summary": "Create Group",
+                "operationId": "create_group_api_media_groups__post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GroupCreate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media-groups/{group_id}": {
+            "delete": {
+                "tags": [
+                    "media_groups"
+                ],
+                "summary": "Delete Group",
+                "operationId": "delete_group_api_media_groups__group_id__delete",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "title": "Response Delete Group Api Media Groups  Group Id  Delete"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/media-groups/aggregate": {
+            "get": {
+                "tags": [
+                    "media_groups"
+                ],
+                "summary": "Aggregate Group Counts",
+                "operationId": "aggregate_group_counts_api_media_groups_aggregate_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupAggregateResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health Check",
+                "description": "Health check endpoint.\n\nReturns:\n    Service health status information.",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "title": "Response Health Check Health Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AccountCreate": {
+                "properties": {
+                    "avatar": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar"
+                    },
+                    "nickname": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "title": "Nickname"
+                    },
+                    "account": {
+                        "type": "string",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "title": "Account"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "minLength": 1,
+                        "title": "Platform"
+                    },
+                    "follower_count": {
+                        "type": "integer",
+                        "minimum": 0.0,
+                        "title": "Follower Count",
+                        "default": 0
+                    },
+                    "status": {
+                        "type": "string",
+                        "pattern": "^(offline|online)$",
+                        "title": "Status",
+                        "default": "offline"
+                    },
+                    "cookie": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cookie"
+                    },
+                    "group_ids": {
+                        "items": {
+                            "type": "integer"
+                        },
+                        "type": "array",
+                        "title": "Group Ids"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nickname",
+                    "account",
+                    "platform"
+                ],
+                "title": "AccountCreate"
+            },
+            "AccountListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/AccountResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total"
+                ],
+                "title": "AccountListResponse"
+            },
+            "AccountResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "avatar": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar"
+                    },
+                    "nickname": {
+                        "type": "string",
+                        "title": "Nickname"
+                    },
+                    "account": {
+                        "type": "string",
+                        "title": "Account"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "title": "Platform"
+                    },
+                    "follower_count": {
+                        "type": "integer",
+                        "title": "Follower Count"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "cookie": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cookie"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "groups": {
+                        "items": {
+                            "$ref": "#/components/schemas/GroupBrief"
+                        },
+                        "type": "array",
+                        "title": "Groups"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "avatar",
+                    "nickname",
+                    "account",
+                    "platform",
+                    "follower_count",
+                    "status",
+                    "cookie",
+                    "created_at",
+                    "updated_at",
+                    "groups"
+                ],
+                "title": "AccountResponse"
+            },
+            "AccountUpdate": {
+                "properties": {
+                    "avatar": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar"
+                    },
+                    "nickname": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 128,
+                                "minLength": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Nickname"
+                    },
+                    "account": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 256,
+                                "minLength": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Account"
+                    },
+                    "platform": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64,
+                                "minLength": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform"
+                    },
+                    "follower_count": {
+                        "anyOf": [
+                            {
+                                "type": "integer",
+                                "minimum": 0.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Follower Count"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^(offline|online)$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    },
+                    "cookie": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cookie"
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "integer"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids"
+                    }
+                },
+                "type": "object",
+                "title": "AccountUpdate"
+            },
+            "AgentCreateRequest": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "Agent name (must match ^[A-Za-z0-9-]+$, stored as lowercase)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Agent description",
+                        "default": ""
+                    },
+                    "model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model",
+                        "description": "Optional model override"
+                    },
+                    "tool_groups": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tool Groups",
+                        "description": "Optional tool group whitelist"
+                    },
+                    "soul": {
+                        "type": "string",
+                        "title": "Soul",
+                        "description": "SOUL.md content — agent personality and behavioral guardrails",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "AgentCreateRequest",
+                "description": "Request body for creating a custom agent."
+            },
+            "AgentResponse": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "Agent name (hyphen-case)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Agent description",
+                        "default": ""
+                    },
+                    "model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model",
+                        "description": "Optional model override"
+                    },
+                    "tool_groups": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tool Groups",
+                        "description": "Optional tool group whitelist"
+                    },
+                    "soul": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Soul",
+                        "description": "SOUL.md content (included on GET /{name})"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "AgentResponse",
+                "description": "Response model for a custom agent."
+            },
+            "AgentUpdateRequest": {
+                "properties": {
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description",
+                        "description": "Updated description"
+                    },
+                    "model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model",
+                        "description": "Updated model override"
+                    },
+                    "tool_groups": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tool Groups",
+                        "description": "Updated tool group whitelist"
+                    },
+                    "soul": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Soul",
+                        "description": "Updated SOUL.md content"
+                    }
+                },
+                "type": "object",
+                "title": "AgentUpdateRequest",
+                "description": "Request body for updating a custom agent."
+            },
+            "AgentsListResponse": {
+                "properties": {
+                    "agents": {
+                        "items": {
+                            "$ref": "#/components/schemas/AgentResponse"
+                        },
+                        "type": "array",
+                        "title": "Agents"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "agents"
+                ],
+                "title": "AgentsListResponse",
+                "description": "Response model for listing all custom agents."
+            },
+            "Body_upload_files_api_threads__thread_id__uploads_post": {
+                "properties": {
+                    "files": {
+                        "items": {
+                            "type": "string",
+                            "format": "binary"
+                        },
+                        "type": "array",
+                        "title": "Files"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "files"
+                ],
+                "title": "Body_upload_files_api_threads__thread_id__uploads_post"
+            },
+            "Body_upload_media_api_media_upload_post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    },
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "tags": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tags"
+                    },
+                    "remark": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Remark"
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file"
+                ],
+                "title": "Body_upload_media_api_media_upload_post"
+            },
+            "BulkAddTagsRequest": {
+                "properties": {
+                    "ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Ids"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Tags"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "ids",
+                    "tags"
+                ],
+                "title": "BulkAddTagsRequest"
+            },
+            "BulkDeleteRequest": {
+                "properties": {
+                    "ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Ids"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "ids"
+                ],
+                "title": "BulkDeleteRequest"
+            },
+            "BulkMoveGroupRequest": {
+                "properties": {
+                    "ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Ids"
+                    },
+                    "group_id": {
+                        "type": "integer",
+                        "title": "Group Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "ids",
+                    "group_id"
+                ],
+                "title": "BulkMoveGroupRequest"
+            },
+            "ChannelRestartResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success",
+                    "message"
+                ],
+                "title": "ChannelRestartResponse"
+            },
+            "ChannelStatusResponse": {
+                "properties": {
+                    "service_running": {
+                        "type": "boolean",
+                        "title": "Service Running"
+                    },
+                    "channels": {
+                        "additionalProperties": {
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        "type": "object",
+                        "title": "Channels"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "service_running",
+                    "channels"
+                ],
+                "title": "ChannelStatusResponse"
+            },
+            "ContextSection": {
+                "properties": {
+                    "summary": {
+                        "type": "string",
+                        "title": "Summary",
+                        "description": "Summary content",
+                        "default": ""
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "title": "Updatedat",
+                        "description": "Last update timestamp",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "title": "ContextSection",
+                "description": "Model for context sections (user and history)."
+            },
+            "Fact": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "Unique identifier for the fact"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "description": "Fact content"
+                    },
+                    "category": {
+                        "type": "string",
+                        "title": "Category",
+                        "description": "Fact category",
+                        "default": "context"
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "title": "Confidence",
+                        "description": "Confidence score (0-1)",
+                        "default": 0.5
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "title": "Createdat",
+                        "description": "Creation timestamp",
+                        "default": ""
+                    },
+                    "source": {
+                        "type": "string",
+                        "title": "Source",
+                        "description": "Source thread ID",
+                        "default": "unknown"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "content"
+                ],
+                "title": "Fact",
+                "description": "Model for a memory fact."
+            },
+            "GroupAggregateItem": {
+                "properties": {
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "type": "string",
+                        "title": "Group Name"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "title": "Count"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "group_id",
+                    "group_name",
+                    "count"
+                ],
+                "title": "GroupAggregateItem"
+            },
+            "GroupAggregateResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/GroupAggregateItem"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items"
+                ],
+                "title": "GroupAggregateResponse"
+            },
+            "GroupBrief": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "title": "GroupBrief"
+            },
+            "GroupCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "title": "Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "GroupCreate"
+            },
+            "GroupResponse": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "GroupResponse"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "HistoryContext": {
+                "properties": {
+                    "recentMonths": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    },
+                    "earlierContext": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    },
+                    "longTermBackground": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    }
+                },
+                "type": "object",
+                "title": "HistoryContext",
+                "description": "Model for history context."
+            },
+            "McpConfigResponse": {
+                "properties": {
+                    "mcp_servers": {
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/McpServerConfigResponse"
+                        },
+                        "type": "object",
+                        "title": "Mcp Servers",
+                        "description": "Map of MCP server name to configuration"
+                    }
+                },
+                "type": "object",
+                "title": "McpConfigResponse",
+                "description": "Response model for MCP configuration."
+            },
+            "McpConfigUpdateRequest": {
+                "properties": {
+                    "mcp_servers": {
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/McpServerConfigResponse"
+                        },
+                        "type": "object",
+                        "title": "Mcp Servers",
+                        "description": "Map of MCP server name to configuration"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "mcp_servers"
+                ],
+                "title": "McpConfigUpdateRequest",
+                "description": "Request model for updating MCP configuration."
+            },
+            "McpOAuthConfigResponse": {
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "title": "Enabled",
+                        "description": "Whether OAuth token injection is enabled",
+                        "default": true
+                    },
+                    "token_url": {
+                        "type": "string",
+                        "title": "Token Url",
+                        "description": "OAuth token endpoint URL",
+                        "default": ""
+                    },
+                    "grant_type": {
+                        "type": "string",
+                        "enum": [
+                            "client_credentials",
+                            "refresh_token"
+                        ],
+                        "title": "Grant Type",
+                        "description": "OAuth grant type",
+                        "default": "client_credentials"
+                    },
+                    "client_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Client Id",
+                        "description": "OAuth client ID"
+                    },
+                    "client_secret": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Client Secret",
+                        "description": "OAuth client secret"
+                    },
+                    "refresh_token": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Refresh Token",
+                        "description": "OAuth refresh token"
+                    },
+                    "scope": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scope",
+                        "description": "OAuth scope"
+                    },
+                    "audience": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Audience",
+                        "description": "OAuth audience"
+                    },
+                    "token_field": {
+                        "type": "string",
+                        "title": "Token Field",
+                        "description": "Token response field containing access token",
+                        "default": "access_token"
+                    },
+                    "token_type_field": {
+                        "type": "string",
+                        "title": "Token Type Field",
+                        "description": "Token response field containing token type",
+                        "default": "token_type"
+                    },
+                    "expires_in_field": {
+                        "type": "string",
+                        "title": "Expires In Field",
+                        "description": "Token response field containing expires-in seconds",
+                        "default": "expires_in"
+                    },
+                    "default_token_type": {
+                        "type": "string",
+                        "title": "Default Token Type",
+                        "description": "Default token type when response omits token_type",
+                        "default": "Bearer"
+                    },
+                    "refresh_skew_seconds": {
+                        "type": "integer",
+                        "title": "Refresh Skew Seconds",
+                        "description": "Refresh this many seconds before expiry",
+                        "default": 60
+                    },
+                    "extra_token_params": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Extra Token Params",
+                        "description": "Additional form params sent to token endpoint"
+                    }
+                },
+                "type": "object",
+                "title": "McpOAuthConfigResponse",
+                "description": "OAuth configuration for an MCP server."
+            },
+            "McpServerConfigResponse": {
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "title": "Enabled",
+                        "description": "Whether this MCP server is enabled",
+                        "default": true
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Type",
+                        "description": "Transport type: 'stdio', 'sse', or 'http'",
+                        "default": "stdio"
+                    },
+                    "command": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Command",
+                        "description": "Command to execute to start the MCP server (for stdio type)"
+                    },
+                    "args": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Args",
+                        "description": "Arguments to pass to the command (for stdio type)"
+                    },
+                    "env": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Env",
+                        "description": "Environment variables for the MCP server"
+                    },
+                    "url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Url",
+                        "description": "URL of the MCP server (for sse or http type)"
+                    },
+                    "headers": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Headers",
+                        "description": "HTTP headers to send (for sse or http type)"
+                    },
+                    "oauth": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/McpOAuthConfigResponse"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "OAuth configuration for MCP HTTP/SSE servers"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Human-readable description of what this MCP server provides",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "title": "McpServerConfigResponse",
+                "description": "Response model for MCP server configuration."
+            },
+            "MediaListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/MediaResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total"
+                ],
+                "title": "MediaListResponse"
+            },
+            "MediaResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "title": "File Path"
+                    },
+                    "media_type": {
+                        "type": "string",
+                        "title": "Media Type"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Tags"
+                    },
+                    "file_size": {
+                        "type": "integer",
+                        "title": "File Size"
+                    },
+                    "remark": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Remark"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "groups": {
+                        "items": {
+                            "$ref": "#/components/schemas/GroupBrief"
+                        },
+                        "type": "array",
+                        "title": "Groups"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "file_path",
+                    "media_type",
+                    "tags",
+                    "file_size",
+                    "remark",
+                    "created_at",
+                    "updated_at",
+                    "groups"
+                ],
+                "title": "MediaResponse"
+            },
+            "MediaUpdate": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 256,
+                                "minLength": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "tags": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tags"
+                    },
+                    "remark": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Remark"
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "integer"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids"
+                    }
+                },
+                "type": "object",
+                "title": "MediaUpdate"
+            },
+            "MemoryConfigResponse": {
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "title": "Enabled",
+                        "description": "Whether memory is enabled"
+                    },
+                    "storage_path": {
+                        "type": "string",
+                        "title": "Storage Path",
+                        "description": "Path to memory storage file"
+                    },
+                    "debounce_seconds": {
+                        "type": "integer",
+                        "title": "Debounce Seconds",
+                        "description": "Debounce time for memory updates"
+                    },
+                    "max_facts": {
+                        "type": "integer",
+                        "title": "Max Facts",
+                        "description": "Maximum number of facts to store"
+                    },
+                    "fact_confidence_threshold": {
+                        "type": "number",
+                        "title": "Fact Confidence Threshold",
+                        "description": "Minimum confidence threshold for facts"
+                    },
+                    "injection_enabled": {
+                        "type": "boolean",
+                        "title": "Injection Enabled",
+                        "description": "Whether memory injection is enabled"
+                    },
+                    "max_injection_tokens": {
+                        "type": "integer",
+                        "title": "Max Injection Tokens",
+                        "description": "Maximum tokens for memory injection"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "enabled",
+                    "storage_path",
+                    "debounce_seconds",
+                    "max_facts",
+                    "fact_confidence_threshold",
+                    "injection_enabled",
+                    "max_injection_tokens"
+                ],
+                "title": "MemoryConfigResponse",
+                "description": "Response model for memory configuration."
+            },
+            "MemoryResponse": {
+                "properties": {
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "description": "Memory schema version",
+                        "default": "1.0"
+                    },
+                    "lastUpdated": {
+                        "type": "string",
+                        "title": "Lastupdated",
+                        "description": "Last update timestamp",
+                        "default": ""
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserContext"
+                    },
+                    "history": {
+                        "$ref": "#/components/schemas/HistoryContext"
+                    },
+                    "facts": {
+                        "items": {
+                            "$ref": "#/components/schemas/Fact"
+                        },
+                        "type": "array",
+                        "title": "Facts"
+                    }
+                },
+                "type": "object",
+                "title": "MemoryResponse",
+                "description": "Response model for memory data."
+            },
+            "MemoryStatusResponse": {
+                "properties": {
+                    "config": {
+                        "$ref": "#/components/schemas/MemoryConfigResponse"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/MemoryResponse"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "config",
+                    "data"
+                ],
+                "title": "MemoryStatusResponse",
+                "description": "Response model for memory status."
+            },
+            "ModelResponse": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "Unique identifier for the model"
+                    },
+                    "display_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Display Name",
+                        "description": "Human-readable name"
+                    },
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description",
+                        "description": "Model description"
+                    },
+                    "supports_thinking": {
+                        "type": "boolean",
+                        "title": "Supports Thinking",
+                        "description": "Whether model supports thinking mode",
+                        "default": false
+                    },
+                    "supports_reasoning_effort": {
+                        "type": "boolean",
+                        "title": "Supports Reasoning Effort",
+                        "description": "Whether model supports reasoning effort",
+                        "default": false
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "ModelResponse",
+                "description": "Response model for model information."
+            },
+            "ModelsListResponse": {
+                "properties": {
+                    "models": {
+                        "items": {
+                            "$ref": "#/components/schemas/ModelResponse"
+                        },
+                        "type": "array",
+                        "title": "Models"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "models"
+                ],
+                "title": "ModelsListResponse",
+                "description": "Response model for listing all models."
+            },
+            "SkillInstallRequest": {
+                "properties": {
+                    "thread_id": {
+                        "type": "string",
+                        "title": "Thread Id",
+                        "description": "The thread ID where the .skill file is located"
+                    },
+                    "path": {
+                        "type": "string",
+                        "title": "Path",
+                        "description": "Virtual path to the .skill file (e.g., mnt/user-data/outputs/my-skill.skill)"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "thread_id",
+                    "path"
+                ],
+                "title": "SkillInstallRequest",
+                "description": "Request model for installing a skill from a .skill file."
+            },
+            "SkillInstallResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success",
+                        "description": "Whether the installation was successful"
+                    },
+                    "skill_name": {
+                        "type": "string",
+                        "title": "Skill Name",
+                        "description": "Name of the installed skill"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Installation result message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success",
+                    "skill_name",
+                    "message"
+                ],
+                "title": "SkillInstallResponse",
+                "description": "Response model for skill installation."
+            },
+            "SkillResponse": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "description": "Name of the skill"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Description of what the skill does"
+                    },
+                    "license": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "License",
+                        "description": "License information"
+                    },
+                    "category": {
+                        "type": "string",
+                        "title": "Category",
+                        "description": "Category of the skill (public or custom)"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "title": "Enabled",
+                        "description": "Whether this skill is enabled",
+                        "default": true
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "description",
+                    "category"
+                ],
+                "title": "SkillResponse",
+                "description": "Response model for skill information."
+            },
+            "SkillUpdateRequest": {
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "title": "Enabled",
+                        "description": "Whether to enable or disable the skill"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "enabled"
+                ],
+                "title": "SkillUpdateRequest",
+                "description": "Request model for updating a skill."
+            },
+            "SkillsListResponse": {
+                "properties": {
+                    "skills": {
+                        "items": {
+                            "$ref": "#/components/schemas/SkillResponse"
+                        },
+                        "type": "array",
+                        "title": "Skills"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "skills"
+                ],
+                "title": "SkillsListResponse",
+                "description": "Response model for listing all skills."
+            },
+            "SuggestionMessage": {
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "title": "Role",
+                        "description": "Message role: user|assistant"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "description": "Message content as plain text"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "role",
+                    "content"
+                ],
+                "title": "SuggestionMessage"
+            },
+            "SuggestionsRequest": {
+                "properties": {
+                    "messages": {
+                        "items": {
+                            "$ref": "#/components/schemas/SuggestionMessage"
+                        },
+                        "type": "array",
+                        "title": "Messages",
+                        "description": "Recent conversation messages"
+                    },
+                    "n": {
+                        "type": "integer",
+                        "maximum": 5.0,
+                        "minimum": 1.0,
+                        "title": "N",
+                        "description": "Number of suggestions to generate",
+                        "default": 3
+                    },
+                    "model_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model Name",
+                        "description": "Optional model override"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "messages"
+                ],
+                "title": "SuggestionsRequest"
+            },
+            "SuggestionsResponse": {
+                "properties": {
+                    "suggestions": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Suggestions",
+                        "description": "Suggested follow-up questions"
+                    }
+                },
+                "type": "object",
+                "title": "SuggestionsResponse"
+            },
+            "UploadResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success"
+                    },
+                    "files": {
+                        "items": {
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "type": "object"
+                        },
+                        "type": "array",
+                        "title": "Files"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success",
+                    "files",
+                    "message"
+                ],
+                "title": "UploadResponse",
+                "description": "Response model for file upload."
+            },
+            "UserContext": {
+                "properties": {
+                    "workContext": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    },
+                    "personalContext": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    },
+                    "topOfMind": {
+                        "$ref": "#/components/schemas/ContextSection"
+                    }
+                },
+                "type": "object",
+                "title": "UserContext",
+                "description": "Model for user context."
+            },
+            "UserProfileResponse": {
+                "properties": {
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content",
+                        "description": "USER.md content, or null if not yet created"
+                    }
+                },
+                "type": "object",
+                "title": "UserProfileResponse",
+                "description": "Response model for the global user profile (USER.md)."
+            },
+            "UserProfileUpdateRequest": {
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "description": "USER.md content — describes the user's background and preferences",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "title": "UserProfileUpdateRequest",
+                "description": "Request body for setting the global user profile."
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "models",
+            "description": "Operations for querying available AI models and their configurations"
+        },
+        {
+            "name": "mcp",
+            "description": "Manage Model Context Protocol (MCP) server configurations"
+        },
+        {
+            "name": "memory",
+            "description": "Access and manage global memory data for personalized conversations"
+        },
+        {
+            "name": "skills",
+            "description": "Manage skills and their configurations"
+        },
+        {
+            "name": "artifacts",
+            "description": "Access and download thread artifacts and generated files"
+        },
+        {
+            "name": "uploads",
+            "description": "Upload and manage user files for threads"
+        },
+        {
+            "name": "agents",
+            "description": "Create and manage custom agents with per-agent config and prompts"
+        },
+        {
+            "name": "suggestions",
+            "description": "Generate follow-up question suggestions for conversations"
+        },
+        {
+            "name": "channels",
+            "description": "Manage IM channel integrations (Feishu, Slack, Telegram)"
+        },
+        {
+            "name": "health",
+            "description": "Health check and system status endpoints"
+        },
+        {
+            "name": "accounts",
+            "description": "Manage social media accounts and their group assignments"
+        },
+        {
+            "name": "account_groups",
+            "description": "Manage account groups and query per-group account counts"
+        },
+        {
+            "name": "media",
+            "description": "Manage media assets, upload/download files, and batch operations"
+        },
+        {
+            "name": "media_groups",
+            "description": "Manage media groups and query per-group media counts"
+        }
+    ]
+}

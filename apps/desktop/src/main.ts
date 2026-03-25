@@ -330,7 +330,8 @@ function createPlatformAuthView(
   platformId: string,
 ): WebContentsView {
   if (externalTabs.has(tabId)) return externalTabs.get(tabId)!;
-  const partition = `persist:platform-auth-${platformId}`;
+  /** 每个 tab 使用独立 ephemeral partition，不持久化 cookie，每次授权互不干扰 */
+  const partition = `platform-auth-${tabId}`;
   const bv = new WebContentsView({
     webPreferences: {
       contextIsolation: true,
@@ -390,7 +391,8 @@ ipcMain.on("external-tab:load-platform-auth", (event, tabId: string, platformId:
   platformAuthTabInitialized.add(tabId);
 
   const cfg = PLATFORM_AUTH_CONFIG[platformId];
-  const partition = `persist:platform-auth-${platformId}`;
+  /** 与 createPlatformAuthView 保持一致：ephemeral partition，每次授权独立 cookie */
+  const partition = `platform-auth-${tabId}`;
   const ses = session.fromPartition(partition);
 
   const view = createPlatformAuthView(win, tabId, platformId);
@@ -416,10 +418,13 @@ ipcMain.on("external-tab:load-platform-auth", (event, tabId: string, platformId:
   // 先附着到主窗口再加载，与独立 BrowserWindow 行为一致，避免部分站点在未附着 View 上报 ERR_FAILED
   showExternalTab(win, tabId);
   void view.webContents.loadURL(cfg.loginUrl).catch((err) => {
+    // 重定向链中被新导航中断时，Electron 会抛 ERR_ABORTED(-3)，不应视为授权失败。
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("ERR_ABORTED") || msg.includes("(-3)")) return;
     finish({
       ok: false,
       error: "load_failed",
-      message: err instanceof Error ? err.message : String(err),
+      message: msg,
     });
   });
 });

@@ -129,7 +129,10 @@ export function attachPlatformAuthSuccessListener(
   });
 }
 
-let activeAuthWindow: BrowserWindow | null = null;
+/** 每个弹窗使用独立 partition，支持同时打开多个平台授权，cookie 互不干扰 */
+function nextAuthPartition(platformId: string): string {
+  return `platform-auth-popup-${platformId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 /** 登录窗口不加载业务 preload，避免第三方页面拿到 IPC 桥。 */
 export function registerPlatformAuthIpc(): void {
@@ -140,13 +143,9 @@ export function registerPlatformAuthIpc(): void {
         return { ok: false, error: "unsupported" };
       }
 
-      if (activeAuthWindow && !activeAuthWindow.isDestroyed()) {
-        activeAuthWindow.focus();
-        return { ok: false, error: "busy" };
-      }
-
       const cfg = PLATFORM_AUTH_CONFIG[platformId];
-      const partition = `persist:platform-auth-${platformId}`;
+      /** ephemeral partition，不持久化 cookie，每次打开都是全新会话 */
+      const partition = nextAuthPartition(platformId);
       const ses = session.fromPartition(partition);
 
       return await new Promise<PlatformAuthResult>((resolve) => {
@@ -161,7 +160,6 @@ export function registerPlatformAuthIpc(): void {
           },
         });
 
-        activeAuthWindow = win;
         let settled = false;
         let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -179,10 +177,8 @@ export function registerPlatformAuthIpc(): void {
 
           settled = true;
           clearDebounce();
-          activeAuthWindow = null;
           try {
             const cookies = await collectCookies(ses, cfg.cookieUrls);
-            console.log(cookies);
             resolve({ ok: true, platformId, cookies });
           } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
@@ -217,7 +213,6 @@ export function registerPlatformAuthIpc(): void {
           e.preventDefault();
           settled = true;
           clearDebounce();
-          activeAuthWindow = null;
           if (!win.isDestroyed()) win.destroy();
           resolve({ ok: false, error: "cancelled" });
         });
@@ -238,7 +233,6 @@ export function registerPlatformAuthIpc(): void {
             if (!isMainFrame || settled) return;
             settled = true;
             clearDebounce();
-            activeAuthWindow = null;
             if (!win.isDestroyed()) win.destroy();
             resolve({
               ok: false,
@@ -254,7 +248,6 @@ export function registerPlatformAuthIpc(): void {
             if (settled) return;
             settled = true;
             clearDebounce();
-            activeAuthWindow = null;
             if (!win.isDestroyed()) win.destroy();
             resolve({
               ok: false,
