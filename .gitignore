@@ -1,6 +1,7 @@
 # dependencies (monorepo)
 node_modules/
 **/node_modules/
+deer-flow/
 
 # logs
 npm-debug.log*
