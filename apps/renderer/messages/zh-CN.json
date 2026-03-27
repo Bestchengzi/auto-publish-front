@@ -1,0 +1,389 @@
+{
+  "common": {
+    "loading": "加载中…",
+    "error": "出错了",
+    "errorRetry": "重试",
+    "notFound": "页面不存在",
+    "notFoundDesc": "抱歉，您访问的页面不存在。",
+    "backToHome": "返回首页"
+  },
+  "app": {
+    "name": "媒小蜂",
+    "metaDescription": "基于 Next.js + Electron + shadcn/ui 的跨端发布工具，内置 SEO、主题与多语言骨架。"
+  },
+  "home": {
+    "title": "一次开发，同时适配 Web 与桌面端",
+    "subtitle": "Next.js + Electron + shadcn/ui，内置 SEO 与主题系统。",
+    "cta": {
+      "primary": "开始使用",
+      "secondary": "查看文档"
+    },
+    "placeholder": "首页占位：请从左侧进入「账号」管理（{path}）。"
+  },
+  "browserChrome": {
+    "newTab": "新标签页",
+    "newVersion": "新版本",
+    "back": "后退",
+    "forward": "前进",
+    "refresh": "刷新",
+    "favorite": "收藏",
+    "urlPlaceholder": "输入网址开始浏览",
+    "emptyStatePrompt": "输入网址开始浏览",
+    "externalError": {
+      "title": "无法访问此网站",
+      "hintTypo": "请检查 {host} 中是否有拼写错误。",
+      "hintNetwork": "如果拼写无误，请尝试检查网络连接或运行 Windows 网络诊断。",
+      "reload": "重新加载",
+      "codeLabel": "错误代码"
+    }
+  },
+  "nav": {
+    "locale": {
+      "label": "语言",
+      "zh": "简体中文",
+      "en": "英文"
+    },
+    "style": {
+      "label": "组件样式",
+      "neutral": "中性（默认）",
+      "blue": "蓝色",
+      "violet": "紫色"
+    },
+    "theme": {
+      "label": "主题",
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统"
+    }
+  },
+  "sidebar": {
+    "brand": {
+      "subtitle": "自动化内容发布与增长"
+    },
+    "groups": {
+      "workspace": "工作台",
+      "ai": "AI 创作",
+      "works": "作品",
+      "assets": "资产"
+    },
+    "items": {
+      "overview": "总览",
+      "recentCreations": "近期创作",
+      "more": "更多",
+      "emptyRecentCreations": "暂无近期创作",
+      "threadActions": "对话操作",
+      "renameThread": "重命名",
+      "renameThreadDesc": "为该对话设置一个新名称。",
+      "deleteThread": "删除",
+      "deleteThreadDesc": "删除后无法恢复，确定要删除该对话吗？",
+      "cancel": "取消",
+      "save": "保存",
+      "saving": "保存中…",
+      "confirmDelete": "确认删除",
+      "deleting": "删除中…",
+      "creationCenter": "创作中心",
+      "topicCenter": "选题中心",
+      "workList": "作品列表",
+      "worksLibrary": "作品库",
+      "account": "账号",
+      "assetLibrary": "素材库"
+    }
+  },
+  "account": {
+    "title": "账号管理",
+    "description": "支持按平台与状态筛选账号，分组管理，并提供表格/卡片两种视图。",
+    "filters": {
+      "platform": "平台",
+      "status": "状态",
+      "all": "全部",
+      "allShort": "全"
+    },
+    "search": {
+      "placeholder": "搜索账号名称",
+      "ariaLabel": "搜索账号"
+    },
+    "view": {
+      "table": "表格",
+      "card": "卡片"
+    },
+    "addAccount": {
+      "dialogTitle": "选择平台",
+      "dialogDescription": "选择要添加账号的平台",
+      "authBusy": "已有登录窗口打开，请先关闭该窗口后再试。",
+      "authUnsupported": "该平台暂未配置网页授权。",
+      "authFailed": "打开或加载登录页失败：{message}",
+      "authNeedDesktop": "请在桌面客户端中使用添加账号功能。",
+      "authSuccess": "账号授权成功"
+    },
+    "editDrawer": {
+      "title": "编辑账号",
+      "groupLabel": "所属分组（可多选）",
+      "groupHint": "没有想要的所属分组，可先创建多个分组",
+      "save": "保存"
+    },
+    "actions": {
+      "add": "添加账号",
+      "edit": "编辑",
+      "settings": "设置",
+      "delete": "删除",
+      "batchDelete": "批量删除",
+      "deleteAccountConfirm": "确定删除该账号吗？",
+      "batchDeleteConfirm": "确定删除选中的 {count} 个账号吗？"
+    },
+    "bulk": {
+      "selectedCount": "已选择 {count} 个账号",
+      "moveToGroup": "移动到分组"
+    },
+    "groups": {
+      "title": "分组",
+      "settingsTooltip": "分组设置",
+      "dialogTitle": "分组设置",
+      "dialogDescription": "新建分组或重命名、删除已有分组。",
+      "close": "关闭",
+      "newGroupPlaceholder": "输入新分组名称",
+      "createNew": "新建分组",
+      "empty": "暂无分组",
+      "emptyHint": "在上方输入名称并点击「新建分组」添加",
+      "rename": "重命名",
+      "renameNotSupported": "分组重命名功能暂未对接",
+      "deleteConfirm": "确定删除该分组吗？",
+      "confirm": "确定",
+      "cancel": "取消",
+      "all": "全部账号",
+      "ops": "运营组",
+      "creator": "达人组",
+      "brand": "品牌组",
+      "ungrouped": "未分组"
+    },
+    "status": {
+      "online": "在线",
+      "offline": "离线"
+    },
+    "table": {
+      "selectAll": "全选",
+      "selectOne": "选择账号",
+      "account": "账号",
+      "platform": "平台",
+      "followers": "粉丝数",
+      "group": "所在分组",
+      "status": "状态",
+      "updatedAt": "更新日期",
+      "actions": "操作"
+    },
+    "card": {
+      "followers": "粉丝",
+      "platform": "平台",
+      "group": "分组",
+      "updatedAt": "更新"
+    },
+    "platforms": {
+      "toutiao": "今日头条",
+      "rednote": "小红书",
+      "douyin": "抖音",
+      "wechat_mp": "微信公众号",
+      "wechat_channels": "微信视频号",
+      "zhixunbao": "知讯宝"
+    },
+    "empty": "暂无账号，换个筛选条件试试。",
+    "emptyTitle": "暂无账号",
+    "emptyDescription": "换个筛选条件试试，或点击上方「添加账号」开始。"
+  },
+  "worksLibrary": {
+    "title": "作品库",
+    "description": "查看 AI 生成并发布的作品，按平台追踪发布结果与表现。",
+    "tabs": {
+      "works": "作品",
+      "drafts": "草稿"
+    },
+    "search": {
+      "placeholder": "搜索标题名称",
+      "ariaLabel": "搜索标题"
+    },
+    "filters": {
+      "platform": "平台类型",
+      "status": "发布状态",
+      "all": "全部",
+      "allShort": "全"
+    },
+    "status": {
+      "success": "发布成功",
+      "failed": "发布失败",
+      "publishing": "正在发布中"
+    },
+    "platforms": {
+      "toutiao": "今日头条",
+      "xhs": "小红书",
+      "rednote": "小红书",
+      "douyin": "抖音",
+      "wx_mp": "微信公众号",
+      "wechat_mp": "微信公众号",
+      "wx_channels": "微信视频号",
+      "wechat_channels": "微信视频号",
+      "zhixunbao": "知讯宝"
+    },
+    "table": {
+      "title": "标题",
+      "type": "类型",
+      "platform": "平台",
+      "createdAt": "创建时间",
+      "status": "发布状态",
+      "successFail": "成功 / 失败",
+      "actions": "操作",
+      "selectAll": "全选",
+      "selectOne": "选择作品"
+    },
+    "bulk": {
+      "selectedCount": "已选择 {count} 个作品"
+    },
+    "actions": {
+      "edit": "编辑",
+      "viewDetails": "查看详情",
+      "delete": "删除",
+      "batchDelete": "批量删除",
+      "deleteWorkConfirm": "确定删除该作品吗？",
+      "batchDeleteConfirm": "确定删除选中的 {count} 个作品吗？"
+    },
+    "dialog": {
+      "close": "关闭",
+      "cancel": "取消",
+      "confirm": "确定"
+    },
+    "emptyTitle": "暂无作品",
+    "emptyDescription": "换个筛选条件试试。"
+  },
+  "material": {
+    "title": "素材库",
+    "description": "支持按类型与分组筛选素材，分组管理，并提供表格/卡片两种视图。",
+    "types": {
+      "image": "图片",
+      "video": "视频",
+      "document": "文档"
+    },
+    "filters": {
+      "type": "素材类型",
+      "all": "全部"
+    },
+    "search": {
+      "placeholder": "搜索素材名称",
+      "ariaLabel": "搜索素材"
+    },
+    "view": {
+      "table": "表格",
+      "card": "卡片"
+    },
+    "upload": {
+      "invalidType": "有 {count} 个文件格式不支持，仅支持图片、视频（mp4/webm/ogg）及常见文档（Word、PDF、TXT、Markdown、Excel）"
+    },
+    "actions": {
+      "upload": "上传素材",
+      "edit": "编辑",
+      "delete": "删除",
+      "batchDelete": "批量删除",
+      "deleteMaterialConfirm": "确定删除该素材吗？",
+      "batchDeleteConfirm": "确定删除选中的 {count} 个素材吗？"
+    },
+    "bulk": {
+      "selectedCount": "已选择 {count} 个素材",
+      "moveToGroup": "移动到分组"
+    },
+    "groups": {
+      "title": "分组",
+      "settingsTooltip": "分组设置",
+      "dialogTitle": "分组设置",
+      "dialogDescription": "新建分组或重命名、删除已有分组。",
+      "close": "关闭",
+      "newGroupPlaceholder": "输入新分组名称",
+      "createNew": "新建分组",
+      "empty": "暂无分组",
+      "emptyHint": "在上方输入名称并点击「新建分组」添加",
+      "rename": "重命名",
+      "deleteConfirm": "确定删除该分组吗？",
+      "confirm": "确定",
+      "cancel": "取消",
+      "all": "全部素材",
+      "default": "默认分组",
+      "ungrouped": "未分组",
+      "renameNotSupported": "分组重命名功能暂未对接"
+    },
+    "table": {
+      "selectAll": "全选",
+      "selectOne": "选择素材",
+      "name": "素材名称",
+      "type": "素材类型",
+      "tags": "标签",
+      "group": "所在分组",
+      "size": "文件大小",
+      "uploadedAt": "上传时间",
+      "actions": "操作"
+    },
+    "card": {
+      "imagePreviewPlaceholder": "图片预览",
+      "videoPreviewPlaceholder": "视频预览",
+      "documentPreviewNotSupported": "暂不支持文档预览"
+    },
+    "edit": {
+      "title": "编辑素材",
+      "group": "分组",
+      "description": "描述",
+      "type": "类型",
+      "uploadedAt": "上传时间",
+      "fileSize": "文件大小",
+      "save": "保存",
+      "deleteMaterial": "删除素材"
+    },
+    "emptyTitle": "暂无素材",
+    "emptyDescription": "换个筛选条件试试，或点击上方「上传素材」开始。"
+  },
+  "topicCenter": {
+    "title": "挖掘你的创作灵感",
+    "searchPlaceholder": "输入关键词搜索话题…",
+    "platform": "平台",
+    "track": "赛道",
+    "all": "全部",
+    "allShort": "全",
+    "search": "搜索",
+    "actions": {
+      "more": "更多操作",
+      "secondaryCreation": "二次创作"
+    },
+    "tabs": {
+      "hotTopics": "热门话题",
+      "trackTopics": "赛道话题"
+    },
+    "trackTopicsPlaceholder": "赛道话题即将上线",
+    "platforms": {
+      "toutiao": "今日头条",
+      "xhs": "小红书",
+      "rednote": "小红书",
+      "douyin": "抖音",
+      "wx_mp": "微信公众号",
+      "wechat_mp": "微信公众号",
+      "wx_channels": "微信视频号",
+      "wechat_channels": "微信视频号",
+      "zhixunbao": "知讯宝"
+    },
+    "tracks": {
+      "shizheng": "时政",
+      "guofang": "国防",
+      "ai": "AI",
+      "jinrong": "金融",
+      "shangye": "商业",
+      "touzi": "投资",
+      "xinnengyuan": "新能源",
+      "qiche": "汽车",
+      "bandaoti": "半导体",
+      "yiyao": "医药"
+    }
+  },
+  "creationCenter": {
+    "placeholder": "创作中心占位页，功能即将上线。",
+    "new": {
+      "title": "你的 AI 社交媒体内容创作专家",
+      "subtitle": "规划撰写小红书、抖音、微博、公众号等多平台内容",
+      "inputPlaceholder": "描述你的创作需求，如：写一篇小红书种草文案、抖音脚本、公众号推文…",
+      "linkKnowledgeBase": "关联知识库",
+      "sendAria": "发送并开始对话",
+      "createThreadFailed": "创建对话失败，请检查网络与 LangGraph 配置"
+    }
+  }
+}

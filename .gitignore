@@ -22,3 +22,6 @@ build/
 .next/
 out/
 
+# analysis reports
+apps/renderer/ts-prune-report.txt
+

@@ -1,0 +1,390 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "errorRetry": "Retry",
+    "notFound": "Page not found",
+    "notFoundDesc": "Sorry, the page you are looking for does not exist.",
+    "backToHome": "Back to home"
+  },
+  "app": {
+    "name": "MediaBee",
+    "metaDescription": "A cross-platform publisher built with Next.js + Electron + shadcn/ui, with SEO, theming and i18n scaffolded."
+  },
+  "home": {
+    "title": "Build once, run on Web & Desktop",
+    "subtitle": "Next.js + Electron + shadcn/ui, with SEO and theming baked in.",
+    "cta": {
+      "primary": "Get started",
+      "secondary": "Documentation"
+    },
+    "placeholder": "Home placeholder: Go to Account management from the sidebar ({path})."
+  },
+  "browserChrome": {
+    "newTab": "New tab",
+    "newVersion": "New version",
+    "back": "Back",
+    "forward": "Forward",
+    "refresh": "Refresh",
+    "favorite": "Favorite",
+    "urlPlaceholder": "Enter URL to start browsing",
+    "emptyStatePrompt": "Enter URL to start browsing",
+    "externalError": {
+      "title": "This site can't be reached",
+      "hintTypo": "Check if there is a typo in {host}.",
+      "hintNetwork": "If spelling is correct, try checking your network connection.",
+      "reload": "Reload",
+      "codeLabel": "Error code"
+    }
+  },
+  "nav": {
+    "locale": {
+      "label": "Language",
+      "zh": "Chinese",
+      "en": "English"
+    },
+    "style": {
+      "label": "UI Style",
+      "neutral": "Neutral (default)",
+      "blue": "Blue",
+      "violet": "Violet"
+    },
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "sidebar": {
+    "brand": {
+      "subtitle": "Automated publishing & growth"
+    },
+    "groups": {
+      "workspace": "Workspace",
+      "ai": "AI Creation",
+      "works": "Works",
+      "assets": "Assets"
+    },
+    "items": {
+      "overview": "Overview",
+      "recentCreations": "Recent Creations",
+      "more": "More",
+      "emptyRecentCreations": "No recent creations",
+      "threadActions": "Thread actions",
+      "renameThread": "Rename",
+      "renameThreadDesc": "Set a new name for this thread.",
+      "deleteThread": "Delete",
+      "deleteThreadDesc": "This action cannot be undone. Delete this thread?",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "confirmDelete": "Delete",
+      "deleting": "Deleting…",
+      "creationCenter": "Creation Center",
+      "topicCenter": "Topic Center",
+      "workList": "Work List",
+      "worksLibrary": "Works Library",
+      "account": "Account",
+      "assetLibrary": "Asset Library"
+    }
+  },
+  "account": {
+    "title": "Account Management",
+    "description": "Filter by platform and status, manage groups, and switch between table and card views.",
+    "filters": {
+      "platform": "Platform",
+      "status": "Status",
+      "all": "All",
+      "allShort": "All"
+    },
+    "search": {
+      "placeholder": "Search accounts",
+      "ariaLabel": "Search accounts"
+    },
+    "view": {
+      "table": "Table",
+      "card": "Cards"
+    },
+    "addAccount": {
+      "dialogTitle": "Select platform",
+      "dialogDescription": "Choose a platform to add an account",
+      "authBusy": "A login window is already open. Close it first.",
+      "authUnsupported": "Web sign-in is not configured for this platform yet.",
+      "authFailed": "Failed to open or load the login page: {message}",
+      "authNeedDesktop": "Add account (cookie capture) is only available in the desktop app.",
+      "authSuccess": "Account authorized successfully"
+    },
+    "editDrawer": {
+      "title": "Edit account",
+      "groupLabel": "Group (multi-select)",
+      "groupHint": "Create more groups in settings if you don't see the one you need.",
+      "save": "Save"
+    },
+    "actions": {
+      "add": "Add account",
+      "edit": "Edit",
+      "settings": "Settings",
+      "delete": "Delete",
+      "batchDelete": "Bulk delete",
+      "deleteAccountConfirm": "Delete this account?",
+      "batchDeleteConfirm": "Delete the selected {count} account(s)?"
+    },
+    "bulk": {
+      "selectedCount": "{count} selected",
+      "moveToGroup": "Move to group"
+    },
+    "groups": {
+      "title": "Groups",
+      "settingsTooltip": "Group settings",
+      "dialogTitle": "Group settings",
+      "dialogDescription": "Create new groups or rename and delete existing groups.",
+      "close": "Close",
+      "newGroupPlaceholder": "Enter new group name",
+      "createNew": "Create group",
+      "empty": "No groups yet",
+      "emptyHint": "Enter a name above and click \"Create group\" to add",
+      "rename": "Rename",
+      "renameNotSupported": "Group rename is not supported yet",
+      "deleteConfirm": "Delete this group?",
+      "confirm": "OK",
+      "cancel": "Cancel",
+      "all": "All accounts",
+      "ops": "Operations",
+      "creator": "Creators",
+      "brand": "Brand",
+      "ungrouped": "Ungrouped"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "table": {
+      "selectAll": "Select all",
+      "selectOne": "Select account",
+      "account": "Account",
+      "platform": "Platform",
+      "followers": "Followers",
+      "group": "Group",
+      "status": "Status",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "card": {
+      "followers": "Followers",
+      "platform": "Platform",
+      "group": "Group",
+      "updatedAt": "Updated"
+    },
+    "platforms": {
+      "toutiao": "Toutiao",
+      "rednote": "Xiaohongshu",
+      "douyin": "Douyin",
+      "wechat_mp": "WeChat Official Account",
+      "wechat_channels": "WeChat Channels",
+      "zhixunbao": "Zhixunbao"
+    },
+    "empty": "No accounts found. Try adjusting filters.",
+    "emptyTitle": "No accounts",
+    "emptyDescription": "Try adjusting filters or click \"Add account\" above to get started."
+  },
+  "worksLibrary": {
+    "title": "Works Library",
+    "description": "View AI-generated and published works, track results and performance by platform.",
+    "tabs": {
+      "works": "Works",
+      "drafts": "Drafts"
+    },
+    "search": {
+      "placeholder": "Search by title",
+      "ariaLabel": "Search by title"
+    },
+    "filters": {
+      "platform": "Platform",
+      "status": "Publish status",
+      "all": "All",
+      "allShort": "All"
+    },
+    "status": {
+      "success": "Published",
+      "failed": "Publish failed",
+      "publishing": "Publishing"
+    },
+    "platforms": {
+      "toutiao": "Toutiao",
+      "xhs": "Xiaohongshu",
+      "rednote": "Xiaohongshu",
+      "douyin": "Douyin",
+      "wx_mp": "WeChat Official Account",
+      "wechat_mp": "WeChat Official Account",
+      "wx_channels": "WeChat Channels",
+      "wechat_channels": "WeChat Channels",
+      "zhixunbao": "Zhixunbao"
+    },
+    "table": {
+      "title": "Title",
+      "type": "Type",
+      "platform": "Platform",
+      "createdAt": "Created",
+      "status": "Status",
+      "successFail": "Success / Failed",
+      "actions": "Actions",
+      "selectAll": "Select all",
+      "selectOne": "Select work"
+    },
+    "bulk": {
+      "selectedCount": "{count} selected"
+    },
+    "actions": {
+      "edit": "Edit",
+      "viewDetails": "View details",
+      "delete": "Delete",
+      "batchDelete": "Bulk delete",
+      "deleteWorkConfirm": "Delete this work?",
+      "batchDeleteConfirm": "Delete the selected {count} work(s)?"
+    },
+    "dialog": {
+      "close": "Close",
+      "cancel": "Cancel",
+      "confirm": "OK"
+    },
+    "emptyTitle": "No works",
+    "emptyDescription": "Try adjusting your filters."
+  },
+  "material": {
+    "title": "Material Library",
+    "description": "Filter by type and group, manage groups, and switch between table and card views.",
+    "types": {
+      "image": "Image",
+      "video": "Video",
+      "document": "Document"
+    },
+    "filters": {
+      "type": "Type",
+      "all": "All"
+    },
+    "search": {
+      "placeholder": "Search materials",
+      "ariaLabel": "Search materials"
+    },
+    "view": {
+      "table": "Table",
+      "card": "Cards"
+    },
+    "upload": {
+      "invalidType": "{count} file(s) have unsupported format. Only images, videos (mp4/webm/ogg), and common documents (Word, PDF, TXT, Markdown, Excel) are allowed."
+    },
+    "actions": {
+      "upload": "Upload",
+      "edit": "Edit",
+      "delete": "Delete",
+      "batchDelete": "Bulk delete",
+      "deleteMaterialConfirm": "Delete this material?",
+      "batchDeleteConfirm": "Delete the selected {count} material(s)?"
+    },
+    "bulk": {
+      "selectedCount": "{count} selected",
+      "moveToGroup": "Move to group"
+    },
+    "groups": {
+      "title": "Groups",
+      "settingsTooltip": "Group settings",
+      "dialogTitle": "Group settings",
+      "dialogDescription": "Create new groups or rename and delete existing groups.",
+      "close": "Close",
+      "newGroupPlaceholder": "Enter new group name",
+      "createNew": "Create group",
+      "empty": "No groups yet",
+      "emptyHint": "Enter a name above and click \"Create group\" to add",
+      "rename": "Rename",
+      "deleteConfirm": "Delete this group?",
+      "confirm": "OK",
+      "cancel": "Cancel",
+      "all": "All materials",
+      "default": "Default",
+      "ungrouped": "Ungrouped",
+      "renameNotSupported": "Group rename is not supported yet"
+    },
+    "table": {
+      "selectAll": "Select all",
+      "selectOne": "Select material",
+      "name": "Name",
+      "type": "Type",
+      "tags": "Tags",
+      "group": "Group",
+      "size": "Size",
+      "uploadedAt": "Uploaded",
+      "actions": "Actions"
+    },
+    "card": {
+      "imagePreviewPlaceholder": "Image preview",
+      "videoPreviewPlaceholder": "Video preview",
+      "documentPreviewNotSupported": "Document preview not supported"
+    },
+    "edit": {
+      "title": "Edit material",
+      "group": "Group",
+      "description": "Description",
+      "type": "Type",
+      "uploadedAt": "Uploaded",
+      "fileSize": "File size",
+      "save": "Save",
+      "deleteMaterial": "Delete material"
+    },
+    "emptyTitle": "No materials",
+    "emptyDescription": "Try adjusting filters or click \"Upload\" above to get started."
+  },
+  "topicCenter": {
+    "title": "Discover your creative inspiration",
+    "searchPlaceholder": "Enter keywords to search topics…",
+    "platform": "Platform",
+    "track": "Track",
+    "all": "All",
+    "allShort": "All",
+    "search": "Search",
+    "actions": {
+      "more": "More actions",
+      "secondaryCreation": "Secondary creation"
+    },
+    "tabs": {
+      "hotTopics": "Hot Topics",
+      "trackTopics": "Track Topics"
+    },
+    "trackTopicsPlaceholder": "Track topics coming soon",
+    "platforms": {
+      "toutiao": "Toutiao",
+      "xhs": "Xiaohongshu",
+      "rednote": "Xiaohongshu",
+      "douyin": "Douyin",
+      "wx_mp": "WeChat Official Account",
+      "wechat_mp": "WeChat Official Account",
+      "wx_channels": "WeChat Channels",
+      "wechat_channels": "WeChat Channels",
+      "zhixunbao": "Zhixunbao"
+    },
+    "tracks": {
+      "shizheng": "Politics",
+      "guofang": "Defense",
+      "ai": "AI",
+      "jinrong": "Finance",
+      "shangye": "Business",
+      "touzi": "Investment",
+      "xinnengyuan": "New Energy",
+      "qiche": "Automotive",
+      "bandaoti": "Semiconductor",
+      "yiyao": "Pharma"
+    }
+  },
+  "creationCenter": {
+    "placeholder": "Creation Center placeholder. Coming soon.",
+    "new": {
+      "title": "Your AI Social Media Content Creation Expert",
+      "subtitle": "Plan and write content for Xiaohongshu, Douyin, Weibo, WeChat and more platforms",
+      "inputPlaceholder": "Describe your creation needs, e.g.: a Xiaohongshu post, Douyin script, WeChat article…",
+      "linkKnowledgeBase": "Link Knowledge Base",
+      "sendAria": "Send and start conversation",
+      "createThreadFailed": "Failed to create conversation. Check network and LangGraph configuration."
+    }
+  }
+}
+
