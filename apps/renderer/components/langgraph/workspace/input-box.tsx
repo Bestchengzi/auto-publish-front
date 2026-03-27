@@ -52,6 +52,8 @@ import {
 import {
   DropdownMenuGroup,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
@@ -89,15 +91,16 @@ type InputMode = "flash" | "thinking" | "pro" | "ultra";
 
 function getResolvedMode(
   mode: InputMode | undefined,
-  supportsThinking: boolean,
+  supportsThinking: boolean | undefined,
 ): InputMode {
-  if (!supportsThinking && mode !== "flash") {
+  // Only fallback to flash when the model explicitly declares no thinking support.
+  if (supportsThinking === false && mode !== "flash") {
     return "flash";
   }
   if (mode) {
     return mode;
   }
-  return supportsThinking ? "pro" : "flash";
+  return "flash";
 }
 
 export function InputBox({
@@ -166,7 +169,7 @@ export function InputBox({
     }
     const currentModel = models.find((m) => m.name === context.model_name);
     const fallbackModel = currentModel ?? models[0]!;
-    const supportsThinking = fallbackModel.supports_thinking ?? false;
+    const supportsThinking = fallbackModel.supports_thinking;
     const nextModelName = fallbackModel.name;
     const nextMode = getResolvedMode(context.mode, supportsThinking);
 
@@ -189,7 +192,7 @@ export function InputBox({
   }, [context.model_name, models]);
 
   const supportThinking = useMemo(
-    () => selectedModel?.supports_thinking ?? false,
+    () => selectedModel?.supports_thinking !== false,
     [selectedModel],
   );
 
@@ -207,7 +210,7 @@ export function InputBox({
       onContextChange?.({
         ...context,
         model_name,
-        mode: getResolvedMode(context.mode, model.supports_thinking ?? false),
+        mode: getResolvedMode(context.mode, model.supports_thinking),
         reasoning_effort: context.reasoning_effort,
       });
       setModelDialogOpen(false);
@@ -242,6 +245,8 @@ export function InputBox({
     },
     [onContextChange, context],
   );
+
+  const selectedMode = getResolvedMode(context.mode, supportThinking);
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -410,40 +415,31 @@ export function InputBox({
           </PromptInputActionMenu> */}
             <AddAttachmentsButton className="px-2!" />
             <PromptInputActionMenu>
-              <ModeHoverGuide
-                mode={
-                  context.mode === "flash" ||
-                  context.mode === "thinking" ||
-                  context.mode === "pro" ||
-                  context.mode === "ultra"
-                    ? context.mode
-                    : "flash"
-                }
-              >
+              <ModeHoverGuide mode={selectedMode}>
                 <PromptInputActionMenuTrigger className="gap-1! px-2!">
                   <div>
-                    {context.mode === "flash" && <ZapIcon className="size-3" />}
-                    {context.mode === "thinking" && (
+                    {selectedMode === "flash" && <ZapIcon className="size-3" />}
+                    {selectedMode === "thinking" && (
                       <LightbulbIcon className="size-3" />
                     )}
-                    {context.mode === "pro" && (
+                    {selectedMode === "pro" && (
                       <GraduationCapIcon className="size-3" />
                     )}
-                    {context.mode === "ultra" && (
+                    {selectedMode === "ultra" && (
                       <RocketIcon className="size-3 text-[#dabb5e]" />
                     )}
                   </div>
                   <div
                     className={cn(
                       "text-xs font-normal",
-                      context.mode === "ultra" ? "golden-text" : "",
+                      selectedMode === "ultra" ? "golden-text" : "",
                     )}
                   >
-                    {(context.mode === "flash" && t.inputBox.flashMode) ||
-                      (context.mode === "thinking" &&
+                    {(selectedMode === "flash" && t.inputBox.flashMode) ||
+                      (selectedMode === "thinking" &&
                         t.inputBox.reasoningMode) ||
-                      (context.mode === "pro" && t.inputBox.proMode) ||
-                      (context.mode === "ultra" && t.inputBox.ultraMode)}
+                      (selectedMode === "pro" && t.inputBox.proMode) ||
+                      (selectedMode === "ultra" && t.inputBox.ultraMode)}
                   </div>
                 </PromptInputActionMenuTrigger>
               </ModeHoverGuide>
@@ -452,21 +448,26 @@ export function InputBox({
                   <DropdownMenuLabel className="text-muted-foreground text-xs">
                     {t.inputBox.mode}
                   </DropdownMenuLabel>
-                  <PromptInputActionMenu>
-                    <PromptInputActionMenuItem
-                      className={cn(
-                        context.mode === "flash"
-                          ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
-                      )}
-                      onSelect={() => handleModeSelect("flash")}
-                    >
+                  <DropdownMenuRadioGroup
+                    value={selectedMode}
+                    onValueChange={(value) => {
+                      if (
+                        value === "flash" ||
+                        value === "thinking" ||
+                        value === "pro" ||
+                        value === "ultra"
+                      ) {
+                        handleModeSelect(value);
+                      }
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="flash">
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 font-bold">
                           <ZapIcon
                             className={cn(
                               "mr-2 size-4",
-                              context.mode === "flash" &&
+                              selectedMode === "flash" &&
                                 "text-accent-foreground",
                             )}
                           />
@@ -476,111 +477,72 @@ export function InputBox({
                           {t.inputBox.flashModeDescription}
                         </div>
                       </div>
-                      {context.mode === "flash" ? (
-                        <CheckIcon className="ml-auto size-4" />
-                      ) : (
-                        <div className="ml-auto size-4" />
-                      )}
-                    </PromptInputActionMenuItem>
+                    </DropdownMenuRadioItem>
                     {supportThinking && (
-                      <PromptInputActionMenuItem
-                        className={cn(
-                          context.mode === "thinking"
-                            ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
-                        )}
-                        onSelect={() => handleModeSelect("thinking")}
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-1 font-bold">
-                            <LightbulbIcon
-                              className={cn(
-                                "mr-2 size-4",
-                                context.mode === "thinking" &&
-                                  "text-accent-foreground",
-                              )}
-                            />
-                            {t.inputBox.reasoningMode}
+                      <>
+                        <DropdownMenuRadioItem value="thinking">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-1 font-bold">
+                              <LightbulbIcon
+                                className={cn(
+                                  "mr-2 size-4",
+                                  selectedMode === "thinking" &&
+                                    "text-accent-foreground",
+                                )}
+                              />
+                              {t.inputBox.reasoningMode}
+                            </div>
+                            <div className="pl-7 text-xs">
+                              {t.inputBox.reasoningModeDescription}
+                            </div>
                           </div>
-                          <div className="pl-7 text-xs">
-                            {t.inputBox.reasoningModeDescription}
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="pro">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-1 font-bold">
+                              <GraduationCapIcon
+                                className={cn(
+                                  "mr-2 size-4",
+                                  selectedMode === "pro" &&
+                                    "text-accent-foreground",
+                                )}
+                              />
+                              {t.inputBox.proMode}
+                            </div>
+                            <div className="pl-7 text-xs">
+                              {t.inputBox.proModeDescription}
+                            </div>
                           </div>
-                        </div>
-                        {context.mode === "thinking" ? (
-                          <CheckIcon className="ml-auto size-4" />
-                        ) : (
-                          <div className="ml-auto size-4" />
-                        )}
-                      </PromptInputActionMenuItem>
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="ultra">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-1 font-bold">
+                              <RocketIcon
+                                className={cn(
+                                  "mr-2 size-4",
+                                  selectedMode === "ultra" && "text-[#dabb5e]",
+                                )}
+                              />
+                              <div
+                                className={cn(
+                                  selectedMode === "ultra" && "golden-text",
+                                )}
+                              >
+                                {t.inputBox.ultraMode}
+                              </div>
+                            </div>
+                            <div className="pl-7 text-xs">
+                              {t.inputBox.ultraModeDescription}
+                            </div>
+                          </div>
+                        </DropdownMenuRadioItem>
+                      </>
                     )}
-                    <PromptInputActionMenuItem
-                      className={cn(
-                        context.mode === "pro"
-                          ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
-                      )}
-                      onSelect={() => handleModeSelect("pro")}
-                    >
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-1 font-bold">
-                          <GraduationCapIcon
-                            className={cn(
-                              "mr-2 size-4",
-                              context.mode === "pro" &&
-                                "text-accent-foreground",
-                            )}
-                          />
-                          {t.inputBox.proMode}
-                        </div>
-                        <div className="pl-7 text-xs">
-                          {t.inputBox.proModeDescription}
-                        </div>
-                      </div>
-                      {context.mode === "pro" ? (
-                        <CheckIcon className="ml-auto size-4" />
-                      ) : (
-                        <div className="ml-auto size-4" />
-                      )}
-                    </PromptInputActionMenuItem>
-                    <PromptInputActionMenuItem
-                      className={cn(
-                        context.mode === "ultra"
-                          ? "text-accent-foreground"
-                          : "text-muted-foreground/65",
-                      )}
-                      onSelect={() => handleModeSelect("ultra")}
-                    >
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-1 font-bold">
-                          <RocketIcon
-                            className={cn(
-                              "mr-2 size-4",
-                              context.mode === "ultra" && "text-[#dabb5e]",
-                            )}
-                          />
-                          <div
-                            className={cn(
-                              context.mode === "ultra" && "golden-text",
-                            )}
-                          >
-                            {t.inputBox.ultraMode}
-                          </div>
-                        </div>
-                        <div className="pl-7 text-xs">
-                          {t.inputBox.ultraModeDescription}
-                        </div>
-                      </div>
-                      {context.mode === "ultra" ? (
-                        <CheckIcon className="ml-auto size-4" />
-                      ) : (
-                        <div className="ml-auto size-4" />
-                      )}
-                    </PromptInputActionMenuItem>
-                  </PromptInputActionMenu>
+                  </DropdownMenuRadioGroup>
                 </DropdownMenuGroup>
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
-            {supportReasoningEffort && context.mode !== "flash" && (
+            {supportReasoningEffort && selectedMode !== "flash" && (
               <PromptInputActionMenu>
                 <PromptInputActionMenuTrigger className="gap-1! px-2!">
                   <div className="text-xs font-normal">
@@ -600,98 +562,96 @@ export function InputBox({
                     <DropdownMenuLabel className="text-muted-foreground text-xs">
                       {t.inputBox.reasoningEffort}
                     </DropdownMenuLabel>
-                    <PromptInputActionMenu>
-                      <PromptInputActionMenuItem
-                        className={cn(
-                          context.reasoning_effort === "minimal"
-                            ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
-                        )}
-                        onSelect={() => handleReasoningEffortSelect("minimal")}
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-1 font-bold">
-                            {t.inputBox.reasoningEffortMinimal}
-                          </div>
-                          <div className="pl-2 text-xs">
-                            {t.inputBox.reasoningEffortMinimalDescription}
-                          </div>
+                    <PromptInputActionMenuItem
+                      className={cn(
+                        context.reasoning_effort === "minimal"
+                          ? "text-accent-foreground"
+                          : "text-muted-foreground/65",
+                      )}
+                      onSelect={() => handleReasoningEffortSelect("minimal")}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1 font-bold">
+                          {t.inputBox.reasoningEffortMinimal}
                         </div>
-                        {context.reasoning_effort === "minimal" ? (
-                          <CheckIcon className="ml-auto size-4" />
-                        ) : (
-                          <div className="ml-auto size-4" />
-                        )}
-                      </PromptInputActionMenuItem>
-                      <PromptInputActionMenuItem
-                        className={cn(
-                          context.reasoning_effort === "low"
-                            ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
-                        )}
-                        onSelect={() => handleReasoningEffortSelect("low")}
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-1 font-bold">
-                            {t.inputBox.reasoningEffortLow}
-                          </div>
-                          <div className="pl-2 text-xs">
-                            {t.inputBox.reasoningEffortLowDescription}
-                          </div>
+                        <div className="pl-2 text-xs">
+                          {t.inputBox.reasoningEffortMinimalDescription}
                         </div>
-                        {context.reasoning_effort === "low" ? (
-                          <CheckIcon className="ml-auto size-4" />
-                        ) : (
-                          <div className="ml-auto size-4" />
-                        )}
-                      </PromptInputActionMenuItem>
-                      <PromptInputActionMenuItem
-                        className={cn(
-                          context.reasoning_effort === "medium" ||
-                            !context.reasoning_effort
-                            ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
-                        )}
-                        onSelect={() => handleReasoningEffortSelect("medium")}
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-1 font-bold">
-                            {t.inputBox.reasoningEffortMedium}
-                          </div>
-                          <div className="pl-2 text-xs">
-                            {t.inputBox.reasoningEffortMediumDescription}
-                          </div>
+                      </div>
+                      {context.reasoning_effort === "minimal" ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
+                      )}
+                    </PromptInputActionMenuItem>
+                    <PromptInputActionMenuItem
+                      className={cn(
+                        context.reasoning_effort === "low"
+                          ? "text-accent-foreground"
+                          : "text-muted-foreground/65",
+                      )}
+                      onSelect={() => handleReasoningEffortSelect("low")}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1 font-bold">
+                          {t.inputBox.reasoningEffortLow}
                         </div>
-                        {context.reasoning_effort === "medium" ||
-                        !context.reasoning_effort ? (
-                          <CheckIcon className="ml-auto size-4" />
-                        ) : (
-                          <div className="ml-auto size-4" />
-                        )}
-                      </PromptInputActionMenuItem>
-                      <PromptInputActionMenuItem
-                        className={cn(
-                          context.reasoning_effort === "high"
-                            ? "text-accent-foreground"
-                            : "text-muted-foreground/65",
-                        )}
-                        onSelect={() => handleReasoningEffortSelect("high")}
-                      >
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-1 font-bold">
-                            {t.inputBox.reasoningEffortHigh}
-                          </div>
-                          <div className="pl-2 text-xs">
-                            {t.inputBox.reasoningEffortHighDescription}
-                          </div>
+                        <div className="pl-2 text-xs">
+                          {t.inputBox.reasoningEffortLowDescription}
                         </div>
-                        {context.reasoning_effort === "high" ? (
-                          <CheckIcon className="ml-auto size-4" />
-                        ) : (
-                          <div className="ml-auto size-4" />
-                        )}
-                      </PromptInputActionMenuItem>
-                    </PromptInputActionMenu>
+                      </div>
+                      {context.reasoning_effort === "low" ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
+                      )}
+                    </PromptInputActionMenuItem>
+                    <PromptInputActionMenuItem
+                      className={cn(
+                        context.reasoning_effort === "medium" ||
+                          !context.reasoning_effort
+                          ? "text-accent-foreground"
+                          : "text-muted-foreground/65",
+                      )}
+                      onSelect={() => handleReasoningEffortSelect("medium")}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1 font-bold">
+                          {t.inputBox.reasoningEffortMedium}
+                        </div>
+                        <div className="pl-2 text-xs">
+                          {t.inputBox.reasoningEffortMediumDescription}
+                        </div>
+                      </div>
+                      {context.reasoning_effort === "medium" ||
+                      !context.reasoning_effort ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
+                      )}
+                    </PromptInputActionMenuItem>
+                    <PromptInputActionMenuItem
+                      className={cn(
+                        context.reasoning_effort === "high"
+                          ? "text-accent-foreground"
+                          : "text-muted-foreground/65",
+                      )}
+                      onSelect={() => handleReasoningEffortSelect("high")}
+                    >
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1 font-bold">
+                          {t.inputBox.reasoningEffortHigh}
+                        </div>
+                        <div className="pl-2 text-xs">
+                          {t.inputBox.reasoningEffortHighDescription}
+                        </div>
+                      </div>
+                      {context.reasoning_effort === "high" ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
+                      )}
+                    </PromptInputActionMenuItem>
                   </DropdownMenuGroup>
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
@@ -719,8 +679,11 @@ export function InputBox({
                   </PromptInputButton>
                 }
               />
-              <ModelSelectorContent>
-                <ModelSelectorInput placeholder={t.inputBox.searchModels} />
+              <ModelSelectorContent className="text-sm">
+                <ModelSelectorInput
+                  className="text-sm placeholder:text-sm"
+                  placeholder={t.inputBox.searchModels}
+                />
                 <ModelSelectorList>
                   {models.map((m) => (
                     <ModelSelectorItem
@@ -729,8 +692,10 @@ export function InputBox({
                       onSelect={() => handleModelSelect(m.name)}
                     >
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <ModelSelectorName>{m.display_name}</ModelSelectorName>
-                        <span className="text-muted-foreground truncate text-[10px]">
+                        <ModelSelectorName className="text-sm">
+                          {m.display_name}
+                        </ModelSelectorName>
+                        <span className="text-muted-foreground truncate text-sm">
                           {m.model}
                         </span>
                       </div>

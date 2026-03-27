@@ -4,11 +4,13 @@ import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 import { motion } from "motion/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2Icon, SendIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
+import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import { createThread } from "@/lib/langgraph-client";
 
 const HIGHLIGHTED_PARTS = [
@@ -74,6 +76,7 @@ export function CreationCenterNewChat() {
   const [isStarting, setIsStarting] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const locale = pathname?.split("/").filter(Boolean)[0] ?? "zh-CN";
 
   const startConversation = useCallback(async () => {
@@ -82,6 +85,29 @@ export function CreationCenterNewChat() {
     setIsStarting(true);
     try {
       const threadId = await createThread({ metadata: {} });
+      const now = new Date().toISOString();
+      const optimisticTitle = "新创作";
+      const optimisticThread = {
+        thread_id: threadId,
+        created_at: now,
+        updated_at: now,
+        metadata: {},
+        values: optimisticTitle ? { title: optimisticTitle } : {},
+      } as unknown as AgentThread;
+
+      queryClient.setQueriesData(
+        {
+          queryKey: ["threads", "search"],
+          exact: false,
+        },
+        (oldData: Array<AgentThread> | undefined) => {
+          if (!oldData || oldData.length === 0) {
+            return [optimisticThread];
+          }
+          const withoutCurrent = oldData.filter((t) => t.thread_id !== threadId);
+          return [optimisticThread, ...withoutCurrent];
+        },
+      );
       // 线程页挂载后再发首条消息（与 DeerFlow：创建后即对话一致）
       stashPendingInitialMessage({ threadId, text });
       router.push(`/${locale}/creation-center/${threadId}`);
@@ -91,7 +117,7 @@ export function CreationCenterNewChat() {
       toast.error(message);
       setIsStarting(false);
     }
-  }, [input, isStarting, locale, router, t]);
+  }, [input, isStarting, locale, queryClient, router, t]);
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">

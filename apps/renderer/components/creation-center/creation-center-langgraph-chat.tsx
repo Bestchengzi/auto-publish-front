@@ -8,7 +8,7 @@ import { ChatBox, useSpecificChatMode } from "@/components/langgraph/workspace/c
 import { InputBox } from "@/components/langgraph/workspace/input-box";
 import { MessageList } from "@/components/langgraph/workspace/messages";
 import { ThreadContext } from "@/components/langgraph/workspace/messages/context";
-import { TodoList } from "@/components/langgraph/workspace/todo-list";
+// import { TodoList } from "@/components/langgraph/workspace/todo-list";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useNotification } from "@/lib/langgraph/core/notification/hooks";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
@@ -125,17 +125,22 @@ export function CreationCenterLanggraphChat() {
               >
                 <div className="absolute -top-4 right-0 left-0 z-0">
                   <div className="absolute right-0 bottom-0 left-0">
-                    <TodoList
+                    {/* <TodoList
                       className="bg-background/5"
                       todos={thread.values.todos ?? []}
                       hidden={
                         !thread.values.todos || thread.values.todos.length === 0
                       }
-                    />
+                    /> */}
                   </div>
                 </div>
                 <InputBox
-                  className={cn("bg-background/5 w-full -translate-y-4")}
+                  className={cn(
+                    "w-full -translate-y-4 overflow-hidden rounded-2xl border border-primary bg-card shadow-[0_0_20px_rgba(124,58,237,0.25)]",
+                    "[&_[name='message']]:text-base [&_[name='message']]:placeholder:text-base",
+                    "[&_[data-slot='input-group-addon']]:text-sm [&_[data-slot='input-group-addon']_*]:text-sm",
+                    "[&_[data-slot='input-group-addon']_svg]:size-[14px]",
+                  )}
                   isNewThread={isNewThread}
                   threadId={threadId}
                   autoFocus={false}

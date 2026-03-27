@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
@@ -38,6 +39,8 @@ export function RecentCreations({
   limit?: number;
 }) {
   const t = useTranslations("sidebar.items");
+  const pathname = usePathname();
+  const router = useRouter();
   const { data, isLoading, isFetching } = useThreads({
     ...(typeof limit === "number" ? { limit } : {}),
     sortBy: "updated_at",
@@ -53,6 +56,14 @@ export function RecentCreations({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [titleDraft, setTitleDraft] = useState("");
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const activePath = pathname ?? "";
+
+  useEffect(() => {
+    if (!hasLoadedOnce && data !== undefined && !isLoading) {
+      setHasLoadedOnce(true);
+    }
+  }, [data, hasLoadedOnce, isLoading]);
 
   function openRename(threadId: string, currentTitle: string) {
     setActiveThreadId(threadId);
@@ -76,20 +87,24 @@ export function RecentCreations({
   async function submitDelete() {
     const threadId = activeThreadId;
     if (!threadId) return;
+    const deletingActiveThread = activePath === `/${locale}/creation-center/${threadId}`;
     await deleteThread.mutateAsync({ threadId });
     setDeleteOpen(false);
+    if (deletingActiveThread) {
+      router.push(`/${locale}/creation-center/new`);
+    }
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
       <div className="flex items-center justify-between">
-        <div className="px-2 text-xs font-medium text-muted-foreground">
+        <div className="px-2 text-xs font-medium text-muted-foreground/70">
           {t("recentCreations")}
         </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto -mr-3 pr-0">
-        {isLoading || isFetching ? (
+        {!hasLoadedOnce && isLoading ? (
           <div className="space-y-1 px-2">
             {Array.from({ length: 10 }).map((_, idx) => (
               <div
@@ -99,6 +114,10 @@ export function RecentCreations({
                 <div className="h-4 w-full animate-pulse rounded-md bg-foreground/12" />
               </div>
             ))}
+          </div>
+        ) : isFetching && threads.length === 0 ? (
+          <div className="rounded-md bg-muted/20 px-2 py-2 text-xs text-muted-foreground">
+            {t("emptyRecentCreations")}
           </div>
         ) : threads.length === 0 ? (
           <div className="rounded-md bg-muted/20 px-2 py-2 text-xs text-muted-foreground">
@@ -113,14 +132,21 @@ export function RecentCreations({
                   ? values.title.trim()
                   : values.title?.toString().trim() ?? "";
               const safeTitle = title || "Untitled";
+              const threadPath = `/${locale}/creation-center/${thread.thread_id}`;
+              const isActive = activePath === threadPath;
 
               return (
                 <div
                   key={thread.thread_id}
-                  className="group flex items-center rounded-md py-1 pl-2 pr-3 text-sm text-foreground/80 hover:bg-muted hover:text-foreground"
+                  className={cn(
+                    "group flex items-center rounded-md py-1 pl-2 pr-3 text-sm",
+                    isActive
+                      ? "bg-muted text-foreground font-medium"
+                      : "text-foreground/80 hover:bg-muted hover:text-foreground",
+                  )}
                 >
                   <Link
-                    href={`/${locale}/creation-center/${thread.thread_id}`}
+                    href={threadPath}
                     prefetch
                     className="min-w-0 flex-1"
                   >
@@ -132,7 +158,8 @@ export function RecentCreations({
                       aria-label={t("threadActions")}
                       className={cn(
                         buttonVariants({ variant: "ghost", size: "icon-xs" }),
-                        "ml-1 opacity-0 transition-opacity group-hover:opacity-100",
+                        "ml-1 transition-opacity",
+                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                       )}
                       onClick={(e) => {
                         e.preventDefault();

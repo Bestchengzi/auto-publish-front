@@ -32,7 +32,7 @@ function applyAccent(preset: AccentPreset) {
 }
 
 function getInitialPreset(): AccentPreset {
-  if (typeof document === "undefined") return "neutral";
+  if (typeof document === "undefined") return "violet";
 
   const match = document.cookie
     .split(";")
@@ -40,7 +40,7 @@ function getInitialPreset(): AccentPreset {
     .find((p) => p.startsWith(`${ACCENT_COOKIE}=`));
 
   const raw = match?.split("=").slice(1).join("=");
-  return raw === "blue" || raw === "violet" ? raw : "neutral";
+  return raw === "blue" || raw === "violet" ? raw : "violet";
 }
 
 export function StyleToggle({
@@ -55,7 +55,7 @@ export function StyleToggle({
   violetLabel: string;
 }) {
   const router = useRouter();
-  const [, setPreset] = React.useState<AccentPreset>("neutral");
+  const [, setPreset] = React.useState<AccentPreset>("violet");
 
   React.useEffect(() => {
     const initial = getInitialPreset();

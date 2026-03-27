@@ -53,6 +53,22 @@ function getStreamErrorMessage(error: unknown): string {
   return "Request failed.";
 }
 
+function shouldSilentlyIgnoreStreamError(error: unknown): boolean {
+  const message = getStreamErrorMessage(error).toLowerCase();
+  if (!message) return false;
+
+  // Deleting an active thread can leave an in-flight stream/run.
+  // The backend may then return "404 Run not found"/"thread not found".
+  if (message.includes("run not found")) return true;
+  if (message.includes("thread not found")) return true;
+  if (message.includes("404") && message.includes("not found")) return true;
+
+  const status = Reflect.get(error as object, "status");
+  if (status === 404) return true;
+
+  return false;
+}
+
 export function useThreadStream({
   threadId,
   context,
@@ -176,6 +192,9 @@ export function useThreadStream({
     },
     onError(error) {
       setOptimisticMessages([]);
+      if (shouldSilentlyIgnoreStreamError(error)) {
+        return;
+      }
       toast.error(getStreamErrorMessage(error));
     },
     onFinish(state) {
@@ -389,6 +408,9 @@ export function useThreadStream({
       } catch (error) {
         setOptimisticMessages([]);
         setIsUploading(false);
+        if (shouldSilentlyIgnoreStreamError(error)) {
+          return;
+        }
         throw error;
       } finally {
         sendInFlightRef.current = false;
