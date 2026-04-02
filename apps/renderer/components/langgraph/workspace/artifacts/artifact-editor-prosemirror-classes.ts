@@ -1,0 +1,25 @@
+import { cn } from "@/lib/utils";
+
+export const artifactEditorContentClassName = cn(
+  "artifact-prosemirror-editor size-full max-w-none focus:outline-none",
+  "[&_.ProseMirror]:size-full [&_.ProseMirror]:outline-none [&_.ProseMirror]:break-words",
+  "[&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0 [&_.ProseMirror_li>p]:m-0 [&_.ProseMirror_li>p]:inline",
+  "[&_.ProseMirror]:text-base [&_.ProseMirror]:leading-[1.65]",
+  "[&_.ProseMirror_h1]:mt-0 [&_.ProseMirror_h1]:mb-4 [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h1]:leading-tight",
+  "[&_.ProseMirror_>h1:first-child]:text-[30px]",
+  "[&_.ProseMirror_h1:not(:first-child)]:text-[24px]",
+  "[&_.ProseMirror_h2]:mt-5 [&_.ProseMirror_h2]:mb-4 [&_.ProseMirror_h2]:text-[20px] [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h2]:leading-tight",
+  "[&_.ProseMirror_h3]:mt-5 [&_.ProseMirror_h3]:mb-4 [&_.ProseMirror_h3]:text-[18px] [&_.ProseMirror_h3]:font-semibold",
+  "[&_.ProseMirror_h4]:mt-5 [&_.ProseMirror_h4]:mb-4 [&_.ProseMirror_h4]:text-[16px] [&_.ProseMirror_h4]:font-semibold",
+  "[&_.ProseMirror_p]:mt-0 [&_.ProseMirror_p]:mb-3",
+  "[&_.ProseMirror_ul]:mt-0 [&_.ProseMirror_ul]:mb-3 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6",
+  "[&_.ProseMirror_ol]:mt-0 [&_.ProseMirror_ol]:mb-3 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6",
+  "[&_.ProseMirror_blockquote]:my-4 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-border [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:text-muted-foreground",
+  "[&_.ProseMirror_pre]:my-4 [&_.ProseMirror_pre]:overflow-x-auto [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_pre]:border [&_.ProseMirror_pre]:bg-muted/40 [&_.ProseMirror_pre]:px-4 [&_.ProseMirror_pre]:py-3",
+  "[&_.ProseMirror_pre_code]:bg-transparent [&_.ProseMirror_pre_code]:p-0 [&_.ProseMirror_pre_code]:font-mono [&_.ProseMirror_pre_code]:text-[14px] [&_.ProseMirror_pre_code]:leading-6",
+  "[&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:bg-muted [&_.ProseMirror_code]:px-1.5 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:font-mono [&_.ProseMirror_code]:text-[0.9em]",
+  "[&_.ProseMirror_img]:mt-6 [&_.ProseMirror_img]:mb-6 [&_.ProseMirror_img]:block [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-xl",
+  "[&_.ProseMirror_p:has(>br.ProseMirror-trailingBreak):has(+img)]:hidden",
+  "[&_.ProseMirror_img+p:has(>br.ProseMirror-trailingBreak)]:hidden",
+  "[&_.ProseMirror_a]:cursor-pointer [&_.ProseMirror_a]:text-primary [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:decoration-primary/30 [&_.ProseMirror_a]:underline-offset-2",
+);

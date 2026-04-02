@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 
 export function RecentCreations({
@@ -111,7 +112,7 @@ export function RecentCreations({
                 key={idx}
                 className="flex h-8 items-center rounded-md px-2"
               >
-                <div className="h-4 w-full animate-pulse rounded-md bg-foreground/12" />
+                <Skeleton className="h-4 w-full" />
               </div>
             ))}
           </div>

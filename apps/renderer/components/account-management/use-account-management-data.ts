@@ -10,6 +10,7 @@ import type { Account, Group, PlatformId } from "./types";
 
 function mapAccountResponseToAccount(a: accountsApi.AccountResponse): Account {
   const groupIds = (a.groups ?? []).map((g) => String(g.id));
+  const updatedAt = a.last_refreshed_at ?? a.updated_at;
   return {
     id: a.id,
     name: a.nickname || a.account,
@@ -17,7 +18,7 @@ function mapAccountResponseToAccount(a: accountsApi.AccountResponse): Account {
     platformId: a.platform as PlatformId,
     groupIds,
     status: a.status as "online" | "offline",
-    updatedAt: formatDateShort(a.updated_at, "--"),
+    updatedAt: formatDateShort(updatedAt, "--"),
     avatarSeed: a.id,
     avatar: a.avatar ?? undefined,
   };

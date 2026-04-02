@@ -369,7 +369,7 @@ export function AccountManagement() {
                           <Table className="min-w-[860px] table-fixed">
                             <TableHeader
                               className={cn(
-                                "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",
+                                "[&_tr]:border-border [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:relative [&_th]:h-[47px] [&_th]:py-0 [&_th]:before:content-[''] [&_th]:before:absolute [&_th]:before:inset-0 [&_th]:before:bg-inherit [&_th]:before:z-[-1] [&_th]:shadow-[inset_0_-1px_0_0_hsl(var(--border))] [&_tr]:py-0",
                                 selectedIds.size > 0
                                   ? "[&_tr]:bg-background"
                                   : "[&_tr]:bg-muted/40",
@@ -392,25 +392,25 @@ export function AccountManagement() {
                                     }
                                   />
                                 </TableHead>
-                                <TableHead className="w-52 shrink-0 px-4">
+                                <TableHead className="w-52 min-w-0">
                                   {t("account.table.account")}
                                 </TableHead>
-                                <TableHead className="w-28 shrink-0 px-4">
+                                <TableHead className="w-28 shrink-0">
                                   {t("account.table.platform")}
                                 </TableHead>
-                                <TableHead className="w-24 shrink-0 px-4">
+                                <TableHead className="w-24 shrink-0">
                                   {t("account.table.followers")}
                                 </TableHead>
-                                <TableHead className="w-28 shrink-0 px-4">
+                                <TableHead className="w-28 shrink-0">
                                   {t("account.table.group")}
                                 </TableHead>
-                                <TableHead className="w-20 shrink-0 px-4">
+                                <TableHead className="w-20 shrink-0">
                                   {t("account.table.status")}
                                 </TableHead>
-                                <TableHead className="w-24 shrink-0 px-4">
+                                <TableHead className="w-24 shrink-0">
                                   {t("account.table.updatedAt")}
                                 </TableHead>
-                                <TableHead className="w-12 shrink-0 px-4 text-right">
+                                <TableHead className="w-12 shrink-0 text-right">
                                   <span className="sr-only">
                                     {t("account.table.actions")}
                                   </span>
@@ -551,7 +551,7 @@ export function AccountManagement() {
                         <>
                           <div
                             className={cn(
-                              "flex h-12 items-center gap-2 rounded-t-xl border-b border-border px-4 text-sm transition-colors -mx-5 -mt-5 mb-4",
+                              "flex h-12 min-h-12 shrink-0 items-center gap-2 rounded-t-xl border-b border-border px-4 text-sm transition-colors -mx-5 -mt-5 mb-4",
                               selectedIds.size > 0
                                 ? "bg-background"
                                 : "bg-muted/40",
@@ -751,7 +751,6 @@ export function AccountManagement() {
           onSelectedGroupIdsChange={setEditingGroupIds}
           onSave={saveEditAccount}
           platform={activeEditingPlatform}
-          onOpenGroupSettings={() => setGroupSettingsOpen(true)}
         />
       </div>
     </div>

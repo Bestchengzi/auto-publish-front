@@ -40,12 +40,27 @@ function DialogContent({
 }: DialogContentProps) {
   return (
     <DialogPortal>
-      <DialogBackdrop className="fixed inset-0 z-50 bg-black/50 data-[entering]:animate-in data-[exiting]:animate-out data-[entering]:fade-in-0 data-[exiting]:fade-out-0" />
+      <DialogBackdrop
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50",
+          // Base UI 使用 data-starting-style / data-ending-style（与 Radix 的 entering/exiting 不同）
+          "transition-opacity duration-200 ease-out",
+          "opacity-100 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
+        )}
+      />
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] p-4">
         <DialogPopup
           data-slot="dialog-content"
           className={cn(
-            "relative w-full max-w-lg rounded-xl border bg-background px-6 py-4 shadow-lg outline-none data-[entering]:animate-in data-[exiting]:animate-out data-[entering]:fade-in-0 data-[exiting]:fade-out-0 data-[entering]:zoom-in-95 data-[exiting]:zoom-out-95",
+            "relative w-full max-w-lg rounded-xl border bg-background px-6 py-4 shadow-lg outline-none",
+            // Base UI 只提供 data-starting-style / data-ending-style，不自带动画。用任意属性把位移+缩放写进同一
+            // 条 transform，避免 Tailwind 默认 translate/scale 拆属性导致过渡断裂。
+            "origin-center backface-hidden",
+            "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            "opacity-100 [transform:translate(0,0)_scale(1)]",
+            "data-[starting-style]:opacity-0 data-[starting-style]:[transform:translate(0,-0.5rem)_scale(0.96)]",
+            "data-[ending-style]:opacity-0 data-[ending-style]:[transform:translate(0,-0.5rem)_scale(0.96)]",
+            "motion-reduce:transition-none motion-reduce:duration-0",
             className,
           )}
           {...props}

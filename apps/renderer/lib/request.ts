@@ -7,6 +7,8 @@
 
 // --- 鉴权预留：接入后端后改为 true，并实现 handleUnauthorized ---
 const AUTH_BACKEND_ENABLED = false
+const DEFAULT_AUTHORIZATION_BEARER =
+  "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZWZhdWx0X3VzZXIiLCJpYXQiOjE3NzQ5MzQ2NDIsImV4cCI6MTc3NTUzOTQ0Mn0.0JX6vUbSDweTEFaI5zwPeZRntTf0ir8NmfqXTkQcQdY"
 
 /** 与登录态持久化一致（例如 zustand persist 的 name） */
 export const AUTH_STORAGE_KEY = "media-auto-publish-auth"
@@ -34,6 +36,12 @@ export function getAuthToken(): string | null {
   } catch {
     return null
   }
+}
+
+export function getAuthorizationHeaderValue(): string {
+  const token = getAuthToken()
+  if (token) return `Bearer ${token}`
+  return DEFAULT_AUTHORIZATION_BEARER
 }
 
 /** 登出或 401 时清理本地会话（接入登录后可在登出按钮里调用） */
@@ -154,10 +162,11 @@ function authHeadersInit(
   options: RequestInit,
   extraDefaults?: Record<string, string>,
 ): Headers {
-  const token = getAuthToken()
   const defaults = { ...defaultJsonContentTypeIfNeeded(options), ...extraDefaults }
   const h = mergeHeaders(defaults, options.headers)
-  if (token) h.set("Authorization", `Bearer ${token}`)
+  if (!h.has("Authorization")) {
+    h.set("Authorization", getAuthorizationHeaderValue())
+  }
   return h
 }
 

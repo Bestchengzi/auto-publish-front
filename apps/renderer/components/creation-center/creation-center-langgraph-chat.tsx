@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 import { type PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
 import { ChatBox, useSpecificChatMode } from "@/components/langgraph/workspace/chats";
@@ -15,6 +17,7 @@ import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import { useThreadStream } from "@/lib/langgraph/core/threads/hooks";
 import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
 import { takePendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
+import { listPersonas } from "@/lib/api/personas";
 import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +26,7 @@ import { cn } from "@/lib/utils";
  */
 export function CreationCenterLanggraphChat() {
   const { t } = useI18n();
+  const tCreation = useTranslations("creationCenter.new");
   const [settings, setSettings] = useLocalSettings();
   const params = useParams<{ locale: string; thread_id: string }>();
 
@@ -39,6 +43,29 @@ export function CreationCenterLanggraphChat() {
   useSpecificChatMode();
 
   const { showNotification } = useNotification();
+  const selectedPersonaId =
+    typeof settings.context.persona_id === "string"
+      ? settings.context.persona_id
+      : null;
+  const { data: personasData, isFetched: personasFetched } = useQuery({
+    queryKey: ["personas", "list"],
+    queryFn: () => listPersonas(),
+    staleTime: 60_000,
+  });
+  const personaOptions = useMemo(
+    () => (personasData?.items ?? []).map((persona) => ({ id: persona.id, name: persona.name })),
+    [personasData?.items],
+  );
+
+  useEffect(() => {
+    if (!personasFetched) return;
+    if (!selectedPersonaId) return;
+    if (personaOptions.some((persona) => persona.id === selectedPersonaId)) return;
+    setSettings("context", {
+      ...settings.context,
+      persona_id: undefined,
+    });
+  }, [personaOptions, personasFetched, selectedPersonaId, setSettings, settings.context]);
 
   const [thread, sendMessage, isUploading] = useThreadStream({
     threadId: threadId || undefined,
@@ -76,17 +103,27 @@ export function CreationCenterLanggraphChat() {
   useEffect(() => {
     if (!threadId || thread.isThreadLoading || demoLocked) return;
     if (pendingBootstrapRef.current) return;
-    const text = takePendingInitialMessage(threadId);
-    if (!text) return;
+    const pending = takePendingInitialMessage(threadId);
+    if (!pending) return;
     if (thread.messages.length > 0) return;
     pendingBootstrapRef.current = true;
-    void sendMessage(threadId, { text, files: [] });
+    setSettings("context", {
+      ...settings.context,
+      persona_id: pending.personaId ?? undefined,
+    });
+    void sendMessage(
+      threadId,
+      { text: pending.text, files: [] },
+      pending.personaId ? { persona_id: pending.personaId } : {},
+    );
   }, [
     threadId,
     thread.isThreadLoading,
     thread.messages.length,
     sendMessage,
     demoLocked,
+    setSettings,
+    settings.context,
   ]);
 
   const handleSubmit = useCallback(
@@ -154,6 +191,15 @@ export function CreationCenterLanggraphChat() {
                   context={settings.context}
                   disabled={demoLocked || isUploading}
                   onContextChange={(context) => setSettings("context", context)}
+                  noPersonaLabel={tCreation("noPersona")}
+                  personas={personaOptions}
+                  selectedPersonaId={selectedPersonaId}
+                  onPersonaSelect={(personaId) =>
+                    setSettings("context", {
+                      ...settings.context,
+                      persona_id: personaId ?? undefined,
+                    })
+                  }
                   onSubmit={handleSubmit}
                   onStop={handleStop}
                 />

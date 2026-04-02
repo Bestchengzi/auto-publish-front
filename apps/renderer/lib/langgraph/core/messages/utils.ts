@@ -1,5 +1,35 @@
 import type { AIMessage, Message } from "@langchain/langgraph-sdk";
 
+export type MissingInfoClarificationArgs = {
+  clarification_type: "missing_info";
+  context?: unknown;
+  questions?: unknown;
+};
+
+export type TopicIdeationClarificationSuggestion = {
+  title?: unknown;
+  keywords?: unknown;
+  reason?: unknown;
+  value?: unknown;
+};
+
+export type TopicIdeationClarificationQuestion = {
+  question?: unknown;
+  suggestions?: unknown;
+};
+
+export type TopicIdeationClarificationArgs = {
+  clarification_type: "topic_ideation";
+  context?: unknown;
+  questions?: unknown;
+};
+
+export type PersonaBuilderClarificationArgs = {
+  clarification_type?: "persona_builder";
+  context?: unknown;
+  questions?: unknown;
+};
+
 interface GenericMessageGroup<T = string> {
   type: T;
   id: string | undefined;
@@ -63,14 +93,8 @@ export function groupMessages<T>(
 
     if (message.type === "tool") {
       if (isClarificationToolMessage(message)) {
-        // Add to the preceding processing group to preserve tool-call association,
-        // then also open a standalone clarification group for prominent display.
+        // Keep tool response attached to current processing group.
         lastOpenGroup()?.messages.push(message);
-        groups.push({
-          id: message.id,
-          type: "assistant:clarification",
-          messages: [message],
-        });
       } else {
         const open = lastOpenGroup();
         if (open) {
@@ -96,6 +120,12 @@ export function groupMessages<T>(
         groups.push({
           id: message.id,
           type: "assistant:subagent",
+          messages: [message],
+        });
+      } else if (hasClarificationToolCall(message)) {
+        groups.push({
+          id: message.id,
+          type: "assistant:clarification",
           messages: [message],
         });
       } else if (hasReasoning(message) || hasToolCalls(message)) {
@@ -273,6 +303,103 @@ export function hasPresentFiles(message: Message) {
   );
 }
 
+export function getMissingInfoClarificationArgs(
+  message: Message,
+): MissingInfoClarificationArgs | null {
+  if (message.type !== "ai" || !Array.isArray(message.tool_calls)) {
+    return null;
+  }
+  const toolCall = message.tool_calls.find(
+    (item) =>
+      item?.name === "ask_clarification" &&
+      typeof item.args === "object" &&
+      item.args !== null,
+  );
+  if (!toolCall || typeof toolCall.args !== "object" || toolCall.args === null) {
+    return null;
+  }
+  return toolCall.args as MissingInfoClarificationArgs;
+}
+
+export function getTopicIdeationClarificationArgs(
+  message: Message,
+): TopicIdeationClarificationArgs | null {
+  if (message.type !== "ai" || !Array.isArray(message.tool_calls)) {
+    return null;
+  }
+  const toolCall = message.tool_calls.find(
+    (item) =>
+      item?.name === "ask_clarification" &&
+      typeof item.args === "object" &&
+      item.args !== null &&
+      (item.args as { clarification_type?: unknown }).clarification_type ===
+        "topic_ideation",
+  );
+  if (!toolCall || typeof toolCall.args !== "object" || toolCall.args === null) {
+    return null;
+  }
+  return toolCall.args as TopicIdeationClarificationArgs;
+}
+
+export function getPersonaBuilderClarificationArgs(
+  message: Message,
+): PersonaBuilderClarificationArgs | null {
+  if (message.type !== "ai" || !Array.isArray(message.tool_calls)) {
+    return null;
+  }
+  const toolCall = message.tool_calls.find(
+    (item) =>
+      item?.name === "ask_clarification" &&
+      typeof item.args === "object" &&
+      item.args !== null &&
+      // clarification_type 可能缺失或非严格匹配，这里先不做强校验
+      true,
+  );
+  if (!toolCall || typeof toolCall.args !== "object" || toolCall.args === null) {
+    return null;
+  }
+
+  const args = toolCall.args as {
+    clarification_type?: unknown;
+    context?: unknown;
+    questions?: unknown;
+  };
+
+  // Strong check
+  if (args.clarification_type === "persona_builder") {
+    return { ...args, clarification_type: "persona_builder" };
+  }
+
+  // Heuristic:
+  // persona_builder 的 questions item 只有 `question`，通常没有 `options`。
+  if (Array.isArray(args.questions) && args.questions.length > 0) {
+    const isPersonaBuilderByShape = (args.questions as unknown[]).every(
+      (item) => {
+        const q = item as { question?: unknown; options?: unknown } | null;
+        return (
+          !!q &&
+          typeof q.question === "string" &&
+          !Array.isArray(q.options)
+        );
+      },
+    );
+
+    if (isPersonaBuilderByShape) {
+      return { ...args, clarification_type: "persona_builder" };
+    }
+  }
+
+  return null;
+}
+
+export function hasClarificationToolCall(message: Message) {
+  return (
+    getMissingInfoClarificationArgs(message) !== null ||
+    getTopicIdeationClarificationArgs(message) !== null ||
+    getPersonaBuilderClarificationArgs(message) !== null
+  );
+}
+
 export function isClarificationToolMessage(message: Message) {
   return message.type === "tool" && message.name === "ask_clarification";
 }
@@ -375,11 +502,23 @@ export function stripNeedHelpSelectionMarker(content: string): string {
         qa.push(`- ${q}：${a}`);
       }
 
-      const out = ["我已完成选择：", ...qa];
-      if (supplement && supplement !== "无其他补充") {
+      // Heuristic:
+      // - missing_info marker always includes `补充说明：...`
+      // - persona_builder marker omits it
+      const isPersonaBuilder = supplement === null;
+
+      const out = [
+        isPersonaBuilder ? "我已完成填写：" : "我已完成选择：",
+        ...qa,
+      ];
+      if (!isPersonaBuilder && supplement && supplement !== "无其他补充") {
         out.push(`- 补充说明：${supplement}`);
       }
-      return out.length > 1 ? out.join("\n") : "我已完成选择。";
+      return out.length > 1
+        ? out.join("\n")
+        : isPersonaBuilder
+          ? "我已完成填写。"
+          : "我已完成选择。";
     })
     .trim();
 }

@@ -1,9 +1,11 @@
 import { getBackendBaseURL } from "../config";
+import { request } from "@/lib/request";
 
 import type { Model } from "./types";
 
 export async function loadModels() {
-  const res = await fetch(`${getBackendBaseURL()}/api/models`);
-  const { models } = (await res.json()) as { models: Model[] };
+  const { models } = await request<{ models: Model[] }>(
+    `${getBackendBaseURL()}/api/models`,
+  );
   return models;
 }

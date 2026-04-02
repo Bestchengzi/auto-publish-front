@@ -35,7 +35,7 @@ import { useRehypeSplitWordsIntoSpans } from "@/lib/langgraph/core/rehype";
 import { extractTitleFromMarkdown } from "@/lib/langgraph/core/utils/markdown";
 import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
-import { getFlieUrl } from "@/lib/utils";
+import { getGenImageUrl } from "@/lib/utils";
 import Image from "next/image";
 
 import { useArtifacts } from "../artifacts";
@@ -43,19 +43,6 @@ import { FlipDisplay } from "../flip-display";
 import { Tooltip } from "../tooltip";
 
 import { MarkdownContent } from "./markdown-content";
-
-type GenerateImagesToolCall = {
-  id?: string;
-  name?: string;
-  args?: {
-    images?: unknown[];
-  };
-};
-
-type AIMessageWithToolCalls = Message & {
-  type: "ai";
-  tool_calls?: GenerateImagesToolCall[];
-};
 
 type GenerateImageArtifact = {
   index?: number;
@@ -110,32 +97,49 @@ export function MessageGroup({
   }, [lastToolCallStep, steps]);
   const rehypePlugins = useRehypeSplitWordsIntoSpans(isLoading);
 
-  const generateImagesInfo = useMemo(() => {
-    // Find the latest AI tool call for generate_images within this processing group.
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i] as AIMessageWithToolCalls;
-      if (!m || m.type !== "ai" || !Array.isArray(m.tool_calls)) continue;
-      const tc = m.tool_calls.find((x) => x?.name === "generate_images");
-      if (!tc) continue;
+  /** Every generate_images tool call in this group (chronological), not only the last one. */
+  const generateImagesBatches = useMemo(() => {
+    const batches: Array<{
+      key: string;
+      count: number;
+      content: string;
+      artifact: unknown;
+    }> = [];
 
-      const count = Array.isArray(tc.args?.images) ? tc.args.images.length : 0;
-      const toolCallId = tc.id as string | undefined;
-      const content = extractContentFromMessage(m) || "";
-      const toolMsg = toolCallId
-        ? (messages.find((x) => {
-            const toolMessage = x as ToolMessageWithArtifact;
-            return (
-              toolMessage?.type === "tool" &&
-              toolMessage?.name === "generate_images" &&
-              toolMessage?.tool_call_id === toolCallId
-            );
-          }) as ToolMessageWithArtifact | undefined)
-        : undefined;
-      const artifact = toolMsg?.artifact;
+    for (const m of messages) {
+      if (m.type !== "ai" || !Array.isArray(m.tool_calls)) continue;
+      const mid = String(m.id ?? "");
+      let firstGenerateImagesInMessage = true;
+      const msgContent = extractContentFromMessage(m) || "";
 
-      return { count, content, artifact };
+      for (const tc of m.tool_calls) {
+        if (tc?.name !== "generate_images") continue;
+        const count = Array.isArray(tc.args?.images) ? tc.args.images.length : 0;
+        if (count <= 0) continue;
+
+        const toolCallId = tc.id as string | undefined;
+        const toolMsg = toolCallId
+          ? (messages.find((x) => {
+              const toolMessage = x as ToolMessageWithArtifact;
+              return (
+                toolMessage?.type === "tool" &&
+                toolMessage?.name === "generate_images" &&
+                toolMessage?.tool_call_id === toolCallId
+              );
+            }) as ToolMessageWithArtifact | undefined)
+          : undefined;
+
+        batches.push({
+          key: toolCallId ?? `${mid}-gen-${batches.length}`,
+          count,
+          content: firstGenerateImagesInMessage ? msgContent : "",
+          artifact: toolMsg?.artifact,
+        });
+        firstGenerateImagesInMessage = false;
+      }
     }
-    return null;
+
+    return batches;
   }, [messages]);
 
   return (
@@ -243,101 +247,105 @@ export function MessageGroup({
         )}
       </ChainOfThought>
 
-      {generateImagesInfo && generateImagesInfo.count > 0 && (
-        <div className="mt-8">
-          {generateImagesInfo.content ? (
-            <MarkdownContent
-              content={generateImagesInfo.content}
-              isLoading={isLoading}
-              rehypePlugins={rehypePlugins}
-              className="mb-2"
-            />
-          ) : null}
+      {generateImagesBatches.length > 0 && (
+        <div className="mt-8 space-y-6">
+          {generateImagesBatches.map((batch) => (
+            <div key={batch.key}>
+              {batch.content ? (
+                <MarkdownContent
+                  content={batch.content}
+                  isLoading={isLoading}
+                  rehypePlugins={rehypePlugins}
+                  className="mb-2"
+                />
+              ) : null}
 
-          <div className="grid grid-cols-4 gap-3">
-            {Array.from({ length: generateImagesInfo.count }).map((_, idx) => {
-              const artifacts = Array.isArray(generateImagesInfo.artifact)
-                ? (generateImagesInfo.artifact as GenerateImageArtifact[])
-                : [];
-              const item = artifacts.find((a) => a?.index === idx);
-              const src = item?.artifact_url ? getFlieUrl(item.artifact_url) : "";
-              const completed = item?.status === "completed" && !!src;
-              return (
-                <div
-                  key={idx}
-                  className="relative overflow-hidden rounded-lg border border-border/40 bg-muted/20"
-                >
-                  <div className="aspect-square w-full">
-                    {completed ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={src}
-                        alt={item?.filename ?? `image-${idx}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted/85 via-muted/50 to-muted/75">
-                        <motion.div
-                          className="pointer-events-none absolute -top-10 -left-10 size-32 rounded-full bg-primary/20 blur-2xl"
-                          animate={{
-                            x: [0, 18, 0],
-                            y: [0, 14, 0],
-                            opacity: [0.28, 0.68, 0.28],
-                          }}
-                          transition={{
-                            duration: 1.8,
-                            repeat: Number.POSITIVE_INFINITY,
-                            ease: "easeInOut",
-                          }}
-                        />
-                        <motion.div
-                          className="pointer-events-none absolute -right-12 -bottom-12 size-36 rounded-full bg-foreground/15 blur-2xl"
-                          animate={{
-                            x: [0, -14, 0],
-                            y: [0, -16, 0],
-                            opacity: [0.18, 0.44, 0.18],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Number.POSITIVE_INFINITY,
-                            ease: "easeInOut",
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <motion.div
-                            className="absolute size-12 rounded-full border border-foreground/35"
-                            animate={{
-                              scale: [0.85, 1.45],
-                              opacity: [0.45, 0],
-                            }}
-                            transition={{
-                              duration: 1.25,
-                              repeat: Number.POSITIVE_INFINITY,
-                              ease: "easeOut",
-                            }}
+              <div className="grid grid-cols-4 gap-3">
+                {Array.from({ length: batch.count }).map((_, idx) => {
+                  const artifacts = Array.isArray(batch.artifact)
+                    ? (batch.artifact as GenerateImageArtifact[])
+                    : [];
+                  const item = artifacts.find((a) => a?.index === idx);
+                  const src = item?.artifact_url ? getGenImageUrl(item.artifact_url) : "";
+                  const completed = item?.status === "completed" && !!src;
+                  return (
+                    <div
+                      key={`${batch.key}-${idx}`}
+                      className="relative overflow-hidden rounded-lg border border-border/40 bg-muted/20"
+                    >
+                      <div className="aspect-square w-full">
+                        {completed ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={src}
+                            alt={item?.filename ?? `image-${idx}`}
+                            className="h-full w-full object-cover"
                           />
-                          <motion.div
-                            animate={{
-                              y: [0, -3, 0],
-                              scale: [0.96, 1.1, 0.96],
-                              opacity: [0.4, 0.5, 0.4],
-                            }}
-                            transition={{
-                              duration: 1.1,
-                              repeat: Number.POSITIVE_INFINITY,
-                              ease: "easeInOut",
-                            }}
-                          >
-                            <ImageIcon className="size-9 text-foreground/70" />
-                          </motion.div>
-                        </div>
+                        ) : (
+                          <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted/85 via-muted/50 to-muted/75">
+                            <motion.div
+                              className="pointer-events-none absolute -top-10 -left-10 size-32 rounded-full bg-primary/20 blur-2xl"
+                              animate={{
+                                x: [0, 18, 0],
+                                y: [0, 14, 0],
+                                opacity: [0.28, 0.68, 0.28],
+                              }}
+                              transition={{
+                                duration: 1.8,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                              }}
+                            />
+                            <motion.div
+                              className="pointer-events-none absolute -right-12 -bottom-12 size-36 rounded-full bg-foreground/15 blur-2xl"
+                              animate={{
+                                x: [0, -14, 0],
+                                y: [0, -16, 0],
+                                opacity: [0.18, 0.44, 0.18],
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                              }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <motion.div
+                                className="absolute size-12 rounded-full border border-foreground/35"
+                                animate={{
+                                  scale: [0.85, 1.45],
+                                  opacity: [0.45, 0],
+                                }}
+                                transition={{
+                                  duration: 1.25,
+                                  repeat: Number.POSITIVE_INFINITY,
+                                  ease: "easeOut",
+                                }}
+                              />
+                              <motion.div
+                                animate={{
+                                  y: [0, -3, 0],
+                                  scale: [0.96, 1.1, 0.96],
+                                  opacity: [0.4, 0.5, 0.4],
+                                }}
+                                transition={{
+                                  duration: 1.1,
+                                  repeat: Number.POSITIVE_INFINITY,
+                                  ease: "easeInOut",
+                                }}
+                              >
+                                <ImageIcon className="size-9 text-foreground/70" />
+                              </motion.div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

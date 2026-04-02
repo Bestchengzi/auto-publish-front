@@ -3,12 +3,15 @@
 import type { ChatStatus } from "ai";
 import {
   CheckIcon,
+  ChevronDownIcon,
   GraduationCapIcon,
   LightbulbIcon,
   PaperclipIcon,
+  PencilIcon,
   PlusIcon,
   SparklesIcon,
   RocketIcon,
+  Trash2Icon,
   ZapIcon,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -61,17 +64,9 @@ import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useModels } from "@/lib/langgraph/core/models/hooks";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
 import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
+import { request } from "@/lib/request";
 import { cn } from "@/lib/utils";
 
-import {
-  ModelSelector,
-  ModelSelectorContent,
-  ModelSelectorInput,
-  ModelSelectorItem,
-  ModelSelectorList,
-  ModelSelectorName,
-  ModelSelectorTrigger,
-} from "@/components/langgraph/ai-elements/model-selector";
 import {
   Suggestion,
   Suggestions,
@@ -88,6 +83,17 @@ import { ModeHoverGuide } from "./mode-hover-guide";
 import { Tooltip } from "./tooltip";
 
 type InputMode = "flash" | "thinking" | "pro" | "ultra";
+
+type ModelSelectorNameProps = ComponentProps<"span">;
+
+// ModelSelectorName was previously imported from `ai-elements/model-selector`.
+// After switching the model selector to a simple dropdown, only this styling helper is needed.
+const ModelSelectorName = ({ className, ...props }: ModelSelectorNameProps) => (
+  <span
+    className={cn("flex-1 truncate text-left text-xs", className)}
+    {...props}
+  />
+);
 
 function getResolvedMode(
   mode: InputMode | undefined,
@@ -116,6 +122,14 @@ export function InputBox({
   onContextChange,
   onSubmit,
   onStop,
+  addPersonaLabel,
+  noPersonaLabel,
+  onAddPersonaClick,
+  personas,
+  selectedPersonaId,
+  onPersonaSelect,
+  onDeletePersonaRequest,
+  onEditPersonaRequest,
   ...props
 }: Omit<ComponentProps<typeof PromptInput>, "onSubmit"> & {
   assistantId?: string | null;
@@ -143,10 +157,17 @@ export function InputBox({
   ) => void;
   onSubmit?: (message: PromptInputMessage) => void;
   onStop?: () => void;
+  addPersonaLabel?: string;
+  noPersonaLabel?: string;
+  onAddPersonaClick?: () => void;
+  personas?: Array<{ id: string; name: string }>;
+  selectedPersonaId?: string | null;
+  onPersonaSelect?: (personaId: string | null) => void;
+  onDeletePersonaRequest?: (persona: { id: string; name: string }) => void;
+  onEditPersonaRequest?: (persona: { id: string; name: string }) => void;
 }) {
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const { models } = useModels();
   const { thread } = useThread();
   const { textInput } = usePromptInputController();
@@ -162,6 +183,9 @@ export function InputBox({
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(
     null,
   );
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
+  const [reasoningEffortMenuOpen, setReasoningEffortMenuOpen] = useState(false);
+  const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
 
   useEffect(() => {
     if (models.length === 0) {
@@ -213,7 +237,6 @@ export function InputBox({
         mode: getResolvedMode(context.mode, model.supports_thinking),
         reasoning_effort: context.reasoning_effort,
       });
-      setModelDialogOpen(false);
     },
     [onContextChange, context, models],
   );
@@ -247,6 +270,14 @@ export function InputBox({
   );
 
   const selectedMode = getResolvedMode(context.mode, supportThinking);
+  const selectedPersona = useMemo(() => {
+    if (!personas || personas.length === 0) return null;
+    if (selectedPersonaId) {
+      const found = personas.find((item) => item.id === selectedPersonaId);
+      if (found) return found;
+    }
+    return null;
+  }, [personas, selectedPersonaId]);
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -336,22 +367,19 @@ export function InputBox({
     setFollowupsLoading(true);
     setFollowups([]);
 
-    fetch(`${getBackendBaseURL()}/api/threads/${threadId}/suggestions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: recent,
-        n: 3,
-        model_name: context.model_name ?? undefined,
-      }),
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          return { suggestions: [] as string[] };
-        }
-        return (await res.json()) as { suggestions?: string[] };
-      })
+    request<{ suggestions?: string[] }>(
+      `${getBackendBaseURL()}/api/threads/${threadId}/suggestions`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: recent,
+          n: 3,
+          model_name: context.model_name ?? undefined,
+        }),
+        signal: controller.signal,
+      },
+    )
       .then((data) => {
         const suggestions = (data.suggestions ?? [])
           .map((s) => (typeof s === "string" ? s.trim() : ""))
@@ -414,7 +442,10 @@ export function InputBox({
             </PromptInputActionMenuContent>
           </PromptInputActionMenu> */}
             <AddAttachmentsButton className="px-2!" />
-            <PromptInputActionMenu>
+            <PromptInputActionMenu
+              open={modeMenuOpen}
+              onOpenChange={setModeMenuOpen}
+            >
               <ModeHoverGuide mode={selectedMode}>
                 <PromptInputActionMenuTrigger className="gap-1! px-2!">
                   <div>
@@ -458,6 +489,7 @@ export function InputBox({
                         value === "ultra"
                       ) {
                         handleModeSelect(value);
+                        setModeMenuOpen(false);
                       }
                     }}
                   >
@@ -514,7 +546,7 @@ export function InputBox({
                             </div>
                           </div>
                         </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="ultra">
+                        {/* <DropdownMenuRadioItem value="ultra">
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-1 font-bold">
                               <RocketIcon
@@ -535,15 +567,132 @@ export function InputBox({
                               {t.inputBox.ultraModeDescription}
                             </div>
                           </div>
-                        </DropdownMenuRadioItem>
+                        </DropdownMenuRadioItem> */}
                       </>
                     )}
                   </DropdownMenuRadioGroup>
                 </DropdownMenuGroup>
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
+            {personas && personas.length > 0 && onPersonaSelect && (
+              <DropdownMenu open={personaMenuOpen} onOpenChange={setPersonaMenuOpen}>
+                <DropdownMenuTrigger
+                  className="inline-flex border-0 bg-transparent p-0 shadow-none"
+                  render={
+                    <PromptInputButton className="gap-1! px-2!">
+                      <span className="max-w-28 truncate text-xs font-normal">
+                        {selectedPersona?.name ?? noPersonaLabel ?? ""}
+                      </span>
+                      <ChevronDownIcon className="size-3 opacity-70" />
+                    </PromptInputButton>
+                  }
+                />
+                <DropdownMenuContent align="start" className="w-56">
+                  {addPersonaLabel && onAddPersonaClick && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setPersonaMenuOpen(false);
+                        onAddPersonaClick();
+                      }}
+                    >
+                      <PlusIcon className="size-4" />
+                      <span className="truncate">{addPersonaLabel}</span>
+                    </DropdownMenuItem>
+                  )}
+                  {addPersonaLabel && onAddPersonaClick && <DropdownMenuSeparator />}
+                  {personas.map((persona) => (
+                    <DropdownMenuItem
+                      className="group"
+                      key={persona.id}
+                      onClick={() => {
+                        onPersonaSelect(persona.id);
+                        setPersonaMenuOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{persona.name}</span>
+                      <span className="relative ml-auto flex h-5 w-12 items-center justify-end">
+                        <span className="absolute inset-0 z-10 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Tooltip content={t.common.edit}>
+                            <button
+                              type="button"
+                              className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground group-hover:pointer-events-auto"
+                              aria-label={t.common.edit}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                setPersonaMenuOpen(false);
+                                onEditPersonaRequest?.({
+                                  id: persona.id,
+                                  name: persona.name,
+                                });
+                              }}
+                            >
+                              <PencilIcon className="size-[13px]" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content={t.common.delete}>
+                            <button
+                              type="button"
+                              className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-destructive group-hover:pointer-events-auto"
+                              aria-label={t.common.delete}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                setPersonaMenuOpen(false);
+                                onDeletePersonaRequest?.({
+                                  id: persona.id,
+                                  name: persona.name,
+                                });
+                              }}
+                            >
+                              <Trash2Icon className="size-[13px]" />
+                            </button>
+                          </Tooltip>
+                        </span>
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-end transition-opacity group-hover:opacity-0">
+                          {selectedPersona?.id === persona.id ? (
+                            <CheckIcon className="size-4" />
+                          ) : (
+                            <div className="size-4" />
+                          )}
+                        </span>
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                  {noPersonaLabel && <DropdownMenuSeparator />}
+                  {noPersonaLabel && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onPersonaSelect(null);
+                        setPersonaMenuOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{noPersonaLabel}</span>
+                      <span className="ml-auto inline-flex items-center">
+                        {selectedPersonaId == null ? (
+                          <CheckIcon className="size-4" />
+                        ) : (
+                          <div className="size-4" />
+                        )}
+                      </span>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {addPersonaLabel &&
+              onAddPersonaClick &&
+              (!personas || personas.length === 0) && (
+                <PromptInputButton className="gap-1! px-2!" onClick={onAddPersonaClick}>
+                  <PlusIcon className="size-3" />
+                  <span className="text-xs font-normal">{addPersonaLabel}</span>
+                </PromptInputButton>
+              )}
             {supportReasoningEffort && selectedMode !== "flash" && (
-              <PromptInputActionMenu>
+              <PromptInputActionMenu
+                open={reasoningEffortMenuOpen}
+                onOpenChange={setReasoningEffortMenuOpen}
+              >
                 <PromptInputActionMenuTrigger className="gap-1! px-2!">
                   <div className="text-xs font-normal">
                     {t.inputBox.reasoningEffort}:
@@ -569,6 +718,7 @@ export function InputBox({
                           : "text-muted-foreground/65",
                       )}
                       onSelect={() => handleReasoningEffortSelect("minimal")}
+                      onClick={() => setReasoningEffortMenuOpen(false)}
                     >
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 font-bold">
@@ -591,6 +741,7 @@ export function InputBox({
                           : "text-muted-foreground/65",
                       )}
                       onSelect={() => handleReasoningEffortSelect("low")}
+                      onClick={() => setReasoningEffortMenuOpen(false)}
                     >
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 font-bold">
@@ -614,6 +765,7 @@ export function InputBox({
                           : "text-muted-foreground/65",
                       )}
                       onSelect={() => handleReasoningEffortSelect("medium")}
+                      onClick={() => setReasoningEffortMenuOpen(false)}
                     >
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 font-bold">
@@ -637,6 +789,7 @@ export function InputBox({
                           : "text-muted-foreground/65",
                       )}
                       onSelect={() => handleReasoningEffortSelect("high")}
+                      onClick={() => setReasoningEffortMenuOpen(false)}
                     >
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-1 font-bold">
@@ -658,11 +811,8 @@ export function InputBox({
             )}
           </PromptInputTools>
           <PromptInputTools>
-            <ModelSelector
-              open={modelDialogOpen}
-              onOpenChange={setModelDialogOpen}
-            >
-              <ModelSelectorTrigger
+            <DropdownMenu>
+              <DropdownMenuTrigger
                 className="inline-flex border-0 bg-transparent p-0 shadow-none"
                 render={
                   <PromptInputButton>
@@ -679,36 +829,31 @@ export function InputBox({
                   </PromptInputButton>
                 }
               />
-              <ModelSelectorContent className="text-sm">
-                <ModelSelectorInput
-                  className="text-sm placeholder:text-sm"
-                  placeholder={t.inputBox.searchModels}
-                />
-                <ModelSelectorList>
-                  {models.map((m) => (
-                    <ModelSelectorItem
-                      key={m.name}
-                      value={m.name}
-                      onSelect={() => handleModelSelect(m.name)}
-                    >
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <ModelSelectorName className="text-sm">
-                          {m.display_name}
-                        </ModelSelectorName>
+              <DropdownMenuContent align="start" className="w-72">
+                {models.map((m) => (
+                  <DropdownMenuItem
+                    key={m.name}
+                    onClick={() => handleModelSelect(m.name)}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <ModelSelectorName className="text-sm">
+                        {m.display_name}
+                      </ModelSelectorName>
+                      {m.model && (
                         <span className="text-muted-foreground truncate text-sm">
                           {m.model}
                         </span>
-                      </div>
-                      {m.name === context.model_name ? (
-                        <CheckIcon className="ml-auto size-4" />
-                      ) : (
-                        <div className="ml-auto size-4" />
                       )}
-                    </ModelSelectorItem>
-                  ))}
-                </ModelSelectorList>
-              </ModelSelectorContent>
-            </ModelSelector>
+                    </div>
+                    {m.name === context.model_name ? (
+                      <CheckIcon className="ml-auto size-4" />
+                    ) : (
+                      <div className="ml-auto size-4" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <PromptInputSubmit
               className="rounded-full"
               disabled={disabled}

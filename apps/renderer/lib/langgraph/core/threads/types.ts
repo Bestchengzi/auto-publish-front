@@ -13,6 +13,7 @@ export type AgentThread = Thread<AgentThreadState>;
 
 export interface AgentThreadContext extends Record<string, unknown> {
   thread_id: string;
+  persona_id?: string;
   model_name: string | undefined;
   thinking_enabled: boolean;
   is_plan_mode: boolean;

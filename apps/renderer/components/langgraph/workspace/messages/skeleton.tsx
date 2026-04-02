@@ -1,7 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const STAGGER_MS = 60;
-const skeletonCn = "bg-neutral-200 dark:bg-neutral-700";
 
 function SkeletonBar({
   className,
@@ -17,7 +16,7 @@ function SkeletonBar({
       className={`animate-skeleton-entrance fill-mode-[forwards] overflow-hidden rounded-md ${originRight ? "origin-[right]" : "origin-[left]"} ${className ?? ""}`}
       style={{ opacity: 0, ...style }}
     >
-      <Skeleton className={`h-full w-full rounded-md ${skeletonCn}`} />
+      <Skeleton className="h-full w-full rounded-md" />
     </div>
   );
 }

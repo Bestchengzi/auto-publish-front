@@ -3,6 +3,7 @@
  */
 export type PlatformAuthId =
   | "toutiao"
+  | "rednote"
   | "xhs"
   | "douyin"
   | "wx_mp"
@@ -25,6 +26,14 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
     cookieUrls: ["https://mp.toutiao.com/"],
     successUrlPatterns: ["^https://mp\\.toutiao\\.com/(?!auth/page/login)"],
   },
+  rednote: {
+    loginUrl: "https://creator.xiaohongshu.com/login",
+    cookieUrls: ["https://creator.xiaohongshu.com/"],
+    successUrlPatterns: [
+      "^https://creator\\.xiaohongshu\\.com/(?!login(?:/|[?#]|$))",
+    ],
+  },
+  // Backward-compatible alias for historical id naming.
   xhs: {
     loginUrl: "https://creator.xiaohongshu.com/login",
     cookieUrls: ["https://creator.xiaohongshu.com/"],

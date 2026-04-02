@@ -458,6 +458,7 @@ export type PromptInputProps = Omit<
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>,
   ) => void | Promise<void>;
+  clearTextOnSubmit?: boolean;
 };
 
 export const PromptInput = ({
@@ -470,6 +471,7 @@ export const PromptInput = ({
   maxFileSize,
   onError,
   onSubmit,
+  clearTextOnSubmit = true,
   children,
   ...props
 }: PromptInputProps) => {
@@ -724,7 +726,7 @@ export const PromptInput = ({
 
     // Reset form immediately after capturing text to avoid race condition
     // where user input during async blob conversion would be lost
-    if (!usingProvider) {
+    if (!usingProvider && clearTextOnSubmit) {
       form.reset();
     }
 
@@ -751,7 +753,7 @@ export const PromptInput = ({
             result
               .then(() => {
                 clear();
-                if (usingProvider) {
+                if (usingProvider && clearTextOnSubmit) {
                   controller.textInput.clear();
                 }
               })
@@ -761,7 +763,7 @@ export const PromptInput = ({
           } else {
             // Sync function completed without throwing, clear attachments
             clear();
-            if (usingProvider) {
+            if (usingProvider && clearTextOnSubmit) {
               controller.textInput.clear();
             }
           }

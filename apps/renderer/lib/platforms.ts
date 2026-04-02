@@ -1,5 +1,5 @@
 /**
- * 统一平台常量，按顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝
+ * 统一平台常量，按顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝、知乎、CSDN、百家号
  */
 export type PlatformId =
   | "toutiao"
@@ -7,7 +7,10 @@ export type PlatformId =
   | "douyin"
   | "wechat_mp"
   | "wechat_channels"
-  | "zhixunbao";
+  | "zhixunbao"
+  | "zhihu"
+  | "csdn"
+  | "baijiahao";
 
 export type Platform = {
   id: PlatformId;
@@ -15,7 +18,7 @@ export type Platform = {
   logo: string;
 };
 
-/** 平台列表，按固定顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝 */
+/** 平台列表，按固定顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝、知乎、CSDN、百家号 */
 export const PLATFORM_IDS: PlatformId[] = [
   "toutiao",
   "rednote",
@@ -23,16 +26,22 @@ export const PLATFORM_IDS: PlatformId[] = [
   "wechat_mp",
   "wechat_channels",
   "zhixunbao",
+  "zhihu",
+  "csdn",
+  "baijiahao",
 ];
 
 /** 平台配置，logo 对应 public/platform-logos/ 下的文件名 */
 export const PLATFORMS: Platform[] = [
   { id: "toutiao", logo: "jin-ri-tou-tiao.png" },
   { id: "rednote", logo: "xiao-hong-shu.png" },
-  { id: "douyin", logo: "dou-yin.png" },
+  // { id: "douyin", logo: "dou-yin.png" },
   { id: "wechat_mp", logo: "wei-xin-gong-zhong-hao.png" },
-  { id: "wechat_channels", logo: "wei-xin-shi-pin-hao.png" },
+  // { id: "wechat_channels", logo: "wei-xin-shi-pin-hao.png" },
   { id: "zhixunbao", logo: "zhi-xun-bao.png" },
+  { id: "zhihu", logo: "zhihu.png" },
+  { id: "csdn", logo: "CSDN.png" },
+  { id: "baijiahao", logo: "bai-jia-hao.png" },
 ];
 
 export function getPlatformById(id: PlatformId): Platform | undefined {

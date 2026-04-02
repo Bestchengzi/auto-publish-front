@@ -1,15 +1,17 @@
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
+import { request } from "@/lib/request";
 
 import type { Skill } from "./type";
 
 export async function loadSkills() {
-  const skills = await fetch(`${getBackendBaseURL()}/api/skills`);
-  const json = await skills.json();
-  return json.skills as Skill[];
+  const json = await request<{ skills: Skill[] }>(
+    `${getBackendBaseURL()}/api/skills`,
+  );
+  return json.skills;
 }
 
 export async function enableSkill(skillName: string, enabled: boolean) {
-  const response = await fetch(
+  return request(
     `${getBackendBaseURL()}/api/skills/${skillName}`,
     {
       method: "PUT",
@@ -21,7 +23,6 @@ export async function enableSkill(skillName: string, enabled: boolean) {
       }),
     },
   );
-  return response.json();
 }
 
 export interface InstallSkillRequest {
@@ -36,27 +37,26 @@ export interface InstallSkillResponse {
 }
 
 export async function installSkill(
-  request: InstallSkillRequest,
+  payload: InstallSkillRequest,
 ): Promise<InstallSkillResponse> {
-  const response = await fetch(`${getBackendBaseURL()}/api/skills/install`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    // Handle HTTP error responses (4xx, 5xx)
-    const errorData = await response.json().catch(() => ({}));
+  try {
+    return await request<InstallSkillResponse>(
+      `${getBackendBaseURL()}/api/skills/install`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+  } catch (error) {
     const errorMessage =
-      errorData.detail ?? `HTTP ${response.status}: ${response.statusText}`;
+      error instanceof Error ? error.message : "Install skill failed";
     return {
       success: false,
       skill_name: "",
       message: errorMessage,
     };
   }
-
-  return response.json();
 }

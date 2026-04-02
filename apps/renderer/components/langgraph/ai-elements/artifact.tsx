@@ -93,6 +93,8 @@ export type ArtifactActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
   label?: string;
   icon?: LucideIcon;
+  /** Visible label next to the icon (icon-only buttons use sr-only from `label`). */
+  textLabel?: string;
 };
 
 export const ArtifactAction = ({
@@ -103,12 +105,15 @@ export const ArtifactAction = ({
   className,
   size = "sm",
   variant = "ghost",
+  textLabel,
   ...props
 }: ArtifactActionProps) => {
+  const showText = Boolean(textLabel);
   const button = (
     <Button
       className={cn(
-        "text-muted-foreground hover:text-foreground size-8 p-0",
+        "text-muted-foreground hover:text-foreground",
+        showText ? "h-8 gap-1.5 px-2" : "size-8 p-0",
         className,
       )}
       size={size}
@@ -116,8 +121,12 @@ export const ArtifactAction = ({
       variant={variant}
       {...props}
     >
-      {Icon ? <Icon className="size-4" /> : children}
-      <span className="sr-only">{label || tooltip}</span>
+      {Icon ? <Icon className="size-4 shrink-0" /> : children}
+      {showText ? (
+        <span className="text-sm font-normal">{textLabel}</span>
+      ) : (
+        <span className="sr-only">{label || tooltip}</span>
+      )}
     </Button>
   );
 

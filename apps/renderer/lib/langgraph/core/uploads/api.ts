@@ -3,6 +3,7 @@
  */
 
 import { getBackendBaseURL } from "../config";
+import { request, upload } from "@/lib/request";
 
 export interface UploadedFileInfo {
   filename: string;
@@ -29,16 +30,6 @@ export interface ListFilesResponse {
   count: number;
 }
 
-async function readErrorDetail(
-  response: Response,
-  fallback: string,
-): Promise<string> {
-  const error = await response
-    .json()
-    .catch(() => ({ detail: fallback }));
-  return error.detail ?? fallback;
-}
-
 /**
  * Upload files to a thread
  */
@@ -52,19 +43,10 @@ export async function uploadFiles(
     formData.append("files", file);
   });
 
-  const response = await fetch(
+  return upload<UploadResponse>(
     `${getBackendBaseURL()}/api/threads/${threadId}/uploads`,
-    {
-      method: "POST",
-      body: formData,
-    },
+    formData,
   );
-
-  if (!response.ok) {
-    throw new Error(await readErrorDetail(response, "Upload failed"));
-  }
-
-  return response.json();
 }
 
 /**
@@ -73,17 +55,9 @@ export async function uploadFiles(
 export async function listUploadedFiles(
   threadId: string,
 ): Promise<ListFilesResponse> {
-  const response = await fetch(
+  return request<ListFilesResponse>(
     `${getBackendBaseURL()}/api/threads/${threadId}/uploads/list`,
   );
-
-  if (!response.ok) {
-    throw new Error(
-      await readErrorDetail(response, "Failed to list uploaded files"),
-    );
-  }
-
-  return response.json();
 }
 
 /**
@@ -93,16 +67,10 @@ export async function deleteUploadedFile(
   threadId: string,
   filename: string,
 ): Promise<{ success: boolean; message: string }> {
-  const response = await fetch(
+  return request<{ success: boolean; message: string }>(
     `${getBackendBaseURL()}/api/threads/${threadId}/uploads/${filename}`,
     {
       method: "DELETE",
     },
   );
-
-  if (!response.ok) {
-    throw new Error(await readErrorDetail(response, "Failed to delete file"));
-  }
-
-  return response.json();
 }

@@ -23,6 +23,7 @@ export const zhCN: Translations = {
     settings: "设置",
     delete: "删除",
     rename: "重命名",
+    edit: "编辑",
     share: "分享",
     openInNewWindow: "在新窗口打开",
     close: "关闭",
@@ -47,6 +48,10 @@ export const zhCN: Translations = {
     exportAsMarkdown: "导出为 Markdown",
     exportAsJSON: "导出为 JSON",
     exportSuccess: "对话已导出",
+    publish: "发布",
+    savePersona: "保存人设",
+    undo: "撤销",
+    redo: "重做",
   },
 
   // Welcome
@@ -63,7 +68,7 @@ export const zhCN: Translations = {
   // Clipboard
   clipboard: {
     copyToClipboard: "复制到剪贴板",
-    copiedToClipboard: "已复制到剪贴板",
+    copiedToClipboard: "复制成功",
     failedToCopyToClipboard: "复制到剪贴板失败",
     linkCopied: "链接已复制到剪贴板",
   },
@@ -244,6 +249,10 @@ export const zhCN: Translations = {
     writeFile: "写入文件",
     clickToViewContent: "点击查看文件内容",
     writeTodos: "更新 To-do 列表",
+    continueIdeation: "继续发散",
+    startCreation: "开始创作",
+    createXiaohongshu: "创作小红书",
+    createMediumLongArticle: "创建中长文",
     skillInstallTooltip: "安装技能并使其可在 DeerFlow 中使用",
   },
 

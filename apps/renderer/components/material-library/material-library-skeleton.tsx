@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -11,16 +10,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const skeletonCn = "bg-neutral-200 dark:bg-neutral-700";
-
 export function MaterialLibrarySkeleton() {
   return (
     <div className="flex flex-1 min-h-0 flex-col gap-4 lg:flex-row lg:items-stretch">
       {/* Left groups sidebar */}
       <div className="rounded-xl border border-border p-3 lg:w-[260px] flex flex-col min-h-0 lg:self-stretch">
-        <div className="h-12 -mx-3 -mt-3 mb-2 rounded-t-xl border-b border-border bg-muted/40 px-4 flex items-center justify-between">
-          <Skeleton className={cn(skeletonCn, "h-4 w-12")} />
-          <Skeleton className={cn(skeletonCn, "h-8 w-8 rounded-md")} />
+        <div className="h-12 -mx-3 -mt-3 mb-2 rounded-t-xl border-b border-border bg-muted/60 px-4 flex items-center justify-between">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-8 w-8 rounded-md" />
         </div>
         <div className="flex flex-1 flex-col gap-1">
           {[1, 2, 3, 4].map((i) => (
@@ -29,10 +26,10 @@ export function MaterialLibrarySkeleton() {
               className="flex h-9 items-center justify-between rounded-lg px-2"
             >
               <Skeleton
-                className={cn(skeletonCn, "h-4 flex-1 max-w-[140px]")}
+                className="h-4 flex-1 max-w-[140px]"
                 style={{ width: `${60 + i * 15}%` }}
               />
-              <Skeleton className={cn(skeletonCn, "h-5 w-6 rounded-md shrink-0 ml-2")} />
+              <Skeleton className="h-5 w-6 rounded-md shrink-0 ml-2" />
             </div>
           ))}
         </div>
@@ -43,29 +40,29 @@ export function MaterialLibrarySkeleton() {
         <div className="flex-1 min-h-0 overflow-auto p-0">
           <Table className="min-w-[860px] table-fixed">
             <TableHeader
-              className="[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0 [&_tr]:bg-muted/40"
+              className="[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0 [&_tr]:bg-muted/60"
             >
               <TableRow>
                 <TableHead className="w-12 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-4")} />
+                  <Skeleton className="h-4 w-4" />
                 </TableHead>
                 <TableHead className="w-52 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-24")} />
+                  <Skeleton className="h-4 w-24" />
                 </TableHead>
                 <TableHead className="w-24 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-12")} />
+                  <Skeleton className="h-4 w-12" />
                 </TableHead>
                 <TableHead className="w-32 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-16")} />
+                  <Skeleton className="h-4 w-16" />
                 </TableHead>
                 <TableHead className="w-28 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-14")} />
+                  <Skeleton className="h-4 w-14" />
                 </TableHead>
                 <TableHead className="w-24 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-12")} />
+                  <Skeleton className="h-4 w-12" />
                 </TableHead>
                 <TableHead className="w-36 shrink-0 px-4">
-                  <Skeleton className={cn(skeletonCn, "h-4 w-20")} />
+                  <Skeleton className="h-4 w-20" />
                 </TableHead>
                 <TableHead className="w-12 shrink-0 px-4" />
               </TableRow>
@@ -74,31 +71,31 @@ export function MaterialLibrarySkeleton() {
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <TableRow key={i} className="[&_td]:py-0 [&_td]:h-[53px]">
                   <TableCell className="w-12 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-4")} />
+                    <Skeleton className="h-4 w-4" />
                   </TableCell>
                   <TableCell className="w-52 shrink-0 px-4">
                     <Skeleton
-                      className={cn(skeletonCn, "h-4")}
+                      className="h-4"
                       style={{ width: `${65 + (i % 3) * 8}%` }}
                     />
                   </TableCell>
                   <TableCell className="w-24 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-12")} />
+                    <Skeleton className="h-4 w-12" />
                   </TableCell>
                   <TableCell className="w-32 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-16")} />
+                    <Skeleton className="h-4 w-16" />
                   </TableCell>
                   <TableCell className="w-28 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-14")} />
+                    <Skeleton className="h-4 w-14" />
                   </TableCell>
                   <TableCell className="w-24 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-10")} />
+                    <Skeleton className="h-4 w-10" />
                   </TableCell>
                   <TableCell className="w-36 shrink-0 px-4">
-                    <Skeleton className={cn(skeletonCn, "h-4 w-20")} />
+                    <Skeleton className="h-4 w-20" />
                   </TableCell>
                   <TableCell className="w-12 shrink-0 px-4 text-right">
-                    <Skeleton className={cn(skeletonCn, "h-6 w-6 rounded ml-auto")} />
+                    <Skeleton className="h-6 w-6 rounded ml-auto" />
                   </TableCell>
                 </TableRow>
               ))}

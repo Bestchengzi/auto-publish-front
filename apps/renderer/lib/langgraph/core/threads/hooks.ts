@@ -63,8 +63,16 @@ function shouldSilentlyIgnoreStreamError(error: unknown): boolean {
   if (message.includes("thread not found")) return true;
   if (message.includes("404") && message.includes("not found")) return true;
 
+  // Navigating between pages may trigger a create-thread attempt for a threadId
+  // that already exists. In that case, 409 can be safely ignored because the
+  // thread is still usable.
+  if (message.includes("already exists") && (message.includes("thread") || message.includes("thread with id"))) {
+    return true;
+  }
+
   const status = Reflect.get(error as object, "status");
   if (status === 404) return true;
+  if (status === 409) return true;
 
   return false;
 }

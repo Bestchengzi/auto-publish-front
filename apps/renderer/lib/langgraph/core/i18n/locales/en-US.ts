@@ -23,6 +23,7 @@ export const enUS: Translations = {
     settings: "Settings",
     delete: "Delete",
     rename: "Rename",
+    edit: "Edit",
     share: "Share",
     openInNewWindow: "Open in new window",
     close: "Close",
@@ -47,6 +48,10 @@ export const enUS: Translations = {
     exportAsMarkdown: "Export as Markdown",
     exportAsJSON: "Export as JSON",
     exportSuccess: "Conversation exported",
+    publish: "Publish",
+    savePersona: "Save Persona",
+    undo: "Undo",
+    redo: "Redo",
   },
 
   // Welcome
@@ -63,7 +68,7 @@ export const enUS: Translations = {
   // Clipboard
   clipboard: {
     copyToClipboard: "Copy to clipboard",
-    copiedToClipboard: "Copied to clipboard",
+    copiedToClipboard: "Copied successfully",
     failedToCopyToClipboard: "Failed to copy to clipboard",
     linkCopied: "Link copied to clipboard",
   },
@@ -256,6 +261,10 @@ export const enUS: Translations = {
     writeFile: "Write file",
     clickToViewContent: "Click to view file content",
     writeTodos: "Update to-do list",
+    continueIdeation: "Continue ideation",
+    startCreation: "Start creating",
+    createXiaohongshu: "Create Xiaohongshu post",
+    createMediumLongArticle: "Create medium-to-long article",
     skillInstallTooltip: "Install skill and make it available to DeerFlow",
   },
 

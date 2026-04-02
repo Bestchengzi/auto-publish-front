@@ -569,7 +569,7 @@ export function MaterialLibrary() {
                                 : "hover:bg-muted/40"
                             }
                           >
-                            <TableHead className="w-12 shrink-0">
+                            <TableHead className="w-12 shrink-0 px-4">
                               <Checkbox
                                 aria-label={t("material.table.selectAll")}
                                 checked={allSelected}
@@ -616,7 +616,7 @@ export function MaterialLibrary() {
                             const checked = selectedIds.has(m.id);
                             return (
                               <TableRow key={m.id}>
-                                <TableCell className="w-12 shrink-0">
+                                <TableCell className="w-12 shrink-0 px-4">
                                   <Checkbox
                                     aria-label={t("material.table.selectOne")}
                                     checked={checked}
@@ -729,7 +729,7 @@ export function MaterialLibrary() {
                     <>
                       <div
                         className={cn(
-                          "flex h-12 items-center gap-2 rounded-t-xl border-b border-border px-4 text-sm transition-colors -mx-5 -mt-5 mb-4",
+                          "flex h-12 min-h-12 shrink-0 items-center gap-2 rounded-t-xl border-b border-border px-4 text-sm transition-colors -mx-5 -mt-5 mb-4",
                           selectedIds.size > 0
                             ? "bg-background"
                             : "bg-muted/40",

@@ -6,9 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckIcon, Loader2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  getMissingInfoClarificationArgs,
+  type MissingInfoClarificationArgs,
+} from "@/lib/langgraph/core/messages/utils";
 import { cn } from "@/lib/utils";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
-import { extractContentFromMessage } from "@/lib/langgraph/core/messages/utils";
 import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
 
 import type { AgentThreadState } from "@/lib/langgraph/core/threads";
@@ -25,6 +28,11 @@ type ClarificationQuestion = {
   index: number;
   title: string;
   options: ClarificationQuestionOption[];
+};
+
+type ClarificationToolQuestion = {
+  question?: unknown;
+  options?: unknown;
 };
 
 type ClarificationSelection = {
@@ -51,87 +59,42 @@ function normalizeForMatch(s: string) {
     .trim();
 }
 
-function parseQuestionsFromClarificationText(text: string): ClarificationQuestion[] {
-  const lines = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0 && l !== "•" && l !== "-" && l !== "*");
 
-  const optionRe = /^\d+\.\s*(.+)$/;
+function parseQuestionsFromToolArgs(
+  args: MissingInfoClarificationArgs,
+): ClarificationQuestion[] {
+  if (!Array.isArray(args.questions)) return [];
 
-  const questions: ClarificationQuestion[] = [];
+  const parsed = (args.questions as ClarificationToolQuestion[])
+    .map((item, idx) => {
+      const title = typeof item?.question === "string" ? item.question.trim() : "";
+      if (!title) return null;
 
-  // Step 1: locate each contiguous option block (1./2./3./4. ...)
-  let i = 0;
-  while (i < lines.length) {
-    const start = i;
-    if (!optionRe.test(lines[i]!)) {
-      i++;
-      continue;
-    }
+      const options = Array.isArray(item?.options)
+        ? item.options
+            .map((opt, optIdx) => {
+              if (typeof opt !== "string") return null;
+              const text = opt.trim();
+              if (!text) return null;
+              return {
+                index: optIdx,
+                text,
+              } satisfies ClarificationQuestionOption;
+            })
+            .filter((opt): opt is ClarificationQuestionOption => !!opt)
+        : [];
 
-    const opts: ClarificationQuestionOption[] = [];
-    while (i < lines.length) {
-      const m = optionRe.exec(lines[i]!);
-      if (!m) break;
-      opts.push({ index: opts.length, text: m[1].trim() });
-      i++;
-    }
+      return {
+        index: idx,
+        title,
+        options,
+      } satisfies ClarificationQuestion;
+    })
+    .filter((q): q is ClarificationQuestion => !!q);
 
-    if (opts.length === 0) continue;
-
-    // Step 2: find the nearest preceding non-option line as title
-    let title = "";
-    for (let k = start - 1; k >= 0; k--) {
-      const candidate = lines[k]!;
-      if (optionRe.test(candidate)) {
-        // crossed into previous option block
-        break;
-      }
-      const cleaned = candidate.replace(/^[•\-*]\s*/g, "").trim();
-      if (!cleaned) continue;
-      // Prefer the line that looks like a question; otherwise still accept the nearest line.
-      title = cleaned;
-      if (/[？?]$/.test(cleaned) || /这是|什么|是否|需要|希望/.test(cleaned)) {
-        break;
-      }
-    }
-
-    questions.push({
-      index: questions.length,
-      title: title || `问题 ${questions.length + 1}`,
-      options: opts,
-    });
-  }
-
-  return questions;
+  return parsed;
 }
 
-function extractPrefaceFromClarificationText(
-  text: string,
-  questions: ClarificationQuestion[],
-): string {
-  if (questions.length === 0) return text.trim();
-
-  // Preface = everything before the first question title line.
-  // We locate the first question title by searching it in the original text.
-  const firstTitle = questions[0]?.title?.trim();
-  if (!firstTitle) return "";
-
-  const idx = text.indexOf(firstTitle);
-  if (idx <= 0) return "";
-
-  const preface = text
-    .slice(0, idx)
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-    // drop standalone bullet markers that render as an empty dot
-    .filter((l) => l !== "•" && l !== "-" && l !== "*" && l !== "·")
-    .join("\n")
-    .trim();
-  return preface;
-}
 function parseSelectionMarkerFromThreadText(
   threadMessagesText: string,
 ): ClarificationSelection | null {
@@ -192,7 +155,6 @@ function resolveDefaultSelection(
 } {
   if (!marker) {
     return {
-      // Default: do NOT select anything
       selectedByQuestionIndex: {},
       supplement: "",
     };
@@ -221,6 +183,28 @@ function resolveDefaultSelection(
   };
 }
 
+/** 澄清消息之后：是否已有人类回复（锁定 UI）；以及用于回填的 marker（任一条含 marker 的 human） */
+function getFollowupAfterClarification(
+  messages: Message[],
+  clarificationMessageId: string,
+): { locked: boolean; marker: ClarificationSelection | null } {
+  const idx = messages.findIndex((m) => m.id === clarificationMessageId);
+  if (idx === -1) return { locked: false, marker: null };
+
+  let locked = false;
+  let marker: ClarificationSelection | null = null;
+  for (let i = idx + 1; i < messages.length; i++) {
+    const m = messages[i]!;
+    if (m.type !== "human") continue;
+    locked = true;
+    const txt = textOfMessage(m);
+    if (!marker && txt?.includes(MARKER_START)) {
+      marker = parseSelectionMarkerFromThreadText(txt);
+    }
+  }
+  return { locked, marker };
+}
+
 export function ClarificationSelector({
   thread,
   threadId,
@@ -230,37 +214,28 @@ export function ClarificationSelector({
 }: ClarificationSelectorProps) {
   const { context: localContext } = useLocalSettings()[0];
 
-  const markerForThisClarification = useMemo(() => {
-    const messages = thread.messages ?? [];
-    const idx = messages.findIndex((m) => m.id === clarificationMessage.id);
-    if (idx === -1) return null;
+  const followup = useMemo(
+    () =>
+      getFollowupAfterClarification(
+        thread.messages ?? [],
+        clarificationMessage.id ?? "",
+      ),
+    [thread.messages, clarificationMessage.id],
+  );
 
-    for (let i = idx + 1; i < messages.length; i++) {
-      const m = messages[i]!;
-      if (m.type !== "human") continue;
-      const txt = textOfMessage(m);
-      if (!txt || !txt.includes(MARKER_START)) continue;
-      return parseSelectionMarkerFromThreadText(txt);
-    }
-    return null;
-  }, [thread.messages, clarificationMessage.id]);
-
-  const clarificationText = useMemo(() => {
-    const raw = extractContentFromMessage(clarificationMessage);
-    return raw ?? "";
+  const { questions, preface } = useMemo(() => {
+    const args = getMissingInfoClarificationArgs(clarificationMessage);
+    if (!args) return { questions: [] as ClarificationQuestion[], preface: "" };
+    return {
+      questions: parseQuestionsFromToolArgs(args),
+      preface: typeof args.context === "string" ? args.context.trim() : "",
+    };
   }, [clarificationMessage]);
 
-  const questions = useMemo(() => {
-    return parseQuestionsFromClarificationText(clarificationText);
-  }, [clarificationText]);
-
-  const preface = useMemo(() => {
-    return extractPrefaceFromClarificationText(clarificationText, questions);
-  }, [clarificationText, questions]);
-
-  const resolved = useMemo(() => {
-    return resolveDefaultSelection(questions, markerForThisClarification);
-  }, [questions, markerForThisClarification]);
+  const resolved = useMemo(
+    () => resolveDefaultSelection(questions, followup.marker),
+    [questions, followup.marker],
+  );
 
   const [selectedByQuestionIndex, setSelectedByQuestionIndex] = useState<
     Record<number, string>
@@ -268,13 +243,42 @@ export function ClarificationSelector({
   const [supplement, setSupplement] = useState<string>(resolved.supplement);
   const [submitting, setSubmitting] = useState(false);
 
-  const isCompleted = !!markerForThisClarification;
+  // Guard against render loops:
+  // `markerForThisClarification` and `resolved.selectedByQuestionIndex` are objects that may get
+  // new references on each render even when the underlying marker content is unchanged.
+  // Derive a stable key from marker values and only sync state when that key changes.
+  const markerKey = useMemo(() => {
+    const m = followup.marker;
+    if (!m) return null;
+    const qa = m.qa ?? {};
+    const sortedKeys = Object.keys(qa).sort();
+    const qaPart = sortedKeys.map((k) => `${k}:${qa[k]}`).join("|");
+    return `${qaPart}::${m.supplement ?? ""}`;
+  }, [followup.marker]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    if (!markerForThisClarification) return;
-    setSelectedByQuestionIndex(resolved.selectedByQuestionIndex);
-    setSupplement(resolved.supplement);
-  }, [markerForThisClarification, resolved.selectedByQuestionIndex, resolved.supplement]);
+    if (!markerKey) return;
+    const nextSelected = resolved.selectedByQuestionIndex;
+    const nextSupplement = resolved.supplement;
+    const nextSelectedEmpty = Object.keys(nextSelected).length === 0;
+
+    // When the user has already "continued" (followup.locked === true),
+    // transient question/option changes during streaming can cause marker re-parsing
+    // to temporarily yield an empty `nextSelected`, which makes checked options disappear.
+    // Preserve the last non-empty selection in that situation.
+    if (followup.locked && nextSelectedEmpty) {
+      setSelectedByQuestionIndex((prev) => prev);
+      setSupplement((prev) => (nextSupplement ? nextSupplement : prev));
+      return;
+    }
+
+    setSelectedByQuestionIndex(nextSelected);
+    setSupplement(nextSupplement);
+    // Intentionally only depend on `markerKey` to avoid re-syncing state
+    // when `resolved` gets new object references but the marker value is unchanged.
+  }, [markerKey]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const selectedCount = useMemo(() => {
     return questions.filter((q) => !!selectedByQuestionIndex[q.index]).length;
@@ -282,8 +286,8 @@ export function ClarificationSelector({
 
   const handleContinue = async () => {
     if (submitting) return;
-    if (isCompleted) return;
-    if (selectedCount <= 0) return;
+    if (followup.locked) return;
+    if (selectedCount <= 0 && !supplement.trim()) return;
     setSubmitting(true);
 
     try {
@@ -341,8 +345,7 @@ export function ClarificationSelector({
   };
 
   if (questions.length === 0) {
-    // Fallback: render original markdown if we can't parse questions
-    return <div className="text-sm text-muted-foreground">{clarificationText}</div>;
+    return null;
   }
 
   return (
@@ -374,7 +377,7 @@ export function ClarificationSelector({
                     <button
                       key={o.index}
                       type="button"
-                      disabled={isLoading || submitting || isCompleted}
+                      disabled={submitting || followup.locked}
                       onClick={() => {
                         setSelectedByQuestionIndex((prev) => {
                           const next = { ...prev };
@@ -404,11 +407,11 @@ export function ClarificationSelector({
                         {isSelected ? <CheckIcon className="size-3" /> : null}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[15px] leading-snug">
-                          <span className="mr-1 text-muted-foreground">
+                        <div className="flex items-start gap-1 text-[15px] leading-snug">
+                          <span className="shrink-0 text-muted-foreground">
                             {o.index + 1}.
                           </span>
-                          {o.text}
+                          <span className="min-w-0">{o.text}</span>
                         </div>
                       </div>
                     </button>
@@ -430,17 +433,20 @@ export function ClarificationSelector({
             onChange={(e) => setSupplement(e.target.value)}
             placeholder="如果没有补充说明，请留空"
             className="h-10 w-full flex-1 rounded-lg border border-border/60 bg-background px-3 text-[15px] placeholder:text-[15px] outline-none focus:border-primary"
-            disabled={isLoading || submitting || isCompleted}
+            disabled={submitting || followup.locked}
           />
         </div>
       </div>
 
-      {!isCompleted && (
+      {!followup.locked && (
         <div className="mt-4 flex justify-end">
           <Button
             type="button"
             onClick={handleContinue}
-            disabled={isLoading || submitting || selectedCount <= 0}
+            disabled={
+              submitting ||
+              (selectedCount <= 0 && !supplement.trim())
+            }
             size="lg"
             className="relative px-7 text-[15px] font-medium shadow-sm transition-[transform,box-shadow] hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 active:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:transform-none disabled:shadow-none"
           >

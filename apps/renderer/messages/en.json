@@ -63,7 +63,6 @@
     "groups": {
       "workspace": "Workspace",
       "ai": "AI Creation",
-      "works": "Works",
       "assets": "Assets"
     },
     "items": {
@@ -84,7 +83,7 @@
       "creationCenter": "Creation Center",
       "topicCenter": "Topic Center",
       "workList": "Work List",
-      "worksLibrary": "Works Library",
+      "worksLibrary": "Publishing Records",
       "account": "Account",
       "assetLibrary": "Asset Library"
     }
@@ -96,6 +95,7 @@
       "platform": "Platform",
       "status": "Status",
       "all": "All",
+      "allPlatforms": "All platforms",
       "allShort": "All"
     },
     "search": {
@@ -150,6 +150,7 @@
       "confirm": "OK",
       "cancel": "Cancel",
       "all": "All accounts",
+      "allGroups": "All groups",
       "ops": "Operations",
       "creator": "Creators",
       "brand": "Brand",
@@ -182,19 +183,22 @@
       "douyin": "Douyin",
       "wechat_mp": "WeChat Official Account",
       "wechat_channels": "WeChat Channels",
-      "zhixunbao": "Zhixunbao"
+      "zhixunbao": "Zhixunbao",
+      "zhihu": "Zhihu",
+      "csdn": "CSDN",
+      "baijiahao": "Baijiahao"
     },
     "empty": "No accounts found. Try adjusting filters.",
     "emptyTitle": "No accounts",
-    "emptyDescription": "Try adjusting filters or click \"Add account\" above to get started."
+    "emptyDescription": "Try adjusting filters or click \"Add account\" above to get started.",
+    "publishEmptyDescription": "Please go to Account Management and complete account authorization first.",
+    "publishEmptyPrefix": "Please go to ",
+    "publishEmptySuffix": " and complete account authorization first.",
+    "publishEmptyActionLabel": "Account Management"
   },
   "worksLibrary": {
-    "title": "Works Library",
+    "title": "Publishing Records",
     "description": "View AI-generated and published works, track results and performance by platform.",
-    "tabs": {
-      "works": "Works",
-      "drafts": "Drafts"
-    },
     "search": {
       "placeholder": "Search by title",
       "ariaLabel": "Search by title"
@@ -219,11 +223,13 @@
       "wechat_mp": "WeChat Official Account",
       "wx_channels": "WeChat Channels",
       "wechat_channels": "WeChat Channels",
-      "zhixunbao": "Zhixunbao"
+      "zhixunbao": "Zhixunbao",
+      "zhihu": "Zhihu",
+      "csdn": "CSDN",
+      "baijiahao": "Baijiahao"
     },
     "table": {
       "title": "Title",
-      "type": "Type",
       "platform": "Platform",
       "createdAt": "Created",
       "status": "Status",
@@ -249,7 +255,15 @@
       "confirm": "OK"
     },
     "emptyTitle": "No works",
-    "emptyDescription": "Try adjusting your filters."
+    "emptyDescription": "Try adjusting your filters.",
+    "pagination": {
+      "navLabel": "Publishing records pagination",
+      "previous": "Previous page",
+      "next": "Next page",
+      "goToPage": "Page {page}",
+      "ellipsis": "More pages",
+      "summary": "{total} total, {pageSize} per page"
+    }
   },
   "material": {
     "title": "Material Library",
@@ -344,13 +358,29 @@
     "search": "Search",
     "actions": {
       "more": "More actions",
-      "secondaryCreation": "Secondary creation"
+      "secondaryCreation": "Diverge",
+      "divergePromptPrefix": "Help me diverge this topic: ",
+      "divergeFailed": "Failed to start a diverge conversation. Please try again.",
+      "creationPromptXiaohongshu": "Help me create a Xiaohongshu image-text post; write the content based on {title}.",
+      "creationPromptMediumLongArticle": "Help me create a medium-to-long article; write the content based on {title}."
     },
     "tabs": {
       "hotTopics": "Hot Topics",
       "trackTopics": "Track Topics"
     },
     "trackTopicsPlaceholder": "Track topics coming soon",
+    "hotRankBoardTitle": "Hot rankings",
+    "hotRank": {
+      "empty": "No trending data yet",
+      "loadError": "Failed to load hot topics",
+      "retry": "Retry"
+    },
+    "hotRankBoards": {
+      "baidu": "Baidu Hot List",
+      "toutiao": "Toutiao Hot List",
+      "weibo": "Weibo Hot List",
+      "zhihu": "Zhihu Hot List"
+    },
     "platforms": {
       "toutiao": "Toutiao",
       "xhs": "Xiaohongshu",
@@ -382,6 +412,29 @@
       "subtitle": "Plan and write content for Xiaohongshu, Douyin, Weibo, WeChat and more platforms",
       "inputPlaceholder": "Describe your creation needs, e.g.: a Xiaohongshu post, Douyin script, WeChat article…",
       "linkKnowledgeBase": "Link Knowledge Base",
+      "addPersona": "Add Persona",
+      "noPersona": "No Persona",
+      "addPersonaPrompt": "Help me add a persona",
+      "deletePersonaDialog": {
+        "close": "Close",
+        "title": "Delete Persona",
+        "description": "Are you sure you want to delete persona \"{name}\"? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "deletePersonaFailed": "Failed to delete persona. Please try again.",
+      "editPersonaDialog": {
+        "title": "Edit Persona",
+        "description": "Update platform and persona overview content. The first-level heading will be used as persona name.",
+        "titlePlaceholder": "Persona Name",
+        "platformLabel": "Platform",
+        "markdownLabel": "Persona Overview",
+        "cancel": "Cancel",
+        "save": "Save",
+        "emptyMarkdown": "Please enter persona overview content.",
+        "titleRequired": "Please provide a first-level heading as persona name.",
+        "saveFailed": "Failed to update persona. Please try again."
+      },
       "sendAria": "Send and start conversation",
       "createThreadFailed": "Failed to create conversation. Check network and LangGraph configuration."
     }

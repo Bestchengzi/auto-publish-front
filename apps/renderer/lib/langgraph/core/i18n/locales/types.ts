@@ -12,6 +12,7 @@ export interface Translations {
     settings: string;
     delete: string;
     rename: string;
+    edit: string;
     share: string;
     openInNewWindow: string;
     close: string;
@@ -36,6 +37,10 @@ export interface Translations {
     exportAsMarkdown: string;
     exportAsJSON: string;
     exportSuccess: string;
+    publish: string;
+    savePersona: string;
+    undo: string;
+    redo: string;
   };
 
   // Welcome
@@ -193,6 +198,10 @@ export interface Translations {
     writeFile: string;
     clickToViewContent: string;
     writeTodos: string;
+    continueIdeation: string;
+    startCreation: string;
+    createXiaohongshu: string;
+    createMediumLongArticle: string;
     skillInstallTooltip: string;
   };
 

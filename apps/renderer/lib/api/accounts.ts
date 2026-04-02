@@ -15,6 +15,7 @@ export type AccountResponse = {
   cookie: string | null;
   created_at: string;
   updated_at: string;
+  last_refreshed_at?: string | null;
   groups: { id: number; name: string }[];
 };
 

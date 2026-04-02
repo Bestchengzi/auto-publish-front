@@ -63,7 +63,6 @@
     "groups": {
       "workspace": "工作台",
       "ai": "AI 创作",
-      "works": "作品",
       "assets": "资产"
     },
     "items": {
@@ -84,7 +83,7 @@
       "creationCenter": "创作中心",
       "topicCenter": "选题中心",
       "workList": "作品列表",
-      "worksLibrary": "作品库",
+      "worksLibrary": "发布记录",
       "account": "账号",
       "assetLibrary": "素材库"
     }
@@ -96,6 +95,7 @@
       "platform": "平台",
       "status": "状态",
       "all": "全部",
+      "allPlatforms": "全部平台",
       "allShort": "全"
     },
     "search": {
@@ -150,6 +150,7 @@
       "confirm": "确定",
       "cancel": "取消",
       "all": "全部账号",
+      "allGroups": "全部分组",
       "ops": "运营组",
       "creator": "达人组",
       "brand": "品牌组",
@@ -182,19 +183,22 @@
       "douyin": "抖音",
       "wechat_mp": "微信公众号",
       "wechat_channels": "微信视频号",
-      "zhixunbao": "知讯宝"
+      "zhixunbao": "知讯宝",
+      "zhihu": "知乎",
+      "csdn": "CSDN",
+      "baijiahao": "百家号"
     },
     "empty": "暂无账号，换个筛选条件试试。",
     "emptyTitle": "暂无账号",
-    "emptyDescription": "换个筛选条件试试，或点击上方「添加账号」开始。"
+    "emptyDescription": "换个筛选条件试试，或点击上方「添加账号」开始。",
+    "publishEmptyDescription": "请先到账号管理界面完成账号授权。",
+    "publishEmptyPrefix": "请先到",
+    "publishEmptySuffix": "界面完成账号授权。",
+    "publishEmptyActionLabel": "账号管理"
   },
   "worksLibrary": {
-    "title": "作品库",
+    "title": "发布记录",
     "description": "查看 AI 生成并发布的作品，按平台追踪发布结果与表现。",
-    "tabs": {
-      "works": "作品",
-      "drafts": "草稿"
-    },
     "search": {
       "placeholder": "搜索标题名称",
       "ariaLabel": "搜索标题"
@@ -219,11 +223,13 @@
       "wechat_mp": "微信公众号",
       "wx_channels": "微信视频号",
       "wechat_channels": "微信视频号",
-      "zhixunbao": "知讯宝"
+      "zhixunbao": "知讯宝",
+      "zhihu": "知乎",
+      "csdn": "CSDN",
+      "baijiahao": "百家号"
     },
     "table": {
       "title": "标题",
-      "type": "类型",
       "platform": "平台",
       "createdAt": "创建时间",
       "status": "发布状态",
@@ -249,7 +255,15 @@
       "confirm": "确定"
     },
     "emptyTitle": "暂无作品",
-    "emptyDescription": "换个筛选条件试试。"
+    "emptyDescription": "换个筛选条件试试。",
+    "pagination": {
+      "navLabel": "发布记录分页",
+      "previous": "上一页",
+      "next": "下一页",
+      "goToPage": "第 {page} 页",
+      "ellipsis": "更多页",
+      "summary": "共 {total} 条，每页 {pageSize} 条"
+    }
   },
   "material": {
     "title": "素材库",
@@ -344,13 +358,29 @@
     "search": "搜索",
     "actions": {
       "more": "更多操作",
-      "secondaryCreation": "二次创作"
+      "secondaryCreation": "发散",
+      "divergePromptPrefix": "帮我话题发散：",
+      "divergeFailed": "创建发散对话失败，请稍后重试",
+      "creationPromptXiaohongshu": "帮我创作一篇小红书图文，内容基于{title}来写",
+      "creationPromptMediumLongArticle": "帮我创作一篇中长文，内容基于{title}来写"
     },
     "tabs": {
       "hotTopics": "热门话题",
       "trackTopics": "赛道话题"
     },
     "trackTopicsPlaceholder": "赛道话题即将上线",
+    "hotRankBoardTitle": "热门榜单",
+    "hotRank": {
+      "empty": "暂无热搜数据",
+      "loadError": "热门话题加载失败",
+      "retry": "重试"
+    },
+    "hotRankBoards": {
+      "baidu": "百度热榜",
+      "toutiao": "头条热榜",
+      "weibo": "微博热榜",
+      "zhihu": "知乎热榜"
+    },
     "platforms": {
       "toutiao": "今日头条",
       "xhs": "小红书",
@@ -382,6 +412,29 @@
       "subtitle": "规划撰写小红书、抖音、微博、公众号等多平台内容",
       "inputPlaceholder": "描述你的创作需求，如：写一篇小红书种草文案、抖音脚本、公众号推文…",
       "linkKnowledgeBase": "关联知识库",
+      "addPersona": "添加人设",
+      "noPersona": "不带人设",
+      "addPersonaPrompt": "帮我添加人设",
+      "deletePersonaDialog": {
+        "close": "关闭",
+        "title": "删除人设",
+        "description": "确定删除人设「{name}」吗？删除后不可恢复。",
+        "cancel": "取消",
+        "confirm": "确定"
+      },
+      "deletePersonaFailed": "删除人设失败，请稍后重试",
+      "editPersonaDialog": {
+        "title": "编辑人设",
+        "description": "支持修改平台和人设概览，人设概览一级标题会作为人设名称。",
+        "titlePlaceholder": "人设名称",
+        "platformLabel": "平台",
+        "markdownLabel": "人设概览",
+        "cancel": "取消",
+        "save": "保存",
+        "emptyMarkdown": "请输入人设概览内容",
+        "titleRequired": "请使用一级标题作为人设名称",
+        "saveFailed": "编辑人设失败，请稍后重试"
+      },
       "sendAria": "发送并开始对话",
       "createThreadFailed": "创建对话失败，请检查网络与 LangGraph 配置"
     }

@@ -34,6 +34,7 @@ export function ArtifactFileList({
   const { t } = useI18n();
   const { select: selectArtifact, setOpen } = useArtifacts();
   const [installingFile, setInstallingFile] = useState<string | null>(null);
+  const markdownFiles = files.filter((file) => file.toLowerCase().endsWith(".md"));
 
   const handleClick = useCallback(
     (filepath: string) => {
@@ -71,9 +72,13 @@ export function ArtifactFileList({
     [threadId, installingFile],
   );
 
+  if (markdownFiles.length === 0) {
+    return null;
+  }
+
   return (
     <ul className={cn("flex w-full flex-col gap-4", className)}>
-      {files.map((file) => (
+      {markdownFiles.map((file) => (
         <Card
           key={file}
           className="relative cursor-pointer p-3"

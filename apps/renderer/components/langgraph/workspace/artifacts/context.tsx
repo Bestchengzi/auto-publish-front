@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { env } from "@/lib/langgraph/env";
+import type { PublishEditResponse } from "@/lib/api/publish";
 
 /** 创作中心无 DeerFlow 侧边栏，折叠主侧栏为空操作 */
 function useNoopSidebarOpen() {
@@ -27,6 +28,9 @@ export interface ArtifactsContextType {
   open: boolean;
   autoOpen: boolean;
   setOpen: (open: boolean) => void;
+  publishPreview: PublishPreviewPayload | null;
+  openPublishPreview: (payload: PublishPreviewPayload) => void;
+  closePublishPreview: () => void;
 }
 
 const ArtifactsContext = createContext<ArtifactsContextType | undefined>(
@@ -37,6 +41,13 @@ interface ArtifactsProviderProps {
   children: ReactNode;
 }
 
+export interface PublishPreviewPayload {
+  title: string;
+  contentHtml: string;
+  selectedAccountIds: string[];
+  publishEdit: PublishEditResponse | null;
+}
+
 export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
   const [artifacts, setArtifacts] = useState<string[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
@@ -45,6 +56,8 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
     env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
   );
   const [autoOpen, setAutoOpen] = useState(true);
+  const [publishPreview, setPublishPreview] =
+    useState<PublishPreviewPayload | null>(null);
   const setSidebarOpen = useNoopSidebarOpen();
 
   const select = useCallback(
@@ -84,6 +97,13 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
     selectedArtifact,
     select,
     deselect,
+    publishPreview,
+    openPublishPreview: (payload: PublishPreviewPayload) => {
+      setPublishPreview(payload);
+    },
+    closePublishPreview: () => {
+      setPublishPreview(null);
+    },
   };
 
   return (

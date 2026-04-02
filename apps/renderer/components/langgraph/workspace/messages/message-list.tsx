@@ -1,4 +1,5 @@
 import type { BaseStream } from "@langchain/langgraph-sdk/react";
+import { MessageCircleQuestionMarkIcon } from "lucide-react";
 
 import {
   Conversation,
@@ -6,6 +7,9 @@ import {
 } from "@/components/langgraph/ai-elements/conversation";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import {
+  getMissingInfoClarificationArgs,
+  getPersonaBuilderClarificationArgs,
+  getTopicIdeationClarificationArgs,
   extractContentFromMessage,
   extractPresentFilesFromMessage,
   extractTextFromMessage,
@@ -26,6 +30,8 @@ import { StreamingIndicator } from "../streaming-indicator";
 import { MarkdownContent } from "./markdown-content";
 import { MessageGroup } from "./message-group";
 import { ClarificationSelector } from "./clarification-selector";
+import { TopicIdeationSelector } from "./topic-ideation-selector";
+import { PersonaBuilderSelector } from "./persona-builder-selector";
 import { MessageListItem } from "./message-list-item";
 import { MessageListSkeleton } from "./skeleton";
 import { SubtaskCard } from "./subtask-card";
@@ -64,16 +70,50 @@ export function MessageList({
             });
           } else if (group.type === "assistant:clarification") {
             const message = group.messages[0];
-            if (message && hasContent(message)) {
+            if (message) {
+              const isTopicIdeation =
+                getTopicIdeationClarificationArgs(message) !== null;
+              const isPersonaBuilder =
+                getPersonaBuilderClarificationArgs(message) !== null;
+              // Besides "topic ideation" and "persona builder", all other clarification
+              // types default to missing_info UI.
+              if (
+                !isTopicIdeation &&
+                !isPersonaBuilder &&
+                getMissingInfoClarificationArgs(message) === null
+              ) {
+                return null;
+              }
               return (
-                <ClarificationSelector
-                  key={group.id}
-                  thread={thread}
-                  threadId={threadId}
-                  isLoading={thread.isLoading}
-                  clarificationMessage={message}
-                  rehypePlugins={rehypePlugins}
-                />
+                <div key={group.id} className="w-full">
+                  <div className="mb-3 flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-sm text-muted-foreground">
+                    <MessageCircleQuestionMarkIcon className="size-4 shrink-0" />
+                    <span>{t.toolCalls.needYourHelp}</span>
+                  </div>
+                  {isTopicIdeation ? (
+                    <TopicIdeationSelector
+                      thread={thread}
+                      threadId={threadId}
+                      isLoading={thread.isLoading}
+                      clarificationMessage={message}
+                    />
+                  ) : isPersonaBuilder ? (
+                    <PersonaBuilderSelector
+                      thread={thread}
+                      threadId={threadId}
+                      isLoading={thread.isLoading}
+                      clarificationMessage={message}
+                    />
+                  ) : (
+                    <ClarificationSelector
+                      thread={thread}
+                      threadId={threadId}
+                      isLoading={thread.isLoading}
+                      clarificationMessage={message}
+                      rehypePlugins={rehypePlugins}
+                    />
+                  )}
+                </div>
               );
             }
             return null;

@@ -9,11 +9,13 @@ export function PublishStatusBadge({
   successLabel,
   failedLabel,
   publishingLabel,
+  className,
 }: {
   status: PublishStatus;
   successLabel: string;
   failedLabel: string;
   publishingLabel: string;
+  className?: string;
 }) {
   const config = {
     success: {
@@ -33,18 +35,19 @@ export function PublishStatusBadge({
     },
   };
 
-  const { icon: Icon, label, className } = config[status];
+  const { icon: Icon, label, className: statusClassName } = config[status];
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-sm font-medium",
+        "inline-flex min-w-0 max-w-full items-center gap-1.5 text-sm font-medium",
+        statusClassName,
         className,
       )}
       title={label}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
-      {label}
+      <span className="min-w-0 truncate">{label}</span>
     </span>
   );
 }

@@ -3,15 +3,12 @@
 import * as React from "react";
 import { debounce } from "lodash";
 import {
-  VideoIcon,
-  ImageIcon,
-  FileTextIcon,
-  PencilIcon,
-  MoreHorizontalIcon,
-  Trash2Icon,
-  ListIcon,
-  FilePen,
-} from "lucide-react";
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
+import { MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -38,93 +35,159 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPageButton,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { getPlatformsWithNames } from "@/lib/platforms";
 import type { PlatformId } from "@/components/account-management/types";
 import { BulkBar } from "@/components/account-management/bulk-bar";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { PlatformLogo } from "@/components/account-management/platform-logo";
-import type { Work, WorkType, PublishStatus } from "./types";
+import type { Work, PublishStatus } from "./types";
 import { PublishStatusBadge } from "./publish-status-badge";
 import { WorkEmptyState } from "./work-empty-state";
+import { WorksLibrarySkeleton } from "./works-library-skeleton";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/date";
+import {
+  deleteUserPublishRecordGroups,
+  listUserPublishRecordGroups,
+  type PublishRecordGroupResponse,
+} from "@/lib/api/publish";
+import { createPageList } from "@/lib/pagination";
 
-const MOCK_WORKS: Work[] = [
-  {
-    id: "w_1",
-    title: "春游vlog · 杭州西湖",
-    type: "video",
-    platformIds: ["rednote", "douyin"],
-    createdAt: "2025-03-15 14:32",
-    status: "success",
-    successCount: 2,
-    failedCount: 0,
-    isDraft: false,
-  },
-  {
-    id: "w_2",
-    title: "AI 绘画入门教程",
-    type: "image",
-    platformIds: ["rednote", "toutiao", "wechat_mp"],
-    createdAt: "2025-03-14 09:20",
-    status: "publishing",
-    successCount: 1,
-    failedCount: 0,
-    isDraft: false,
-  },
-  {
-    id: "w_3",
-    title: "产品使用说明文档",
-    type: "text",
-    platformIds: ["wechat_mp", "toutiao"],
-    createdAt: "2025-03-13 16:45",
-    status: "failed",
-    successCount: 1,
-    failedCount: 1,
-    isDraft: false,
-  },
-  {
-    id: "w_4",
-    title: "未完成的视频脚本",
-    type: "video",
-    platformIds: [],
-    createdAt: "2025-03-18 10:00",
-    status: "publishing",
-    successCount: 0,
-    failedCount: 0,
-    isDraft: true,
-  },
+const SUPPORTED_PLATFORM_IDS: PlatformId[] = [
+  "toutiao",
+  "rednote",
+  "douyin",
+  "wechat_mp",
+  "wechat_channels",
+  "zhixunbao",
+  "zhihu",
+  "csdn",
+  "baijiahao",
 ];
+const PAGE_SIZE = 12;
 
-function WorkTypeIcon({ type }: { type: WorkType }) {
-  const config = {
-    video: { Icon: VideoIcon, label: "video" },
-    image: { Icon: ImageIcon, label: "image" },
-    text: { Icon: FileTextIcon, label: "text" },
+type PublishRecordsPageData = {
+  items: Work[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+function isPlatformId(value: string): value is PlatformId {
+  return SUPPORTED_PLATFORM_IDS.includes(value as PlatformId);
+}
+
+function extractTitleFromGroup(group: PublishRecordGroupResponse): string {
+  if (typeof group.title === "string" && group.title.trim().length > 0) {
+    return group.title.trim();
+  }
+  for (const record of group.records) {
+    const info = record.publish_info;
+    if (!info || typeof info !== "object" || Array.isArray(info)) continue;
+    const candidate =
+      (info as Record<string, unknown>).title ??
+      (info as Record<string, unknown>).post_title ??
+      (info as Record<string, unknown>).article_title;
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return group.thread_id;
+}
+
+function mapGroupToWork(group: PublishRecordGroupResponse): Work {
+  const status: PublishStatus = group.failed_account_count > 0 ? "failed" : "success";
+  const platformIds = Array.from(
+    new Set(
+      group.records
+        .map((item) => item.platform)
+        .filter((platform): platform is PlatformId => isPlatformId(platform)),
+    ),
+  );
+  return {
+    id: group.thread_id,
+    title: extractTitleFromGroup(group),
+    platformIds,
+    createdAt: formatDateTime(group.last_published_at || group.created_at),
+    status,
+    successCount: group.success_account_count,
+    failedCount: group.failed_account_count,
   };
-  const { Icon } = config[type];
-  return (
+}
+
+/** 固定宽度 + 省略；仅在被截断时悬停显示全文 */
+function WorksLibraryTitleCell({ title }: { title: string }) {
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = React.useState(false);
+
+  const remeasure = React.useCallback(() => {
+    const el = textRef.current;
+    if (!el) return;
+    setTruncated(el.scrollWidth > el.clientWidth + 1);
+  }, []);
+
+  React.useLayoutEffect(() => {
+    remeasure();
+    const el = textRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(remeasure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [title, remeasure]);
+
+  const label = (
     <span
-      className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground ring-1 ring-border"
-      aria-hidden
+      ref={textRef}
+      className="block min-w-0 truncate text-sm text-foreground"
     >
-      <Icon className="size-4" />
+      {title}
     </span>
+  );
+
+  if (!truncated) {
+    return <div className="min-w-0 max-w-full">{label}</div>;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        className="min-w-0 max-w-full"
+        render={
+          <div className="min-w-0 max-w-full cursor-default outline-none">
+            {label}
+          </div>
+        }
+      />
+      <TooltipContent side="top" className="max-w-md">
+        <p className="whitespace-pre-wrap break-words text-left">{title}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 export function WorksLibrary() {
   const t = useTranslations("worksLibrary");
+  const queryClient = useQueryClient();
 
   const platforms = React.useMemo(
     () => getPlatformsWithNames((id) => t(`platforms.${id}`)),
     [t],
   );
 
-  const [tab, setTab] = React.useState<"works" | "drafts">("works");
+  const [page, setPage] = React.useState(1);
   const [queryInput, setQueryInput] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [platformFilter, setPlatformFilter] = React.useState<PlatformId | "all">("all");
@@ -133,23 +196,77 @@ export function WorksLibrary() {
   const updateQuery = React.useMemo(() => debounce((next: string) => setQuery(next), 300), []);
   React.useEffect(() => () => updateQuery.cancel(), [updateQuery]);
 
-  const [works, setWorks] = React.useState<Work[]>(() => MOCK_WORKS);
+  React.useEffect(() => {
+    setPage(1);
+  }, [query, platformFilter, statusFilter]);
+
+  const publishRecordsQuery = useQuery<PublishRecordsPageData>({
+    queryKey: ["works-library", "publish-records", page, PAGE_SIZE] as QueryKey,
+    queryFn: async () => {
+      const res = await listUserPublishRecordGroups({
+        page,
+        pageSize: PAGE_SIZE,
+      });
+      return {
+        items: res.items.map(mapGroupToWork),
+        total: res.total,
+        page: res.page,
+        pageSize: res.page_size,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+  const [hasLoadedOnce, setHasLoadedOnce] = React.useState(false);
+  React.useEffect(() => {
+    if (!hasLoadedOnce && publishRecordsQuery.isFetched) {
+      setHasLoadedOnce(true);
+    }
+  }, [hasLoadedOnce, publishRecordsQuery.isFetched]);
+  const isInitialLoading = !hasLoadedOnce && publishRecordsQuery.isLoading;
+  const [hiddenWorkIds, setHiddenWorkIds] = React.useState<Set<string>>(() => new Set());
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
   const [pendingBatchDeleteOpen, setPendingBatchDeleteOpen] = React.useState(false);
+  const deletePublishRecordsMutation = useMutation({
+    mutationFn: async (threadIds: string[]) => {
+      return deleteUserPublishRecordGroups({ threadIds });
+    },
+  });
+
+  const works = React.useMemo(() => {
+    const list = publishRecordsQuery.data?.items ?? [];
+    if (hiddenWorkIds.size === 0) return list;
+    return list.filter((item) => !hiddenWorkIds.has(item.id));
+  }, [hiddenWorkIds, publishRecordsQuery.data]);
+
+  const listMeta = publishRecordsQuery.data;
+  const totalCount = listMeta?.total ?? 0;
+  const pageSize = listMeta?.pageSize ?? PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const showPagination = !isInitialLoading && totalCount > 0;
+  const pageItems = React.useMemo(
+    () => createPageList(page, totalPages),
+    [page, totalPages],
+  );
+
+  React.useEffect(() => {
+    if (!listMeta) return;
+    if (page > totalPages) setPage(totalPages);
+  }, [listMeta, page, totalPages]);
 
   const filteredWorks = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     return works.filter((w) => {
-      const isDraft = w.isDraft;
-      const passTab = tab === "drafts" ? isDraft : !isDraft;
       const passQuery = !q || w.title.toLowerCase().includes(q);
       const passPlatform =
         platformFilter === "all" ||
         w.platformIds.some((pid) => pid === platformFilter);
       const passStatus = statusFilter === "all" || w.status === statusFilter;
-      return passTab && passQuery && passPlatform && passStatus;
+      return passQuery && passPlatform && passStatus;
     });
-  }, [works, tab, query, platformFilter, statusFilter]);
+  }, [works, query, platformFilter, statusFilter]);
 
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
 
@@ -179,16 +296,38 @@ export function WorksLibrary() {
   }
 
   function deleteSelected() {
-    setWorks((prev) => prev.filter((w) => !selectedIds.has(w.id)));
-    setSelectedIds(new Set());
+    const threadIds = Array.from(selectedIds);
+    if (threadIds.length === 0) return;
+
+    deletePublishRecordsMutation.mutate(threadIds, {
+      onSuccess: () => {
+        setHiddenWorkIds(new Set());
+        setSelectedIds(new Set());
+        setPendingBatchDeleteOpen(false);
+        void queryClient.invalidateQueries({
+          queryKey: ["works-library", "publish-records"],
+        });
+      },
+      onError: (error) => {
+        // 保持弹窗打开，方便用户重试；同时在控制台给出错误细节
+        console.error("Failed to delete publish records:", error);
+      },
+    });
   }
 
   function deleteOne(id: string) {
-    setWorks((prev) => prev.filter((w) => w.id !== id));
-    setSelectedIds((prev) => {
-      const n = new Set(prev);
-      n.delete(id);
-      return n;
+    deletePublishRecordsMutation.mutate([id], {
+      onSuccess: () => {
+        setHiddenWorkIds(new Set());
+        setSelectedIds(new Set());
+        setPendingDeleteId(null);
+        void queryClient.invalidateQueries({
+          queryKey: ["works-library", "publish-records"],
+        });
+      },
+      onError: (error) => {
+        console.error("Failed to delete publish record:", error);
+      },
     });
   }
 
@@ -201,11 +340,7 @@ export function WorksLibrary() {
   return (
     <div className="w-full h-full">
       <div className="h-full w-full max-w-6xl mx-auto rounded-xl p-8 px-10 flex flex-col">
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as "works" | "drafts")}
-          className="flex flex-1 min-h-0 flex-col gap-4"
-        >
+        <div className="flex flex-1 min-h-0 flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-xl font-semibold tracking-tight">
@@ -218,17 +353,6 @@ export function WorksLibrary() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <TabsList className="rounded-lg border border-border p-1">
-              <TabsTrigger value="works" className="gap-1.5">
-                <ListIcon className="size-4" />
-                {t("tabs.works")}
-              </TabsTrigger>
-              <TabsTrigger value="drafts" className="gap-1.5">
-                <FilePen className="size-4" />
-                {t("tabs.drafts")}
-              </TabsTrigger>
-            </TabsList>
-
             <div className="w-full sm:w-64">
               <Input
                 value={queryInput}
@@ -318,148 +442,210 @@ export function WorksLibrary() {
             </Select>
           </div>
 
-          <div className="flex-1 min-h-0 rounded-xl border border-border flex flex-col overflow-hidden">
-            <BulkBar
-              selectedCount={selectedIds.size}
-              onDeleteSelected={() => setPendingBatchDeleteOpen(true)}
-              selectedCountLabel={t("bulk.selectedCount", { count: selectedIds.size })}
-              batchDeleteLabel={t("actions.batchDelete")}
-              showMoveToGroup={false}
-            />
-            {filteredWorks.length > 0 ? (
-              <div className="flex-1 min-h-0 overflow-auto">
-                <Table className="min-w-[860px]">
-                  <TableHeader
-                    className={cn(
-                      "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",
-                      selectedIds.size > 0 ? "[&_tr]:bg-background" : "[&_tr]:bg-muted/40",
-                    )}
-                  >
-                    <TableRow
-                      className={
-                        selectedIds.size > 0 ? "hover:bg-background" : "hover:bg-muted/40"
-                      }
+          {isInitialLoading ? (
+            <WorksLibrarySkeleton />
+          ) : (
+            <div className="flex-1 min-h-0 rounded-xl border border-border flex flex-col overflow-hidden">
+              <BulkBar
+                selectedCount={selectedIds.size}
+                onDeleteSelected={() => setPendingBatchDeleteOpen(true)}
+                selectedCountLabel={t("bulk.selectedCount", { count: selectedIds.size })}
+                batchDeleteLabel={t("actions.batchDelete")}
+                showMoveToGroup={false}
+              />
+              <div className="flex min-h-0 flex-1 flex-col">
+              {filteredWorks.length > 0 ? (
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <Table className="min-w-[880px]">
+                    <TableHeader
+                      className={cn(
+                        "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",
+                        selectedIds.size > 0 ? "[&_tr]:bg-background" : "[&_tr]:bg-muted/40",
+                      )}
                     >
-                      <TableHead className="w-12">
-                        <Checkbox
-                          aria-label={t("table.selectAll")}
-                          checked={allSelected}
-                          indeterminate={someSelected}
-                          onCheckedChange={(v) => toggleAll(Boolean(v))}
-                        />
-                      </TableHead>
-                      <TableHead>{t("table.title")}</TableHead>
-                      <TableHead>{t("table.type")}</TableHead>
-                      <TableHead>{t("table.platform")}</TableHead>
-                      <TableHead>{t("table.createdAt")}</TableHead>
-                      <TableHead>{t("table.status")}</TableHead>
-                      <TableHead>{t("table.successFail")}</TableHead>
-                      <TableHead className="w-12 text-right">
-                        <span className="sr-only">{t("table.actions")}</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredWorks.map((w) => {
-                      const checked = selectedIds.has(w.id);
-                      return (
-                      <TableRow key={w.id} className="hover:bg-muted/30">
-                        <TableCell className="w-12">
+                      <TableRow
+                        className={
+                          selectedIds.size > 0 ? "hover:bg-background" : "hover:bg-muted/40"
+                        }
+                      >
+                        <TableHead className="w-12 shrink-0 px-4">
                           <Checkbox
-                            aria-label={t("table.selectOne")}
-                            checked={checked}
-                            onCheckedChange={(v) => toggleOne(w.id, Boolean(v))}
+                            aria-label={t("table.selectAll")}
+                            checked={allSelected}
+                            indeterminate={someSelected}
+                            onCheckedChange={(v) => toggleAll(Boolean(v))}
                           />
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-foreground">
-                            {w.title}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <WorkTypeIcon type={w.type} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            {w.platformIds.length > 0 ? (
-                              w.platformIds.map((pid) => {
-                                const platform = platformMap.get(pid);
-                                return platform ? (
-                                  <PlatformLogo
-                                    key={pid}
-                                    platformId={platform.id}
-                                    size={28}
-                                  />
-                                ) : null;
-                              })
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                —
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-foreground">
-                          {w.createdAt}
-                        </TableCell>
-                        <TableCell>
-                          <PublishStatusBadge
-                            status={w.status}
-                            successLabel={t("status.success")}
-                            failedLabel={t("status.failed")}
-                            publishingLabel={t("status.publishing")}
-                          />
-                        </TableCell>
-                        <TableCell className="text-sm text-foreground">
-                          {w.successCount} / {w.failedCount}
-                        </TableCell>
-                        <TableCell className="w-12 text-right">
-                          <div className="flex items-center justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8"
-                                    aria-label={t("table.actions")}
-                                  >
-                                    <MoreHorizontalIcon className="size-4" />
-                                  </Button>
-                                }
-                              />
-                              <DropdownMenuContent align="end" className="w-36">
-                                <DropdownMenuItem onClick={() => {}}>
-                                  <PencilIcon className="size-4" />
-                                  {t("actions.edit")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => setPendingDeleteId(w.id)}
-                                >
-                                  <Trash2Icon className="size-4" />
-                                  {t("actions.delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
+                        </TableHead>
+                        <TableHead className="w-96 max-w-96 min-w-0">
+                          {t("table.title")}
+                        </TableHead>
+                        <TableHead className="w-44 min-w-44 max-w-44">
+                          {t("table.platform")}
+                        </TableHead>
+                        <TableHead className="w-[8.5rem] max-w-[8.5rem]">
+                          {t("table.createdAt")}
+                        </TableHead>
+                        <TableHead className="w-[6.75rem] max-w-[6.75rem]">
+                          {t("table.status")}
+                        </TableHead>
+                        <TableHead className="w-14 max-w-14 text-center">
+                          {t("table.successFail")}
+                        </TableHead>
+                        <TableHead className="w-12 text-right">
+                          <span className="sr-only">{t("table.actions")}</span>
+                        </TableHead>
                       </TableRow>
-                    );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredWorks.map((w) => {
+                        const checked = selectedIds.has(w.id);
+                        return (
+                          <TableRow key={w.id} className="hover:bg-muted/30">
+                            <TableCell className="w-12 shrink-0 px-4">
+                              <Checkbox
+                                aria-label={t("table.selectOne")}
+                                checked={checked}
+                                onCheckedChange={(v) => toggleOne(w.id, Boolean(v))}
+                              />
+                            </TableCell>
+                            <TableCell className="w-96 max-w-96 min-w-0">
+                              <WorksLibraryTitleCell title={w.title} />
+                            </TableCell>
+                            <TableCell className="w-44 min-w-44 max-w-44">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {w.platformIds.length > 0 ? (
+                                  w.platformIds.map((pid) => {
+                                    const platform = platformMap.get(pid);
+                                    return platform ? (
+                                      <PlatformLogo
+                                        key={pid}
+                                        platformId={platform.id}
+                                        size={28}
+                                      />
+                                    ) : null;
+                                  })
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="w-[8.5rem] max-w-[8.5rem] text-sm tabular-nums text-foreground">
+                              {w.createdAt}
+                            </TableCell>
+                            <TableCell className="w-[6.75rem] max-w-[6.75rem] min-w-0">
+                              <PublishStatusBadge
+                                className="w-full"
+                                status={w.status}
+                                successLabel={t("status.success")}
+                                failedLabel={t("status.failed")}
+                                publishingLabel={t("status.publishing")}
+                              />
+                            </TableCell>
+                            <TableCell className="w-14 max-w-14 text-center text-sm tabular-nums text-foreground">
+                              {w.successCount} / {w.failedCount}
+                            </TableCell>
+                            <TableCell className="w-12 text-right">
+                              <div className="flex items-center justify-end">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger
+                                    render={
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8"
+                                        aria-label={t("table.actions")}
+                                      >
+                                        <MoreHorizontalIcon className="size-4" />
+                                      </Button>
+                                    }
+                                  />
+                                  <DropdownMenuContent align="end" className="w-36">
+                                    <DropdownMenuItem
+                                      variant="destructive"
+                                      onClick={() => setPendingDeleteId(w.id)}
+                                    >
+                                      <Trash2Icon className="size-4" />
+                                      {t("actions.delete")}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex min-h-[200px] flex-1 items-center justify-center p-8">
+                  <WorkEmptyState
+                    title={t("emptyTitle")}
+                    description={t("emptyDescription")}
+                  />
+                </div>
+              )}
+              {showPagination ? (
+                <div className="shrink-0 border-t border-border bg-muted/20 px-3 py-2">
+                  <Pagination
+                    aria-label={t("pagination.navLabel")}
+                    className="justify-between gap-3 sm:justify-between"
+                  >
+                    <div className="order-last w-full text-center text-xs text-muted-foreground sm:order-first sm:w-auto sm:text-left">
+                      {t("pagination.summary", {
+                        total: totalCount,
+                        pageSize,
+                      })}
+                    </div>
+                    <PaginationContent className="order-first sm:order-last">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          aria-label={t("pagination.previous")}
+                          disabled={page <= 1 || publishRecordsQuery.isFetching}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        />
+                      </PaginationItem>
+                      {pageItems.map((item, idx) =>
+                        item === "ellipsis" ? (
+                          <PaginationItem key={`ellipsis-${idx}`}>
+                            <PaginationEllipsis
+                              screenReaderLabel={t("pagination.ellipsis")}
+                            />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={item}>
+                            <PaginationPageButton
+                              isActive={item === page}
+                              aria-label={t("pagination.goToPage", { page: item })}
+                              disabled={publishRecordsQuery.isFetching}
+                              onClick={() => setPage(item)}
+                            >
+                              {item}
+                            </PaginationPageButton>
+                          </PaginationItem>
+                        ),
+                      )}
+                      <PaginationItem>
+                        <PaginationNext
+                          aria-label={t("pagination.next")}
+                          disabled={
+                            page >= totalPages || publishRecordsQuery.isFetching
+                          }
+                          onClick={() =>
+                            setPage((p) => Math.min(totalPages, p + 1))
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              ) : null}
               </div>
-            ) : (
-              <div className="flex min-h-[200px] flex-1 items-center justify-center p-8">
-                <WorkEmptyState
-                  title={t("emptyTitle")}
-                  description={t("emptyDescription")}
-                />
-              </div>
-            )}
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
 
         <DeleteConfirmDialog
           open={pendingDeleteId !== null}
@@ -467,7 +653,6 @@ export function WorksLibrary() {
           onConfirm={() => {
             if (pendingDeleteId) {
               deleteOne(pendingDeleteId);
-              setPendingDeleteId(null);
             }
           }}
           closeLabel={t("dialog.close")}
@@ -475,6 +660,7 @@ export function WorksLibrary() {
           description={t("actions.deleteWorkConfirm")}
           cancelLabel={t("dialog.cancel")}
           confirmLabel={t("dialog.confirm")}
+          isPending={deletePublishRecordsMutation.isPending}
         />
 
         <DeleteConfirmDialog
@@ -482,13 +668,13 @@ export function WorksLibrary() {
           onOpenChange={setPendingBatchDeleteOpen}
           onConfirm={() => {
             deleteSelected();
-            setPendingBatchDeleteOpen(false);
           }}
           closeLabel={t("dialog.close")}
           title={t("actions.batchDelete")}
           description={t("actions.batchDeleteConfirm", { count: selectedIds.size })}
           cancelLabel={t("dialog.cancel")}
           confirmLabel={t("dialog.confirm")}
+          isPending={deletePublishRecordsMutation.isPending}
         />
       </div>
     </div>
