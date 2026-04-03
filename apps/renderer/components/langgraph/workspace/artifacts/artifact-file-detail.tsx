@@ -1,6 +1,7 @@
 import {
   CopyIcon,
   DownloadIcon,
+  Loader2Icon,
   LoaderIcon,
   PackageIcon,
   Redo2Icon,
@@ -73,6 +74,8 @@ import { PublishAccountsDrawer } from "./publish-accounts-drawer";
 const ARTIFACT_AUTOSAVE_MS = 2500;
 /** 连续编辑结束后等待该时间，工具栏撤销才可用，并与 history 分组对齐 */
 const UNDO_UI_DEBOUNCE_MS = 500;
+/** 抽屉关闭动画结束后再打开发布面板，避免视觉跳变 */
+const PUBLISH_DRAWER_CLOSE_ANIMATION_MS = 320;
 
 type PublishEditCacheEntry = {
   publishEdit: PublishEditResponse;
@@ -552,7 +555,7 @@ export function ArtifactFileDetail({
 
   return (
     <>
-      <Artifact className={cn(className)}>
+      <Artifact className={cn("relative", className)}>
       <ArtifactHeader className="bg-background px-4">
         <div className="flex min-w-0 items-center">
           {isWriteFile && (
@@ -651,8 +654,8 @@ export function ArtifactFileDetail({
             {!isWriteFile && (
               <Button
                 type="button"
-                size="sm"
-                className="h-8 shrink-0 gap-1.5 px-4 text-sm font-semibold shadow-sm"
+                size="lg"
+                className="shrink-0"
                 disabled={
                   env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true" ||
                   isPreparingPublishPreview ||
@@ -713,6 +716,19 @@ export function ArtifactFileDetail({
           </div>
         )}
       </ArtifactContent>
+      {isSavingPersona && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+          className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-background/65 backdrop-blur-[2px]"
+        >
+          <Loader2Icon className="size-10 shrink-0 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground">
+            正在保存…
+          </span>
+        </div>
+      )}
       </Artifact>
       <PublishAccountsDrawer
         open={publishAccountsOpen}
@@ -722,7 +738,9 @@ export function ArtifactFileDetail({
             ...prev,
             [publishAccountCacheKey]: ids,
           }));
-          void openPublishPreviewForAccounts(ids);
+          setTimeout(() => {
+            void openPublishPreviewForAccounts(ids);
+          }, PUBLISH_DRAWER_CLOSE_ANIMATION_MS);
         }}
       />
     </>

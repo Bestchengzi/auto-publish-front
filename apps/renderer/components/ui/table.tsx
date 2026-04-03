@@ -4,15 +4,31 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+export type TableProps = React.ComponentProps<"table"> & {
+  /** 表头固定在外，仅 tbody 纵向滚动（滚动条只出现在数据区） */
+  bodyScroll?: boolean
+}
+
+function Table({ className, bodyScroll = false, ...props }: TableProps) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn(
+        "relative min-w-0",
+        bodyScroll
+          ? "flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-auto"
+          : "w-full",
+      )}
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "caption-bottom text-sm",
+          bodyScroll
+            ? "flex h-full min-h-0 w-full flex-col border-collapse [&>thead]:w-full [&>thead]:shrink-0 [&>thead]:[scrollbar-gutter:stable] [&>thead>tr]:table [&>thead>tr]:w-full [&>thead>tr]:table-fixed [&>tbody]:min-h-0 [&>tbody]:w-full [&>tbody]:flex-1 [&>tbody]:overflow-x-hidden [&>tbody]:overflow-y-auto [&>tbody]:[scrollbar-gutter:stable] [&>tbody>tr]:table [&>tbody>tr]:w-full [&>tbody>tr]:table-fixed"
+            : "w-full",
+          className,
+        )}
         {...props}
       />
     </div>

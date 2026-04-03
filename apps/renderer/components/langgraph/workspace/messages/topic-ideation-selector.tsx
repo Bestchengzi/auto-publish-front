@@ -103,48 +103,52 @@ function parseTopicIdeationQuestions(
 ): IdeationQuestion[] {
   if (!Array.isArray(args.questions)) return [];
 
-  return (args.questions as TopicIdeationClarificationQuestion[])
-    .map((question, questionIdx) => {
+  return (args.questions as TopicIdeationClarificationQuestion[]).flatMap(
+    (question, questionIdx) => {
       const questionText =
         typeof question?.question === "string" ? question.question.trim() : "";
-      if (!questionText) return null;
+      if (!questionText) return [];
 
       const suggestions = Array.isArray(question?.suggestions)
-        ? (question.suggestions as TopicIdeationClarificationSuggestion[])
-            .map((suggestion, suggestionIdx) => {
+        ? (question.suggestions as TopicIdeationClarificationSuggestion[]).flatMap(
+            (suggestion, suggestionIdx) => {
               const title =
                 typeof suggestion?.title === "string" ? suggestion.title.trim() : "";
-              if (!title) return null;
+              if (!title) return [];
               const keywords = Array.isArray(suggestion?.keywords)
                 ? suggestion.keywords
                     .filter((keyword): keyword is string => typeof keyword === "string")
                     .map((keyword) => keyword.trim())
                     .filter((keyword) => keyword.length > 0)
                 : [];
-              return {
-                index: suggestionIdx,
-                title,
-                keywords,
-                reason:
-                  typeof suggestion?.reason === "string"
-                    ? suggestion.reason.trim()
-                    : undefined,
-                value:
-                  typeof suggestion?.value === "string"
-                    ? suggestion.value.trim()
-                    : undefined,
-              } satisfies IdeationSuggestion;
-            })
-            .filter((suggestion): suggestion is IdeationSuggestion => !!suggestion)
+              return [
+                {
+                  index: suggestionIdx,
+                  title,
+                  keywords,
+                  reason:
+                    typeof suggestion?.reason === "string"
+                      ? suggestion.reason.trim()
+                      : undefined,
+                  value:
+                    typeof suggestion?.value === "string"
+                      ? suggestion.value.trim()
+                      : undefined,
+                } satisfies IdeationSuggestion,
+              ];
+            },
+          )
         : [];
 
-      return {
-        index: questionIdx,
-        question: questionText,
-        suggestions,
-      } satisfies IdeationQuestion;
-    })
-    .filter((question): question is IdeationQuestion => !!question);
+      return [
+        {
+          index: questionIdx,
+          question: questionText,
+          suggestions,
+        } satisfies IdeationQuestion,
+      ];
+    },
+  );
 }
 
 function TopicIdeationSuggestionCard({

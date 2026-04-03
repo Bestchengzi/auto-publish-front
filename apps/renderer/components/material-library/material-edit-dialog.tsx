@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -282,12 +283,12 @@ export function MaterialEditDialog({
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2">
+            <DialogFooter className="mt-6 sm:justify-end">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {cancelLabel}
               </Button>
               <Button onClick={handleSave}>{saveLabel}</Button>
-            </div>
+            </DialogFooter>
           </div>
         </div>
       </DialogContent>

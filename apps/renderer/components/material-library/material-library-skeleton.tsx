@@ -37,8 +37,8 @@ export function MaterialLibrarySkeleton() {
 
       {/* Right: table area - 无选中时无 BulkBar，直接展示表格 */}
       <div className="min-w-0 flex-1 rounded-xl border border-border flex flex-col min-h-0 lg:self-stretch overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-auto p-0">
-          <Table className="min-w-[860px] table-fixed">
+        <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col p-0">
+          <Table bodyScroll className="min-w-[860px] table-fixed">
             <TableHeader
               className="[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0 [&_tr]:bg-muted/60"
             >

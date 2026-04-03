@@ -105,6 +105,8 @@ function DialogFooter({ className, ...props }: DialogFooterProps) {
       data-slot="dialog-footer"
       className={cn(
         "mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        // 与页面主操作按钮一致（如 h-9「新建定时计划」）
+        "[&_[data-slot=button]]:h-9",
         className,
       )}
       {...props}

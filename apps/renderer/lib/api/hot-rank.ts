@@ -162,18 +162,35 @@ export function getHotRankLogoPath(listId: HotRankListId): string {
   return `/platform-logos/${HOT_RANK_LOGO_BASENAME[listId]}.png`;
 }
 
+function getHotRankBlockForList(
+  data: HotRankResponse | undefined,
+  listId: HotRankListId,
+): HotRankPlatformData | null {
+  if (!data) return null;
+  for (const key of HOT_RANK_API_KEYS[listId]) {
+    const block = data[key];
+    if (block && typeof block === "object") return block;
+  }
+  return null;
+}
+
 export function getHotRankItemsForList(
   data: HotRankResponse | undefined,
   listId: HotRankListId,
 ): HotRankDisplayItem[] {
-  if (!data) return [];
-  for (const key of HOT_RANK_API_KEYS[listId]) {
-    const block = data[key];
-    if (block?.items?.length) {
-      return parseHotRankItems(block.items);
-    }
-  }
-  return [];
+  const block = getHotRankBlockForList(data, listId);
+  if (!block?.items?.length) return [];
+  return parseHotRankItems(block.items);
+}
+
+/** 各平台热榜数据的 `update_time`（Unix 秒或毫秒，由 {@link formatUpdateAgoMinutesToHours} 识别） */
+export function getHotRankUpdateTimeForList(
+  data: HotRankResponse | undefined,
+  listId: HotRankListId,
+): number | null {
+  const block = getHotRankBlockForList(data, listId);
+  const t = block?.update_time;
+  return typeof t === "number" && Number.isFinite(t) ? t : null;
 }
 
 export async function fetchHotRank(): Promise<HotRankResponse> {

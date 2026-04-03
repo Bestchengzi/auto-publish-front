@@ -6,6 +6,7 @@ import {
   LightbulbIcon,
   ListIcon,
   PenSquareIcon,
+  SendIcon,
   UserRoundIcon,
 } from "lucide-react";
 
@@ -21,7 +22,8 @@ type ActiveKey =
   | "assetLibrary"
   | "worksLibrary"
   | "topicCenter"
-  | "creationCenter";
+  | "creationCenter"
+  | "autoPublish";
 
 function NavItem({
   href,
@@ -84,9 +86,6 @@ export async function AppShell({
 
           <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden px-3 py-4">
             <div className="space-y-1">
-              <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">
-                {t("sidebar.groups.ai")}
-              </div>
               <NavItem
                 href={`/${locale}/creation-center/new`}
                 active={activeKey === "creationCenter"}
@@ -99,18 +98,18 @@ export async function AppShell({
                 icon={<LightbulbIcon className="size-4" />}
                 label={t("sidebar.items.topicCenter")}
               />
+              <NavItem
+                href={`/${locale}/auto-publish`}
+                active={activeKey === "autoPublish"}
+                icon={<SendIcon className="size-4" />}
+                label={t("sidebar.items.autoPublish")}
+              />
             </div>
 
             <div className="space-y-1">
               <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">
                 {t("sidebar.groups.assets")}
               </div>
-              <NavItem
-                href={`/${locale}/works-library`}
-                active={activeKey === "worksLibrary"}
-                icon={<ListIcon className="size-4" />}
-                label={t("sidebar.items.worksLibrary")}
-              />
               <NavItem
                 href={`/${locale}/account`}
                 active={activeKey === "account"}
@@ -122,6 +121,12 @@ export async function AppShell({
                 active={activeKey === "assetLibrary"}
                 icon={<ImagesIcon className="size-4" />}
                 label={t("sidebar.items.assetLibrary")}
+              />
+              <NavItem
+                href={`/${locale}/works-library`}
+                active={activeKey === "worksLibrary"}
+                icon={<ListIcon className="size-4" />}
+                label={t("sidebar.items.worksLibrary")}
               />
             </div>
 

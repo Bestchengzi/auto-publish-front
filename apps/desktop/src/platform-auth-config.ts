@@ -6,8 +6,8 @@ export type PlatformAuthId =
   | "rednote"
   | "xhs"
   | "douyin"
-  | "wx_mp"
-  | "wx_channels";
+  | "wechat_mp"
+  | "wechat_channels";
 
 export type PlatformAuthEntry = {
   loginUrl: string;
@@ -50,13 +50,12 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
       "^https://creator\\.douyin\\.com/publish",
     ],
   },
-  wx_mp: {
-    loginUrl:
-      "https://mp.weixin.qq.com/cgi-bin/loginpage?url=%2Fcgi-bin%2Fhome",
+  wechat_mp: {
+    loginUrl: "https://mp.weixin.qq.com/",
     cookieUrls: ["https://mp.weixin.qq.com/"],
     successUrlPatterns: ["^https://mp\\.weixin\\.qq\\.com/cgi-bin/(?!loginpage)"],
   },
-  wx_channels: {
+  wechat_channels: {
     loginUrl: "https://channels.weixin.qq.com/login.html",
     cookieUrls: ["https://channels.weixin.qq.com/"],
     successUrlPatterns: ["^https://channels\\.weixin\\.qq\\.com/(?!login\\.html)"],

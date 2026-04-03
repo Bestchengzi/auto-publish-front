@@ -1,5 +1,13 @@
-import { CheckIcon, ChevronLeftIcon, FilesIcon, PlusIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  FilesIcon,
+  Loader2Icon,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import type { GroupImperativeHandle } from "react-resizable-panels";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -15,22 +23,30 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  PlatformPickerDialog,
+  type PickerPlatformItem,
+} from "@/components/common/platform-picker-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  parsePublishThreadResponse,
   publishThreadArticle,
+  type PublishEditAccount,
   type PublishEditPlatform,
   type PublishPlatformRequest,
+  type PublishSummary,
 } from "@/lib/api/publish";
 import * as accountsApi from "@/lib/api/accounts";
 import * as mediaApi from "@/lib/api/media";
+import { getPlatformsWithNames } from "@/lib/platforms";
 import { getApiErrorMessage } from "@/lib/request";
 import { env } from "@/lib/langgraph/env";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
@@ -115,7 +131,7 @@ const PLATFORM_OPTIONS_ORDER: Record<string, string[]> = {
     "note_copyable",
   ],
   zhihu: ["cover_image"],
-  wechat_mp: [],
+  wechat_mp: ["claim_source", "enable_comment", "platform_recommend"],
 };
 
 function prettyFieldName(field: string): string {
@@ -151,6 +167,9 @@ function prettyFieldName(field: string): string {
     privacy: "可见范围",
     note_copyable: "允许正文复制",
     original: "原创",
+    enable_comment: "开启留言",
+    claim_source: "创作来源",
+    platform_recommend: "平台推荐",
   };
   return map[field] ?? field.replace(/_/g, " ").replace(/\b\w/g, (s) => s.toUpperCase());
 }
@@ -214,8 +233,33 @@ const HIDDEN_PLATFORM_FIELD_IDS = new Set(["info_source", "source_author_uid"]);
 const REMOVED_TOUTIAO_FIELD_IDS = new Set(["position", "collection_id"]);
 const REDNOTE_ALLOWED_FIELD_IDS = new Set(["privacy", "original", "note_copyable"]);
 const ZHIHU_ALLOWED_FIELD_IDS = new Set(["cover_image"]);
+const WECHAT_ALLOWED_FIELD_IDS = new Set([
+  "enable_comment",
+  "claim_source",
+  "platform_recommend",
+]);
 const COVER_PICKER_TAB_UPLOAD = "upload";
 const COVER_PICKER_TAB_LIBRARY = "library";
+
+const WECHAT_CLAIM_SOURCE_OPTIONS = [
+  "无需声明",
+  "内容由AI生成",
+  "素材来源官方媒体/网络新闻",
+  "内容剧情演绎，仅供娱乐",
+  "个人观点，仅供参考",
+  "健康医疗分享，仅供参考",
+  "投资观点，仅供参考",
+] as const;
+
+const PLATFORM_PICKER_LABELS: Record<string, string> = {
+  toutiao: "今日头条",
+  rednote: "小红书",
+  wechat_mp: "微信公众号",
+  zhixunbao: "知讯宝",
+  zhihu: "知乎",
+  csdn: "CSDN",
+  baijiahao: "百家号",
+};
 
 function getUploadPreviewUrl(file: { artifact_url?: string; virtual_path?: string; path?: string }): string | null {
   const artifactUrl = typeof file.artifact_url === "string" ? file.artifact_url : "";
@@ -283,6 +327,12 @@ function getRequiredFieldError(platform: string, fieldId: string, value: unknown
       return "标题最多100个字";
     }
   }
+  if (platform === "wechat_mp" && fieldId === FIELD_ID_TITLE) {
+    const length = [...textValue].length;
+    if (length > 64) {
+      return "标题最多64个字";
+    }
+  }
   return "";
 }
 
@@ -296,6 +346,7 @@ function getTitleMaxLength(platform: string): number | undefined {
   if (platform === "toutiao") return 30;
   if (platform === "rednote" || platform === "xiaohongshu") return 20;
   if (platform === "zhihu") return 100;
+  if (platform === "wechat_mp") return 64;
   return undefined;
 }
 
@@ -327,6 +378,21 @@ function getToutiaoCoverImageError(coverMode: unknown, coverImageCount: number):
   return "";
 }
 
+function getDefaultPlatformOptions(platformKey: string): Record<string, unknown> {
+  const keys = PLATFORM_OPTIONS_ORDER[platformKey] ?? [];
+  const result: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (key === "enable_comment") result[key] = false;
+    else if (key === "platform_recommend") result[key] = true;
+    else if (key === "claim_source") result[key] = "无需声明";
+    else if (key === "enable_ad") result[key] = false;
+    else if (key === "cover_mode") result[key] = "single";
+    else if (key === "privacy") result[key] = "PUBLIC";
+    else result[key] = "";
+  }
+  return result;
+}
+
 /** 发布预览面板中按「会话文档」隔离的草稿（避免多文档共用同一 platform 键导致串数据） */
 type PublishPanelDraftSnapshot = {
   activePublishPlatform: string;
@@ -335,6 +401,8 @@ type PublishPanelDraftSnapshot = {
   formErrorsByPlatform: Record<string, Record<string, string>>;
   selectedAccountIdsByPlatform: Record<string, string[]>;
   coverImagesByPlatform: Record<string, string[]>;
+  dismissedPublishPlatforms: string[];
+  addedPlatformDataById: Record<string, PublishEditPlatform>;
 };
 
 function publishDraftKey(threadId: string, artifactsPath: string) {
@@ -388,6 +456,23 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverReuploadTargetIndex, setCoverReuploadTargetIndex] = useState<number | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResultSummary, setPublishResultSummary] =
+    useState<PublishSummary | null>(null);
+  const publishFailedDetails = useMemo(
+    () =>
+      publishResultSummary?.details.filter(
+        (d) => d.publish_status === "failed",
+      ) ?? [],
+    [publishResultSummary],
+  );
+  const [addPlatformOpen, setAddPlatformOpen] = useState(false);
+  const [publishPanelAnimatedIn, setPublishPanelAnimatedIn] = useState(false);
+  const [dismissedPublishPlatforms, setDismissedPublishPlatforms] = useState<Set<string>>(
+    new Set(),
+  );
+  const [addedPlatformDataById, setAddedPlatformDataById] = useState<
+    Record<string, PublishEditPlatform>
+  >({});
   const coverUploadInputRef = useRef<HTMLInputElement>(null);
   const coverReuploadInputRef = useRef<HTMLInputElement>(null);
   const publishPanelStateRef = useRef<PublishPanelDraftSnapshot>({
@@ -397,6 +482,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     formErrorsByPlatform: {},
     selectedAccountIdsByPlatform: {},
     coverImagesByPlatform: {},
+    dismissedPublishPlatforms: [],
+    addedPlatformDataById: {},
   });
   const publishDraftsRef = useRef(
     new Map<string, PublishPanelDraftSnapshot>(),
@@ -421,8 +508,19 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       formErrorsByPlatform,
       selectedAccountIdsByPlatform,
       coverImagesByPlatform,
+      dismissedPublishPlatforms: Array.from(dismissedPublishPlatforms),
+      addedPlatformDataById,
     };
-  });
+  }, [
+    activePublishPlatform,
+    formValuesByPlatform,
+    formTouchedByPlatform,
+    formErrorsByPlatform,
+    selectedAccountIdsByPlatform,
+    coverImagesByPlatform,
+    dismissedPublishPlatforms,
+    addedPlatformDataById,
+  ]);
 
   useEffect(() => {
     const edit = publishPreview?.publishEdit;
@@ -453,6 +551,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       setFormErrorsByPlatform({});
       setSelectedAccountIdsByPlatform({});
       setCoverImagesByPlatform({});
+      setDismissedPublishPlatforms(new Set());
+      setAddedPlatformDataById({});
       return;
     }
 
@@ -464,6 +564,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       setFormErrorsByPlatform(snap.formErrorsByPlatform);
       setSelectedAccountIdsByPlatform(snap.selectedAccountIdsByPlatform);
       setCoverImagesByPlatform(snap.coverImagesByPlatform);
+      setDismissedPublishPlatforms(new Set(snap.dismissedPublishPlatforms ?? []));
+      setAddedPlatformDataById(snap.addedPlatformDataById ?? {});
     } else {
       setActivePublishPlatform("");
       setFormValuesByPlatform({});
@@ -471,6 +573,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       setFormErrorsByPlatform({});
       setSelectedAccountIdsByPlatform({});
       setCoverImagesByPlatform({});
+      setDismissedPublishPlatforms(new Set());
+      setAddedPlatformDataById({});
     }
   }, [publishPreview]);
 
@@ -550,10 +654,36 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     }
   }, [artifactPanelOpen]);
 
-  const publishPlatformEntries = useMemo(() => {
-    if (!publishPreview?.publishEdit?.platform) return [];
-    return Object.entries(publishPreview.publishEdit.platform);
-  }, [publishPreview]);
+  const publishPlatformMap = useMemo(
+    () => ({
+      ...(publishPreview?.publishEdit?.platform ?? {}),
+      ...addedPlatformDataById,
+    }),
+    [publishPreview, addedPlatformDataById],
+  );
+  const publishPlatformEntries = useMemo(
+    () => Object.entries(publishPlatformMap),
+    [publishPlatformMap],
+  );
+  const visiblePublishPlatformEntries = useMemo(
+    () => publishPlatformEntries.filter(([platformKey]) => !dismissedPublishPlatforms.has(platformKey)),
+    [publishPlatformEntries, dismissedPublishPlatforms],
+  );
+  const visiblePublishPlatformIdSet = useMemo(
+    () => new Set(visiblePublishPlatformEntries.map(([platformKey]) => platformKey)),
+    [visiblePublishPlatformEntries],
+  );
+  const pickerPlatforms = useMemo<PickerPlatformItem[]>(
+    () =>
+      getPlatformsWithNames(
+        (id) => PLATFORM_PICKER_LABELS[id] ?? PLATFORM_LABELS[id] ?? id,
+      ).map((p) => ({
+        id: p.id,
+        name: p.name,
+        logo: `/platform-logos/${p.logo}`,
+      })),
+    [],
+  );
 
   const { data: allAccountsRes } = useQuery({
     queryKey: ["publish-panel", "all-accounts"],
@@ -562,24 +692,34 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   });
 
   useEffect(() => {
-    if (publishPlatformEntries.length === 0) {
+    if (!publishPreview) {
+      setPublishPanelAnimatedIn(false);
+      return;
+    }
+    setPublishPanelAnimatedIn(false);
+    const raf = requestAnimationFrame(() => setPublishPanelAnimatedIn(true));
+    return () => cancelAnimationFrame(raf);
+  }, [publishPreview]);
+
+  useEffect(() => {
+    if (visiblePublishPlatformEntries.length === 0) {
       setActivePublishPlatform("");
       return;
     }
     setActivePublishPlatform((prev) => {
-      if (prev && publishPlatformEntries.some(([key]) => key === prev)) {
+      if (prev && visiblePublishPlatformEntries.some(([key]) => key === prev)) {
         return prev;
       }
-      return publishPlatformEntries[0]?.[0] ?? "";
+      return visiblePublishPlatformEntries[0]?.[0] ?? "";
     });
-  }, [publishPlatformEntries]);
+  }, [visiblePublishPlatformEntries]);
 
   const activePlatformData = useMemo<PublishEditPlatform | null>(() => {
-    if (!activePublishPlatform || !publishPreview?.publishEdit?.platform) {
+    if (!activePublishPlatform) {
       return null;
     }
-    return publishPreview.publishEdit.platform[activePublishPlatform] ?? null;
-  }, [activePublishPlatform, publishPreview]);
+    return publishPlatformMap[activePublishPlatform] ?? null;
+  }, [activePublishPlatform, publishPlatformMap]);
 
   const availableAccountsForActivePlatform = useMemo(() => {
     const items = allAccountsRes?.items ?? [];
@@ -595,7 +735,15 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const orderedPlatformOptions = useMemo(() => {
     if (!activePlatformData) return [];
     const options = activePlatformData.platform_options ?? {};
-    const keys = Object.keys(options);
+    const keys =
+      activePublishPlatform === "wechat_mp"
+        ? Array.from(
+            new Set([
+              ...Object.keys(options).filter((k) => WECHAT_ALLOWED_FIELD_IDS.has(k)),
+              ...PLATFORM_OPTIONS_ORDER.wechat_mp,
+            ]),
+          )
+        : Object.keys(options);
     const baseOrder = PLATFORM_OPTIONS_ORDER[activePublishPlatform] ?? [];
     const ordered = baseOrder.filter((k) => keys.includes(k));
     const extra = keys.filter((k) => !baseOrder.includes(k)).sort();
@@ -615,11 +763,22 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
         if (activePublishPlatform === "zhihu" && !ZHIHU_ALLOWED_FIELD_IDS.has(key)) {
           return false;
         }
+        if (activePublishPlatform === "wechat_mp" && !WECHAT_ALLOWED_FIELD_IDS.has(key)) {
+          return false;
+        }
         return true;
       })
       .map((key) => ({
-      key,
-      value: options[key],
+        key,
+        value:
+          options[key] ??
+          (key === "enable_comment"
+            ? false
+            : key === "platform_recommend"
+              ? true
+              : key === "claim_source"
+                ? "无需声明"
+                : ""),
       }));
   }, [activePlatformData, activePublishPlatform]);
 
@@ -908,14 +1067,14 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
 
   const handlePublish = async () => {
     const publishEdit = publishPreview?.publishEdit;
-    if (!publishEdit?.thread_id || publishPlatformEntries.length === 0) {
+    if (!publishEdit?.thread_id || visiblePublishPlatformEntries.length === 0) {
       return;
     }
     if (isPublishing) return;
 
     const payloadPlatforms: Record<string, PublishPlatformRequest> = {};
 
-    for (const [platformKey, platformData] of publishPlatformEntries) {
+    for (const [platformKey, platformData] of visiblePublishPlatformEntries) {
       const rawFormValues = formValuesByPlatform[platformKey];
       const contentImageUrls = extractImageUrlsFromContent(platformData.content).slice(0, 3);
       const defaultToutiaoCoverMode = getDefaultToutiaoCoverMode(contentImageUrls.length);
@@ -992,6 +1151,9 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
           return false;
         }
         if (platformKey === "zhihu" && !ZHIHU_ALLOWED_FIELD_IDS.has(key)) return false;
+        if (platformKey === "wechat_mp" && !WECHAT_ALLOWED_FIELD_IDS.has(key)) {
+          return false;
+        }
         return true;
       });
 
@@ -1053,6 +1215,27 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
         Object.assign(platformOptions, normalized);
       }
 
+      if (platformKey === "wechat_mp") {
+        const normalized: Record<string, unknown> = {
+          enable_comment: toBooleanField(
+            platformOptions.enable_comment ?? formValues.enable_comment,
+          ),
+          platform_recommend: toBooleanField(
+            platformOptions.platform_recommend ?? formValues.platform_recommend,
+          ),
+        };
+        const claimSourceRaw = platformOptions.claim_source ?? formValues.claim_source;
+        if (typeof claimSourceRaw === "string" && claimSourceRaw.trim()) {
+          normalized.claim_source = claimSourceRaw.trim();
+        } else {
+          normalized.claim_source = "无需声明";
+        }
+        for (const key of Object.keys(platformOptions)) {
+          delete platformOptions[key];
+        }
+        Object.assign(platformOptions, normalized);
+      }
+
       if (titleValue) {
         platformOptions.title = titleValue;
       }
@@ -1070,20 +1253,23 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
 
     setIsPublishing(true);
     try {
-      await publishThreadArticle({
+      const res = await publishThreadArticle({
         threadId: publishEdit.thread_id,
         source: "renderer.publish-panel",
         payload: {
           platforms: payloadPlatforms,
         },
       });
-      toast.success("发布成功");
-      suppressPublishDraftSaveRef.current = true;
-      publishDraftsRef.current.delete(
-        publishDraftKey(publishEdit.thread_id, publishEdit.artifacts),
-      );
-      closePublishPreview();
-      return;
+      const summary = parsePublishThreadResponse(res);
+      if (summary) {
+        suppressPublishDraftSaveRef.current = true;
+        publishDraftsRef.current.delete(
+          publishDraftKey(publishEdit.thread_id, publishEdit.artifacts),
+        );
+        setPublishResultSummary(summary);
+      } else {
+        toast.error("发布结果格式异常，请稍后重试");
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, "发布失败"));
     } finally {
@@ -1162,7 +1348,23 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
         </ResizablePanel>
       </ResizablePanelGroup>
       {publishPreview && (
-        <div className="absolute inset-0 z-50 flex bg-background">
+        <div
+          className={cn(
+            "absolute inset-0 z-50 flex bg-background transition-opacity duration-300 ease-out",
+            publishPanelAnimatedIn ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {isPublishing && (
+            <div
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-background/65 backdrop-blur-[2px]"
+            >
+              <Loader2Icon className="size-10 shrink-0 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">发布中…</span>
+            </div>
+          )}
           <div className="relative flex w-[50%] shrink-0 items-center justify-center bg-background p-6">
             <div className="absolute top-6 left-6">
               <Button
@@ -1197,22 +1399,32 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
               <h2 className="text-base font-semibold">发布面板配置</h2>
               <Button
                 type="button"
-                size="sm"
-                className="h-8 shrink-0 gap-1.5 px-4 text-sm font-semibold shadow-sm"
-                disabled={isPublishing}
+                size="lg"
+                className="shrink-0"
+                disabled={isPublishing || visiblePublishPlatformEntries.length === 0}
                 onClick={() => {
                   void handlePublish();
                 }}
               >
-                {isPublishing ? "发布中..." : "开始发布"}
+                开始发布
               </Button>
             </div>
             <div className="shrink-0 border-b border-border" />
             <div className="min-h-0 flex-1 p-6">
-              {publishPlatformEntries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  加载发布配置中...
-                </p>
+              {visiblePublishPlatformEntries.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="text-base text-muted-foreground">
+                    暂无待发布平台，
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto cursor-pointer p-0 align-baseline text-base text-primary"
+                      onClick={() => setAddPlatformOpen(true)}
+                    >
+                      添加平台
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="flex h-full min-h-0 flex-col">
                   <Tabs
@@ -1220,38 +1432,78 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                     onValueChange={setActivePublishPlatform}
                     className="gap-3"
                   >
-                    <TabsList
-                      variant="line"
-                      className="h-auto w-full justify-start p-0"
-                    >
-                      {publishPlatformEntries.map(
-                        ([platformKey]) => (
-                          <TabsTrigger
-                            key={platformKey}
-                            value={platformKey}
-                            className="h-8 px-2 text-sm first:pl-0 group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:bottom-[-1px] group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:left-0 group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:right-0"
-                          >
-                            <span className="inline-flex items-center gap-1.5">
-                              <img
-                                src={
-                                  PLATFORM_LOGO_PATHS[platformKey] ??
-                                  "/platform-logos/xiao-hong-shu.png"
-                                }
-                                alt={
-                                  PLATFORM_LABELS[platformKey] ?? platformKey
-                                }
-                                className="size-5 rounded-sm object-contain"
-                              />
-                              <span>
-                                {PLATFORM_LABELS[platformKey] ?? platformKey}
+                    <div className="flex items-center justify-between gap-3">
+                      <TabsList
+                        variant="line"
+                        className="h-auto w-full justify-start p-0"
+                      >
+                        {visiblePublishPlatformEntries.map(
+                          ([platformKey]) => (
+                            <TabsTrigger
+                              key={platformKey}
+                              value={platformKey}
+                              className="h-8 px-2 text-sm first:pl-0 group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:bottom-[-1px] group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:left-0 group-data-[variant=line]/tabs-list:group-data-horizontal/tabs:after:right-0"
+                            >
+                              <span className="inline-flex items-center gap-1.5">
+                                <Image
+                                  src={
+                                    PLATFORM_LOGO_PATHS[platformKey] ??
+                                    "/platform-logos/xiao-hong-shu.png"
+                                  }
+                                  alt={
+                                    PLATFORM_LABELS[platformKey] ?? platformKey
+                                  }
+                                  width={20}
+                                  height={20}
+                                  className="size-5 rounded-sm object-contain"
+                                />
+                                <span>
+                                  {PLATFORM_LABELS[platformKey] ?? platformKey}
+                                </span>
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="inline-flex size-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                  aria-label={`关闭${PLATFORM_LABELS[platformKey] ?? platformKey}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDismissedPublishPlatforms((prev) => {
+                                      const next = new Set(prev);
+                                      next.add(platformKey);
+                                      return next;
+                                    });
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter" && e.key !== " ") return;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDismissedPublishPlatforms((prev) => {
+                                      const next = new Set(prev);
+                                      next.add(platformKey);
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <XIcon className="size-3.5 cursor-pointer" />
+                                </span>
                               </span>
-                            </span>
-                          </TabsTrigger>
-                        ),
-                      )}
-                    </TabsList>
+                            </TabsTrigger>
+                          ),
+                        )}
+                      </TabsList>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        className="shrink-0 cursor-pointer"
+                        aria-label="添加平台"
+                        onClick={() => setAddPlatformOpen(true)}
+                      >
+                        <PlusIcon className="size-4" />
+                      </Button>
+                    </div>
                   </Tabs>
-
                   {activePlatformData && (
                     <div className="mt-6 min-h-0 flex-1 space-y-8 overflow-auto pl-2 pr-6 -mr-6">
                       <div className="flex items-start gap-4 mt-2">
@@ -1264,6 +1516,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                               (account) => ({
                               value: account.id,
                               label: account.nickname || account.account,
+                              avatarUrl: account.avatar,
                             }))}
                             values={activeSelectedAccountIds}
                             onValuesChange={handleAccountSelectionChange}
@@ -1310,18 +1563,24 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                             (activePublishPlatform === "rednote" ||
                               activePublishPlatform === "xiaohongshu") &&
                             (item.key === "original" || item.key === "note_copyable");
+                          const isWechatSwitchField =
+                            activePublishPlatform === "wechat_mp" &&
+                            (item.key === "enable_comment" ||
+                              item.key === "platform_recommend");
+                          const isInlineSwitchField =
+                            isRednoteSwitchField || isWechatSwitchField;
                           return (
                           <div
                             key={item.key}
                             className={cn(
                               "flex gap-4",
-                              isRednoteSwitchField ? "items-center" : "items-start",
+                              isInlineSwitchField ? "items-center" : "items-start",
                             )}
                           >
                             <div
                               className={cn(
                                 "w-[7.5rem] shrink-0 text-sm text-foreground",
-                                isRednoteSwitchField ? "pt-0" : "pt-2",
+                                isInlineSwitchField ? "pt-0" : "pt-2",
                               )}
                             >
                               {prettyFieldName(item.key)}
@@ -1376,10 +1635,13 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                               key={`cover-${index}`}
                                               className="group relative h-[115px] w-[150px] shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted"
                                             >
-                                              <img
+                                              <Image
                                                 src={imageSrc}
                                                 alt={`封面${index + 1}`}
-                                                className="size-full object-cover"
+                                                fill
+                                                unoptimized
+                                                className="object-cover"
+                                                sizes="150px"
                                               />
                                               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-1.5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
                                                 <div className="flex items-center rounded-md bg-black/55 px-2 py-1 text-sm text-white shadow-sm">
@@ -1431,10 +1693,13 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                         <div
                                           className="group relative h-[115px] w-[150px] shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-muted"
                                         >
-                                          <img
+                                          <Image
                                             src={imageSrc}
                                             alt="封面"
-                                            className="size-full object-cover"
+                                            fill
+                                            unoptimized
+                                            className="object-cover"
+                                            sizes="150px"
                                           />
                                           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-1.5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
                                             <div className="flex items-center rounded-md bg-black/55 px-2 py-1 text-sm text-white shadow-sm">
@@ -1577,6 +1842,45 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                   }
                                   aria-label={prettyFieldName(item.key)}
                                 />
+                              ) : activePublishPlatform === "wechat_mp" &&
+                                item.key === "enable_comment" ? (
+                                <Switch
+                                  checked={toBooleanField(activeFormValues[item.key])}
+                                  onCheckedChange={(checked) =>
+                                    handleFieldChange(item.key, checked)
+                                  }
+                                  aria-label={prettyFieldName(item.key)}
+                                />
+                              ) : activePublishPlatform === "wechat_mp" &&
+                                item.key === "platform_recommend" ? (
+                                <Switch
+                                  checked={toBooleanField(activeFormValues[item.key])}
+                                  onCheckedChange={(checked) =>
+                                    handleFieldChange(item.key, checked)
+                                  }
+                                  aria-label={prettyFieldName(item.key)}
+                                />
+                              ) : activePublishPlatform === "wechat_mp" &&
+                                item.key === "claim_source" ? (
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2">
+                                  {WECHAT_CLAIM_SOURCE_OPTIONS.map((option) => (
+                                    <label
+                                      key={option}
+                                      className="inline-flex w-fit cursor-pointer items-center gap-2 text-sm"
+                                    >
+                                      <Checkbox
+                                        checked={activeFormValues[item.key] === option}
+                                        onCheckedChange={(v) =>
+                                          handleFieldChange(
+                                            item.key,
+                                            Boolean(v) ? option : "",
+                                          )
+                                        }
+                                      />
+                                      <span>{option}</span>
+                                    </label>
+                                  ))}
+                                </div>
                               ) : (
                                 <Input
                                   value={(activeFormValues[item.key] as string) ?? ""}
@@ -1601,6 +1905,52 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                   )}
                 </div>
               )}
+              <PlatformPickerDialog
+                open={addPlatformOpen}
+                onOpenChange={setAddPlatformOpen}
+                platforms={pickerPlatforms}
+                disabledPlatformIds={Array.from(visiblePublishPlatformIdSet)}
+                closeLabel="关闭"
+                title="选择平台"
+                description="选择要添加发布的平台"
+                onSelectPlatform={(platformId) => {
+                  if (!publishPlatformMap[platformId]) {
+                    const template =
+                      publishPlatformEntries[0]?.[1] ?? null;
+                    const platformAccounts = (allAccountsRes?.items ?? [])
+                      .filter(
+                        (a) => a.platform === toAccountPlatform(platformId),
+                      )
+                      .map(
+                        (a): PublishEditAccount => ({
+                          id: a.id,
+                          avatar: a.avatar,
+                          nickname: a.nickname,
+                          account: a.account,
+                          platform: a.platform,
+                        }),
+                      );
+                    const nextPlatformData: PublishEditPlatform = {
+                      accounts: platformAccounts,
+                      content: template?.content ?? "",
+                      draft: template?.draft ?? false,
+                      skip_image_upload: template?.skip_image_upload ?? false,
+                      timeout: template?.timeout ?? 60,
+                      platform_options: getDefaultPlatformOptions(platformId),
+                    };
+                    setAddedPlatformDataById((prev) => ({
+                      ...prev,
+                      [platformId]: nextPlatformData,
+                    }));
+                  }
+                  setDismissedPublishPlatforms((prev) => {
+                    const next = new Set(prev);
+                    next.delete(platformId);
+                    return next;
+                  });
+                  setActivePublishPlatform(platformId);
+                }}
+              />
             </div>
           </aside>
           <Sheet
@@ -1679,9 +2029,12 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                 coverReuploadInputRef.current?.click();
                               }}
                             >
-                              <img
+                              <Image
                                 src={url}
                                 alt={`上传封面${idx + 1}`}
+                                width={300}
+                                height={230}
+                                unoptimized
                                 className="aspect-[150/115] w-full object-cover"
                               />
                               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
@@ -1738,9 +2091,12 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                   toggleCoverLibraryCandidate(item.url);
                                 }}
                               >
-                                <img
+                                <Image
                                   src={item.url}
                                   alt={item.name}
+                                  width={800}
+                                  height={600}
+                                  unoptimized
                                   className="h-auto w-full object-cover"
                                 />
                                 <div
@@ -1809,6 +2165,83 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
           </Sheet>
         </div>
       )}
+
+      <Dialog
+        open={publishResultSummary !== null}
+        onOpenChange={(open) => {
+          if (!open) setPublishResultSummary(null);
+        }}
+      >
+        <DialogContent
+          className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden sm:max-w-lg"
+          closeLabel="关闭"
+        >
+          {publishResultSummary && (
+            <>
+              <DialogHeader className="shrink-0">
+                <DialogTitle>发布结果</DialogTitle>
+              </DialogHeader>
+              <p className="shrink-0 text-sm text-muted-foreground">
+                成功 {publishResultSummary.success}，失败{" "}
+                {publishResultSummary.failed}
+                {publishResultSummary.total > 0
+                  ? `（共 ${publishResultSummary.total} 个账号）`
+                  : ""}
+              </p>
+              <div className="mt-4 min-h-0 max-h-[min(52vh,28rem)] flex-1 overflow-y-auto overscroll-y-contain pr-1">
+                <ul className="space-y-2">
+                  {publishFailedDetails.map((d, index) => {
+                    const platformLabel =
+                      PLATFORM_LABELS[d.account_platform ?? ""] ??
+                      d.account_platform ??
+                      "";
+                    return (
+                      <li
+                        key={`${d.account_id}-${index}`}
+                        className="rounded-lg border border-destructive/35 bg-destructive/5 px-3 py-2.5 text-sm"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <span className="font-medium text-foreground">
+                            {d.account_name || d.account_id}
+                          </span>
+                          {platformLabel ? (
+                            <span className="text-xs text-muted-foreground">
+                              {platformLabel}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-1 text-xs text-destructive">
+                          发布失败
+                        </div>
+                        {d.failure_reason ? (
+                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                            {d.failure_reason}
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {publishFailedDetails.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    {publishResultSummary.failed === 0
+                      ? "全部账号发布成功"
+                      : "暂无失败明细"}
+                  </p>
+                ) : null}
+              </div>
+              <DialogFooter className="mt-4 shrink-0 border-t border-border pt-4 sm:justify-end">
+                <Button
+                  type="button"
+                  onClick={() => setPublishResultSummary(null)}
+                >
+                  知道了
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

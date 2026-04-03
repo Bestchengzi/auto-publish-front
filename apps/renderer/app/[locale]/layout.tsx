@@ -52,6 +52,11 @@ export async function generateMetadata({
   return {
     title,
     description,
+    icons: {
+      icon: "/logo.png",
+      shortcut: "/logo.png",
+      apple: "/logo.png",
+    },
     alternates: {
       canonical: `/${safeLocale}`,
       languages: {

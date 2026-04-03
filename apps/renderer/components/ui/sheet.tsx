@@ -138,6 +138,7 @@ function SheetFooter({ className, ...props }: SheetFooterProps) {
       data-slot="sheet-footer"
       className={cn(
         "flex shrink-0 justify-end gap-2 border-t border-border p-4",
+        "[&_[data-slot=button]]:h-9",
         className,
       )}
       {...props}

@@ -4,6 +4,7 @@ const ROUTE_TO_TITLE_KEY: Record<string, string> = {
   "works-library": "sidebar.items.worksLibrary",
   "creation-center": "sidebar.items.creationCenter",
   "topic-center": "sidebar.items.topicCenter",
+  "auto-publish": "sidebar.items.autoPublish",
 };
 
 export function getTitleKeyFromPath(pathname: string): string {
@@ -20,7 +21,7 @@ export function getDomainFromUrl(url: string): string {
 }
 
 export function getAppFaviconUrl(): string {
-  if (typeof window === "undefined") return "/favicon.ico";
+  if (typeof window === "undefined") return "/logo.png";
   const link =
     document.querySelector<HTMLLinkElement>('link[rel="icon"]') ??
     document.querySelector<HTMLLinkElement>('link[rel="shortcut icon"]');
@@ -28,10 +29,10 @@ export function getAppFaviconUrl(): string {
     try {
       return new URL(link.href, window.location.origin).href;
     } catch {
-      return `${window.location.origin}/favicon.ico`;
+      return `${window.location.origin}/logo.png`;
     }
   }
-  return `${window.location.origin}/favicon.ico`;
+  return `${window.location.origin}/logo.png`;
 }
 
 export function displayHostForExternalError(url: string): string {

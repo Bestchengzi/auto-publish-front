@@ -38,6 +38,61 @@ export type PublishRequest = {
   platforms: Record<string, PublishPlatformRequest>;
 };
 
+/** `POST /api/threads/:id/publish` 响应中的汇总结构 */
+export type PublishSummaryDetail = {
+  account_id: string;
+  account_name: string;
+  account_platform?: string;
+  publish_status: string;
+  failure_reason?: string | null;
+};
+
+export type PublishSummary = {
+  total: number;
+  success: number;
+  failed: number;
+  status?: string;
+  details: PublishSummaryDetail[];
+};
+
+/**
+ * 从发布接口 JSON 中解析 `summary`（用于结果弹窗，不依赖 HTTP 状态或其它顶层字段判断成败）
+ */
+export function parsePublishThreadResponse(data: unknown): PublishSummary | null {
+  if (!data || typeof data !== "object") return null;
+  const root = data as Record<string, unknown>;
+  const s = root.summary;
+  if (!s || typeof s !== "object") return null;
+  const sum = s as Record<string, unknown>;
+  const rawDetails = sum.details;
+  const details: PublishSummaryDetail[] = Array.isArray(rawDetails)
+    ? rawDetails.map((item) => {
+        const x = (item && typeof item === "object" ? item : {}) as Record<
+          string,
+          unknown
+        >;
+        return {
+          account_id: String(x.account_id ?? ""),
+          account_name: String(x.account_name ?? ""),
+          account_platform:
+            typeof x.account_platform === "string" ? x.account_platform : undefined,
+          publish_status: String(x.publish_status ?? ""),
+          failure_reason:
+            x.failure_reason == null || x.failure_reason === undefined
+              ? null
+              : String(x.failure_reason),
+        };
+      })
+    : [];
+  return {
+    total: typeof sum.total === "number" ? sum.total : 0,
+    success: typeof sum.success === "number" ? sum.success : 0,
+    failed: typeof sum.failed === "number" ? sum.failed : 0,
+    status: typeof sum.status === "string" ? sum.status : undefined,
+    details,
+  };
+}
+
 export type PublishRecordResponse = {
   id: string;
   thread_id: string;

@@ -62,8 +62,7 @@
     },
     "groups": {
       "workspace": "工作台",
-      "ai": "AI 创作",
-      "assets": "资产"
+      "assets": "我的资产"
     },
     "items": {
       "overview": "总览",
@@ -82,6 +81,7 @@
       "deleting": "删除中…",
       "creationCenter": "创作中心",
       "topicCenter": "选题中心",
+      "autoPublish": "自动发布",
       "workList": "作品列表",
       "worksLibrary": "发布记录",
       "account": "账号",
@@ -373,7 +373,8 @@
     "hotRank": {
       "empty": "暂无热搜数据",
       "loadError": "热门话题加载失败",
-      "retry": "重试"
+      "retry": "重试",
+      "updatedAgo": "更新于 {time}"
     },
     "hotRankBoards": {
       "baidu": "百度热榜",
@@ -403,6 +404,145 @@
       "qiche": "汽车",
       "bandaoti": "半导体",
       "yiyao": "医药"
+    }
+  },
+  "autoPublish": {
+    "title": "自动发布",
+    "description": "管理定时生成与发布任务：用自然语言描述定时规则、配置账号与高级选项，支持立即执行与编辑。",
+    "loading": "加载任务列表…",
+    "newTask": "新建定时计划",
+    "search": {
+      "placeholder": "按任务名称筛选",
+      "ariaLabel": "按任务名称筛选"
+    },
+    "empty": {
+      "title": "暂无定时任务",
+      "hint": "点击右上角「新建定时计划」创建。"
+    },
+    "table": {
+      "name": "任务名称",
+      "prompt": "提示词",
+      "cron": "定时说明",
+      "enabled": "是否启用",
+      "toggleScheduleAria": "切换定时任务「{name}」是否启用",
+      "lastRun": "上次执行",
+      "lastStatus": "上次状态",
+      "actions": "操作"
+    },
+    "enabled": {
+      "yes": "是",
+      "no": "否"
+    },
+    "actions": {
+      "edit": "编辑",
+      "runNow": "立即执行",
+      "delete": "删除"
+    },
+    "runStatus": {
+      "queued": "排队中",
+      "running": "运行中",
+      "success": "成功",
+      "partial_success": "部分成功",
+      "failed": "失败"
+    },
+    "toast": {
+      "createSuccess": "已创建定时任务",
+      "updateSuccess": "已保存修改",
+      "saveFailed": "保存失败，请稍后重试",
+      "runNowSuccess": "已触发立即执行",
+      "runNowFailed": "触发失败，请稍后重试",
+      "deleteSuccess": "已删除任务",
+      "deleteFailed": "删除失败，请稍后重试"
+    },
+    "deleteDialog": {
+      "title": "删除定时任务",
+      "description": "确定删除「{name}」吗？此操作不可恢复。",
+      "close": "关闭",
+      "cancel": "取消",
+      "confirm": "删除"
+    },
+    "dialog": {
+      "titleCreate": "新建定时计划",
+      "titleEdit": "编辑定时计划",
+      "close": "关闭",
+      "cancel": "取消",
+      "save": "保存",
+      "saving": "保存中…",
+      "fields": {
+        "name": "任务名称",
+        "prompt": "提示词",
+        "publishTargets": "发布账号",
+        "group": "分组",
+        "scheduleText": "定时说明",
+        "imageSource": "配图方式",
+        "persona": "人设（可选）"
+      },
+      "placeholders": {
+        "name": "例如：人工智能最新动态",
+        "prompt": "例如：我是一名科技博主，关注人工智能相关技术发展以及热点事件，搜索人工智能相关话题，比如大模型、人工智能、OpenAI等，生成 300 字左右的图文帖子，要求图片10张左右，主要发布到小红书平台。",
+        "platform": "平台",
+        "group": "分组",
+        "accounts": "选择账号（可搜索、多选）",
+        "searchAccounts": "搜索账号…",
+        "scheduleText": "例如：每天早上8点和晚上8点发布一次",
+        "persona": "选择人设"
+      },
+      "filters": {
+        "allPlatforms": "全部平台",
+        "allGroups": "全部分组",
+        "ungrouped": "未分组"
+      },
+      "emptyAccounts": "暂无可用账号",
+      "imageSource": {
+        "ai_generate": "AI 生成配图",
+        "web_search": "网络搜索配图",
+        "media_library": "素材库配图",
+        "none": "不带配图"
+      },
+      "personaNone": "不带人设",
+      "validation": {
+        "required": "请填写任务名称、提示词和定时说明",
+        "name": "请输入任务名称",
+        "prompt": "请输入提示词",
+        "scheduleText": "请描述定时规则（保存后由系统生成具体调度）",
+        "accounts": "请至少选择一个发布账号（支持平台内）"
+      },
+      "advanced": {
+        "title": "高级设置",
+        "scheduleEnabled": "开启定时任务",
+        "scheduleEnabledDesc": "关闭后仍可在列表中手动「立即执行」。",
+        "scheduleOn": "定时开启",
+        "scheduleOff": "定时关闭",
+        "model": "模型",
+        "modelDesc": "选择执行任务时使用的模型；默认交给系统。",
+        "modelDefault": "默认模型",
+        "jitter": "时间偏差（防风控）",
+        "jitterDesc": "在计划时间上增加随机偏移，降低固定时间发布被判定为机器行为的风险。",
+        "jitterSummary": "偏差 {minutes} 分钟"
+      },
+      "jitter": {
+        "0": "无",
+        "10": "10 分钟",
+        "20": "20 分钟",
+        "30": "30 分钟",
+        "60": "1 小时",
+        "120": "2 小时"
+      }
+    },
+    "platforms": {
+      "toutiao": "今日头条",
+      "wechat_mp": "微信公众号",
+      "rednote": "小红书",
+      "zhihu": "知乎",
+      "baijiahao": "百家号",
+      "csdn": "CSDN"
+    },
+    "runNowDialog": {
+      "title": "立即执行任务",
+      "description": "立即执行「{name}」？这会立刻触发一次生成与发布。",
+      "close": "关闭",
+      "cancel": "取消",
+      "confirm": "立即执行"
     }
   },
   "creationCenter": {

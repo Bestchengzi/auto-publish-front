@@ -12,10 +12,12 @@ import {
   fetchHotRank,
   getHotRankItemsForList,
   getHotRankLogoPath,
+  getHotRankUpdateTimeForList,
   HOT_RANK_LIST_ORDER,
   type HotRankDisplayItem,
   type HotRankListId,
 } from "@/lib/api/hot-rank";
+import { formatUpdateAgoMinutesToHours } from "@/lib/date";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
 import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import { createThread } from "@/lib/langgraph-client";
@@ -48,6 +50,7 @@ function HotTopicsSkeleton() {
           <div className="flex items-center gap-2 px-4 py-2">
             <Skeleton className="size-9 shrink-0 rounded-md" />
             <Skeleton className="h-4 min-w-0 flex-1" />
+            <Skeleton className="h-4 w-24 shrink-0 rounded-sm" />
           </div>
           <Separator />
           <div
@@ -152,22 +155,44 @@ function HotRankItemTitle({
   );
 }
 
+function useUpdateAgoTick(epochTs: number | null, appLocale: string) {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (epochTs == null) return;
+    const id = window.setInterval(() => {
+      setTick((n) => n + 1);
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [epochTs]);
+  if (epochTs == null) return null;
+  return formatUpdateAgoMinutesToHours(epochTs, appLocale);
+}
+
 function HotListCard({
   listId,
   boardTitle,
   items,
+  updatedAtTs,
+  appLocale,
   onDiverge,
   pendingItemKey,
 }: {
   listId: HotRankListId;
   boardTitle: string;
   items: HotRankDisplayItem[];
+  updatedAtTs: number | null;
+  appLocale: string;
   onDiverge: (title: string, itemKey: string) => Promise<void>;
   pendingItemKey: string | null;
 }) {
   const t = useTranslations("topicCenter");
   const displayItems = items.slice(0, HOT_LIST_MAX_ITEMS);
   const logoSrc = getHotRankLogoPath(listId);
+  const relativeTime = useUpdateAgoTick(updatedAtTs, appLocale);
+  const updatedLabel =
+    relativeTime != null
+      ? t("hotRank.updatedAgo", { time: relativeTime })
+      : null;
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card shadow-sm transition hover:shadow-md">
@@ -183,9 +208,19 @@ function HotListCard({
             aria-hidden
           />
         </div>
-        <h3 className="truncate text-base font-semibold text-foreground flex-1 min-w-0">
-          {boardTitle}
-        </h3>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <h3 className="truncate text-base font-semibold text-foreground min-w-0 flex-1">
+            {boardTitle}
+          </h3>
+          {updatedLabel ? (
+            <span
+              className="shrink-0 text-sm text-muted-foreground tabular-nums whitespace-nowrap"
+              title={updatedLabel}
+            >
+              {updatedLabel}
+            </span>
+          ) : null}
+        </div>
       </div>
       <Separator />
       <div
@@ -368,12 +403,18 @@ export function TopicCenter() {
                     hotRankQuery.data,
                     listId,
                   );
+                  const updatedAtTs = getHotRankUpdateTimeForList(
+                    hotRankQuery.data,
+                    listId,
+                  );
                   return (
                     <HotListCard
                       key={listId}
                       listId={listId}
                       boardTitle={t(`topicCenter.hotRankBoards.${listId}`)}
                       items={items}
+                      updatedAtTs={updatedAtTs}
+                      appLocale={locale}
                       onDiverge={handleDiverge}
                       pendingItemKey={pendingItemKey}
                     />

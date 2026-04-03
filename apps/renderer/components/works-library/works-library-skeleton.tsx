@@ -13,8 +13,8 @@ import {
 export function WorksLibrarySkeleton() {
   return (
     <div className="flex-1 min-h-0 rounded-xl border border-border flex flex-col overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-auto">
-        <Table className="min-w-[880px]">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+        <Table bodyScroll className="min-w-[880px] table-fixed">
           <TableHeader className="[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0 [&_tr]:bg-muted/60">
             <TableRow>
               <TableHead className="w-12 shrink-0 px-4">

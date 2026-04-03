@@ -86,7 +86,7 @@ export function AccountManagement() {
   );
   const [editingGroupName, setEditingGroupName] = React.useState("");
 
-  const [view, setView] = React.useState<"table" | "card">("table");
+  const [view, setView] = React.useState<"table" | "card">("card");
 
   const {
     query,
@@ -312,13 +312,13 @@ export function AccountManagement() {
               </Select>
 
               <TabsList className="hidden sm:flex rounded-lg border border-border p-1">
-                <TabsTrigger value="table" className="gap-1.5">
-                  <Rows3Icon className="size-4" />
-                  {t("account.view.table")}
-                </TabsTrigger>
                 <TabsTrigger value="card" className="gap-1.5">
                   <LayoutGridIcon className="size-4" />
                   {t("account.view.card")}
+                </TabsTrigger>
+                <TabsTrigger value="table" className="gap-1.5">
+                  <Rows3Icon className="size-4" />
+                  {t("account.view.table")}
                 </TabsTrigger>
               </TabsList>
 
@@ -364,12 +364,15 @@ export function AccountManagement() {
                     className="flex flex-1 min-h-0 flex-col mt-0"
                   >
                     <div className="w-full flex flex-col min-h-0 flex-1">
-                      <div className="flex flex-1 min-h-0 overflow-auto">
+                      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
                         {filteredAccounts.length > 0 ? (
-                          <Table className="min-w-[860px] table-fixed">
+                          <Table
+                            bodyScroll
+                            className="min-w-[860px] table-fixed"
+                          >
                             <TableHeader
                               className={cn(
-                                "[&_tr]:border-border [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:relative [&_th]:h-[47px] [&_th]:py-0 [&_th]:before:content-[''] [&_th]:before:absolute [&_th]:before:inset-0 [&_th]:before:bg-inherit [&_th]:before:z-[-1] [&_th]:shadow-[inset_0_-1px_0_0_hsl(var(--border))] [&_tr]:py-0",
+                                "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",
                                 selectedIds.size > 0
                                   ? "[&_tr]:bg-background"
                                   : "[&_tr]:bg-muted/40",
@@ -439,7 +442,7 @@ export function AccountManagement() {
                                       />
                                     </TableCell>
                                     <TableCell className="w-52 shrink-0 px-4 min-w-0">
-                                      <div className="flex items-center gap-3">
+                                      <div className="flex items-center gap-3 -ml-2">
                                         <Avatar
                                           seed={a.avatarSeed}
                                           name={a.name}

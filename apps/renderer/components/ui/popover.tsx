@@ -24,8 +24,9 @@ interface PopoverContentProps
   extends React.ComponentProps<typeof PopoverPopup>,
     Pick<
       React.ComponentProps<typeof PopoverPositioner>,
-      "side" | "sideOffset" | "align" | "alignOffset"
+      "side" | "sideOffset" | "align" | "alignOffset" | "anchor" | "positionMethod"
     > {
+  positionerClassName?: string;
 }
 
 function PopoverContent({
@@ -34,6 +35,9 @@ function PopoverContent({
   sideOffset = 4,
   align = "center",
   alignOffset = 0,
+  anchor,
+  positionMethod,
+  positionerClassName,
   ...props
 }: PopoverContentProps) {
   return (
@@ -43,7 +47,9 @@ function PopoverContent({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        className="z-50"
+        anchor={anchor}
+        positionMethod={positionMethod}
+        className={cn("z-50", positionerClassName)}
       >
         <PopoverPopup
           data-slot="popover-content"

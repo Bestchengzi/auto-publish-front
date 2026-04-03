@@ -120,7 +120,7 @@ export function MaterialLibrary() {
   );
   const [editingGroupName, setEditingGroupName] = React.useState("");
 
-  const [view, setView] = React.useState<"table" | "card">("table");
+  const [view, setView] = React.useState<"table" | "card">("card");
   const [queryInput, setQueryInput] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [typeFilter, setTypeFilter] = React.useState<MaterialType | "all">(
@@ -488,13 +488,13 @@ export function MaterialLibrary() {
               </Select>
 
               <TabsList className="hidden sm:flex rounded-lg border border-border p-1">
-                <TabsTrigger value="table" className="gap-1.5">
-                  <Rows3Icon className="size-4" />
-                  {t("material.view.table")}
-                </TabsTrigger>
                 <TabsTrigger value="card" className="gap-1.5">
                   <LayoutGridIcon className="size-4" />
                   {t("material.view.card")}
+                </TabsTrigger>
+                <TabsTrigger value="table" className="gap-1.5">
+                  <Rows3Icon className="size-4" />
+                  {t("material.view.table")}
                 </TabsTrigger>
               </TabsList>
 
@@ -551,9 +551,12 @@ export function MaterialLibrary() {
                 className="flex flex-1 min-h-0 flex-col mt-0"
               >
                 <div className="w-full flex flex-col min-h-0 flex-1">
-                  <div className="flex flex-1 min-h-0 overflow-auto">
+                  <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
                     {filteredMaterials.length > 0 ? (
-                      <Table className="min-w-[860px] table-fixed">
+                      <Table
+                        bodyScroll
+                        className="min-w-[860px] table-fixed"
+                      >
                         <TableHeader
                           className={cn(
                             "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",

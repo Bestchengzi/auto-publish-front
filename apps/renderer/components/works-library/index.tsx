@@ -455,8 +455,8 @@ export function WorksLibrary() {
               />
               <div className="flex min-h-0 flex-1 flex-col">
               {filteredWorks.length > 0 ? (
-                <div className="min-h-0 flex-1 overflow-auto">
-                  <Table className="min-w-[880px]">
+                <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+                  <Table bodyScroll className="min-w-[880px] table-fixed">
                     <TableHeader
                       className={cn(
                         "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",

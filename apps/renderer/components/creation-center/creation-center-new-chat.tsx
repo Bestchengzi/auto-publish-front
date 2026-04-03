@@ -18,7 +18,10 @@ import { Placeholder } from "@tiptap/extension-placeholder";
 import { marked } from "marked";
 
 import { InputBox } from "@/components/langgraph/workspace/input-box";
-import { ThreadContext } from "@/components/langgraph/workspace/messages/context";
+import {
+  ThreadContext,
+  type ThreadContextType,
+} from "@/components/langgraph/workspace/messages/context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -159,7 +162,10 @@ export function CreationCenterNewChat() {
     queryFn: () => listPersonas(),
     staleTime: 60_000,
   });
-  const personas = personasData?.items ?? [];
+  const personas = useMemo(
+    () => personasData?.items ?? [],
+    [personasData],
+  );
   const deletePersonaMutation = useMutation({
     mutationFn: async (personaId: string) => deletePersona(personaId),
   });
@@ -367,6 +373,7 @@ export function CreationCenterNewChat() {
       }
     };
     void hydrate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅在弹窗/人设切换时灌入；列入 editPersonaMarkdown 会在每次输入时重灌编辑器
   }, [editPersonaDialogOpen, editPersonaEditor, editingPersona?.id]);
 
   return (
@@ -382,7 +389,11 @@ export function CreationCenterNewChat() {
 
         {/* 输入框区域 - 复用线程页 InputBox：上传附件/闪速/深度思考/选择模型 */}
         <div className="w-full">
-          <ThreadContext.Provider value={{ thread: fakeThread as any }}>
+          <ThreadContext.Provider
+            value={{
+              thread: fakeThread as unknown as ThreadContextType["thread"],
+            }}
+          >
             <InputBox
               className={cn(
                 "w-full -translate-y-4 overflow-hidden rounded-2xl border border-primary bg-card shadow-[0_0_20px_rgba(124,58,237,0.25)]",
