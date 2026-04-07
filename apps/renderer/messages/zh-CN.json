@@ -66,9 +66,9 @@
     },
     "items": {
       "overview": "总览",
-      "recentCreations": "近期创作",
+      "recentCreations": "近期对话",
       "more": "更多",
-      "emptyRecentCreations": "暂无近期创作",
+      "emptyRecentCreations": "暂无近期对话",
       "threadActions": "对话操作",
       "renameThread": "重命名",
       "renameThreadDesc": "为该对话设置一个新名称。",
@@ -190,7 +190,7 @@
     },
     "empty": "暂无账号，换个筛选条件试试。",
     "emptyTitle": "暂无账号",
-    "emptyDescription": "换个筛选条件试试，或点击上方「添加账号」开始。",
+    "emptyDescription": "换个筛选条件试试，或点击上方「添加账号」添加。",
     "publishEmptyDescription": "请先到账号管理界面完成账号授权。",
     "publishEmptyPrefix": "请先到",
     "publishEmptySuffix": "界面完成账号授权。",
@@ -254,7 +254,7 @@
       "cancel": "取消",
       "confirm": "确定"
     },
-    "emptyTitle": "暂无作品",
+    "emptyTitle": "暂无发布记录",
     "emptyDescription": "换个筛选条件试试。",
     "pagination": {
       "navLabel": "发布记录分页",
@@ -346,7 +346,7 @@
       "deleteMaterial": "删除素材"
     },
     "emptyTitle": "暂无素材",
-    "emptyDescription": "换个筛选条件试试，或点击上方「上传素材」开始。"
+    "emptyDescription": "换个筛选条件试试，或点击右上角「上传素材」上传。"
   },
   "topicCenter": {
     "title": "挖掘你的创作灵感",
@@ -373,6 +373,7 @@
     "hotRank": {
       "empty": "暂无热搜数据",
       "loadError": "热门话题加载失败",
+      "loadErrorHint": "网络或服务器出错了",
       "retry": "重试",
       "updatedAgo": "更新于 {time}"
     },
@@ -417,7 +418,7 @@
     },
     "empty": {
       "title": "暂无定时任务",
-      "hint": "点击右上角「新建定时计划」创建。"
+      "hint": "换个筛选条件试试，或点击右上角「新建定时计划」创建。"
     },
     "table": {
       "name": "任务名称",

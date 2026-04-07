@@ -50,11 +50,25 @@ export function MessageList({
   const updateSubtask = useUpdateSubtask();
   const messages = thread.messages;
   if (thread.isThreadLoading && messages.length === 0) {
-    return <MessageListSkeleton />;
+    return (
+      <div
+        className={cn(
+          "flex min-h-0 w-full flex-1 flex-col justify-center overflow-y-auto",
+          className,
+        )}
+      >
+        <div className="mx-auto w-full max-w-(--container-width-md)">
+          <MessageListSkeleton />
+        </div>
+      </div>
+    );
   }
   return (
     <Conversation
-      className={cn("flex size-full flex-col justify-center", className,"h-[calc(100vh-174px)]")}
+      className={cn(
+        "flex min-h-0 w-full flex-1 flex-col justify-center",
+        className,
+      )}
     >
       <ConversationContent className="mx-auto w-full max-w-(--container-width-md) gap-8">
         {groupMessages(messages, (group) => {

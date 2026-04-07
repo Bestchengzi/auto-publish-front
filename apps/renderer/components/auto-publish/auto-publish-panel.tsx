@@ -36,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
+import { PageEmptyState } from "@/components/common/page-empty-state";
 import { AutoPublishSkeleton } from "@/components/auto-publish/auto-publish-skeleton";
 import { ScheduledTaskDialog } from "@/components/auto-publish/scheduled-task-dialog";
 import { cn } from "@/lib/utils";
@@ -264,9 +265,11 @@ export function AutoPublishPanel() {
               {isInitialLoading ? (
                 <AutoPublishSkeleton />
               ) : filtered.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 p-12 text-center text-muted-foreground">
-                  <p className="text-sm">{t("empty.title")}</p>
-                  <p className="text-xs">{t("empty.hint")}</p>
+                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center p-8">
+                  <PageEmptyState
+                    title={t("empty.title")}
+                    description={t("empty.hint")}
+                  />
                 </div>
               ) : (
                 <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">

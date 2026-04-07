@@ -66,9 +66,9 @@
     },
     "items": {
       "overview": "Overview",
-      "recentCreations": "Recent Creations",
+      "recentCreations": "Recent conversations",
       "more": "More",
-      "emptyRecentCreations": "No recent creations",
+      "emptyRecentCreations": "No recent conversations",
       "threadActions": "Thread actions",
       "renameThread": "Rename",
       "renameThreadDesc": "Set a new name for this thread.",
@@ -190,7 +190,7 @@
     },
     "empty": "No accounts found. Try adjusting filters.",
     "emptyTitle": "No accounts",
-    "emptyDescription": "Try adjusting filters or click \"Add account\" above to get started.",
+    "emptyDescription": "Try adjusting filters, or click \"Add account\" above to add one.",
     "publishEmptyDescription": "Please go to Account Management and complete account authorization first.",
     "publishEmptyPrefix": "Please go to ",
     "publishEmptySuffix": " and complete account authorization first.",
@@ -254,7 +254,7 @@
       "cancel": "Cancel",
       "confirm": "OK"
     },
-    "emptyTitle": "No works",
+    "emptyTitle": "No publishing records yet",
     "emptyDescription": "Try adjusting your filters.",
     "pagination": {
       "navLabel": "Publishing records pagination",
@@ -346,7 +346,7 @@
       "deleteMaterial": "Delete material"
     },
     "emptyTitle": "No materials",
-    "emptyDescription": "Try adjusting filters or click \"Upload\" above to get started."
+    "emptyDescription": "Try adjusting filters, or click \"Upload\" in the top-right corner to upload."
   },
   "topicCenter": {
     "title": "Discover your creative inspiration",
@@ -373,6 +373,7 @@
     "hotRank": {
       "empty": "No trending data yet",
       "loadError": "Failed to load hot topics",
+      "loadErrorHint": "Network or server error.",
       "retry": "Retry",
       "updatedAgo": "Updated {time}"
     },
@@ -417,7 +418,7 @@
     },
     "empty": {
       "title": "No scheduled tasks yet",
-      "hint": "Click “New scheduled plan” to create one."
+      "hint": "Try adjusting your filters, or click “New scheduled plan” to create one."
     },
     "table": {
       "name": "Task name",

@@ -146,34 +146,19 @@ export function CreationCenterLanggraphChat() {
     <ThreadContext.Provider value={{ thread }}>
       <ChatBox threadId={threadId}>
         <div className="relative flex size-full min-h-0 justify-between">
-          <main className="flex min-h-0 max-w-full grow flex-col">
-            <div className="flex size-full justify-center">
+          <main className="flex min-h-0 max-w-full flex-1 flex-col">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden">
               <MessageList
-                className={cn("size-full", "pt-10")}
+                className={cn("min-h-0 flex-1", "pt-10")}
                 threadId={threadId}
                 thread={thread}
               />
             </div>
-            <div className="absolute right-0 bottom-0 left-0 z-30 flex justify-center px-4">
-              <div
-                className={cn(
-                  "relative w-full max-w-(--container-width-md)",
-                )}
-              >
-                <div className="absolute -top-4 right-0 left-0 z-0">
-                  <div className="absolute right-0 bottom-0 left-0">
-                    {/* <TodoList
-                      className="bg-background/5"
-                      todos={thread.values.todos ?? []}
-                      hidden={
-                        !thread.values.todos || thread.values.todos.length === 0
-                      }
-                    /> */}
-                  </div>
-                </div>
+            <div className="z-30 flex shrink-0 justify-center px-4 pb-4 pt-2">
+              <div className="relative w-full max-w-(--container-width-md)">
                 <InputBox
                   className={cn(
-                    "w-full -translate-y-4 overflow-hidden rounded-2xl border border-primary bg-card shadow-[0_0_20px_rgba(124,58,237,0.25)]",
+                    "w-full overflow-hidden rounded-2xl border border-primary bg-card shadow-[0_0_20px_rgba(124,58,237,0.25)]",
                     "[&_[name='message']]:text-base [&_[name='message']]:placeholder:text-base",
                     "[&_[data-slot='input-group-addon']]:text-sm [&_[data-slot='input-group-addon']_*]:text-sm",
                     "[&_[data-slot='input-group-addon']_svg]:size-[14px]",
@@ -204,7 +189,7 @@ export function CreationCenterLanggraphChat() {
                   onStop={handleStop}
                 />
                 {demoLocked && (
-                  <div className="text-muted-foreground/67 w-full translate-y-12 text-center text-xs">
+                  <div className="text-muted-foreground/67 mt-3 w-full text-center text-xs">
                     {t.common.notAvailableInDemoMode}
                   </div>
                 )}

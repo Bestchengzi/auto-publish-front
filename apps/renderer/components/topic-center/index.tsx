@@ -21,7 +21,7 @@ import { formatUpdateAgoMinutesToHours } from "@/lib/date";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
 import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import { createThread } from "@/lib/langgraph-client";
-import { getApiErrorMessage } from "@/lib/request";
+import { PageEmptyState } from "@/components/common/page-empty-state";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -363,36 +363,35 @@ export function TopicCenter() {
   const hotRankShowGrid = hotRankQuery.data != null;
 
   return (
-    <div className="w-full min-h-full">
-      <div className="min-h-full rounded-xl p-8 px-16 flex flex-col">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+    <div className="flex min-h-full w-full flex-col">
+      <div className="flex min-h-full flex-1 flex-col rounded-xl p-8 px-16">
+        <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-4">
           <div className="min-w-0 shrink-0">
             <div className="text-xl font-semibold tracking-tight">
               {t("topicCenter.hotRankBoardTitle")}
             </div>
           </div>
-          <div className="w-full space-y-3">
+          <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
             {hotRankQuery.isError ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-                <p className="text-destructive">
-                  {t("topicCenter.hotRank.loadError")}
-                  {(() => {
-                    const detail = getApiErrorMessage(
-                      hotRankQuery.error,
-                      "",
-                    ).trim();
-                    return detail ? `（${detail}）` : "";
-                  })()}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => hotRankQuery.refetch()}
+              <div
+                className={cn(
+                  "flex w-full justify-center p-8",
+                  !hotRankShowGrid && "min-h-0 flex-1 items-center",
+                )}
+              >
+                <PageEmptyState
+                  title={tTopicCenter("hotRank.loadError")}
+                  description={tTopicCenter("hotRank.loadErrorHint")}
                 >
-                  {t("topicCenter.hotRank.retry")}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => hotRankQuery.refetch()}
+                  >
+                    {tTopicCenter("hotRank.retry")}
+                  </Button>
+                </PageEmptyState>
               </div>
             ) : null}
             {hotRankShowSkeleton ? <HotTopicsSkeleton /> : null}

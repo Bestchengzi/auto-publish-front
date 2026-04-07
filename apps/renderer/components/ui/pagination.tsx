@@ -1,7 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MoreHorizontalIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,13 +15,19 @@ function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
     <nav
       role="navigation"
       data-slot="pagination"
-      className={cn("flex w-full flex-wrap items-center justify-end gap-2", className)}
+      className={cn(
+        "flex w-full flex-wrap items-center justify-end gap-2",
+        className,
+      )}
       {...props}
     />
   );
 }
 
-function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) {
+function PaginationContent({
+  className,
+  ...props
+}: React.ComponentProps<"ul">) {
   return (
     <ul
       data-slot="pagination-content"
@@ -29,7 +39,11 @@ function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) 
 
 function PaginationItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
-    <li data-slot="pagination-item" className={cn("list-none", className)} {...props} />
+    <li
+      data-slot="pagination-item"
+      className={cn("list-none", className)}
+      {...props}
+    />
   );
 }
 
@@ -50,7 +64,10 @@ function PaginationPrevious({
   );
 }
 
-function PaginationNext({ className, ...props }: React.ComponentProps<typeof Button>) {
+function PaginationNext({
+  className,
+  ...props
+}: React.ComponentProps<typeof Button>) {
   return (
     <Button
       type="button"
