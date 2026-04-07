@@ -11,6 +11,23 @@
     "name": "MediaBee",
     "metaDescription": "A cross-platform publisher built with Next.js + Electron + shadcn/ui, with SEO, theming and i18n scaffolded."
   },
+  "auth": {
+    "loginDialog": {
+      "close": "Close",
+      "loading": "Loading…",
+      "tabQrcode": "Scan to log in",
+      "wechatScanBadge": "WeChat scan",
+      "qrcodeExpired": "QR code expired",
+      "tapToRefresh": "Tap to refresh",
+      "qrcodeLoadFailed": "Failed to load QR code",
+      "agreePrefix": "By scanning, you agree to the ",
+      "agreeMiddle": " and ",
+      "userAgreement": "User Agreement",
+      "privacyPolicy": "Privacy Policy",
+      "legalUserHref": "/home/legal/user",
+      "legalPrivacyHref": "/home/legal/privacy"
+    }
+  },
   "home": {
     "title": "Build once, run on Web & Desktop",
     "subtitle": "Next.js + Electron + shadcn/ui, with SEO and theming baked in.",
@@ -85,7 +102,10 @@
       "workList": "Work List",
       "worksLibrary": "Publishing Records",
       "account": "Account",
-      "assetLibrary": "Asset Library"
+      "assetLibrary": "Asset Library",
+      "login": "Log in",
+      "loginPromptTitle": "Please log in first",
+      "loginPromptSubtitle": "Log in to use conversation features."
     }
   },
   "account": {

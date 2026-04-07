@@ -1,53 +1,27 @@
 /**
  * 基于 Fetch 的请求封装（Web + Electron 渲染进程共用）
  *
- * 鉴权：后端用户体系尚未接入，Token 读取与 401 侧效应已预留，默认不执行跳转/清栈。
- * 接入时：1) 与 Zustand persist 的 storage key / state 字段对齐 2) 打开下方 AUTH_* 开关并补全登录页路径（注意 next-intl 的 /[locale]/...）
+ * 鉴权：401 侧效应已预留，默认不执行跳转/清栈。
+ * Token 与用户会话读写位于 `@/lib/auth/session`。
  */
+import { clearAuthStorage, getAuthorizationHeaderValue } from "@/lib/auth/session"
 
-// --- 鉴权预留：接入后端后改为 true，并实现 handleUnauthorized ---
-const AUTH_BACKEND_ENABLED = false
-const DEFAULT_AUTHORIZATION_BEARER =
-  "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZWZhdWx0X3VzZXIiLCJpYXQiOjE3NzQ5MzQ2NDIsImV4cCI6MTc3NTUzOTQ0Mn0.0JX6vUbSDweTEFaI5zwPeZRntTf0ir8NmfqXTkQcQdY"
+let unauthorizedRedirecting = false
 
-/** 与登录态持久化一致（例如 zustand persist 的 name） */
-export const AUTH_STORAGE_KEY = "media-auto-publish-auth"
-
-/**
- * 从 persist 快照里取 token；若你改用别的字段名，只改此函数即可。
- * Zustand persist 默认形态多为：{ state: { token: string }, version: number }
- */
-function readTokenFromPersistSnapshot(parsed: unknown): string | null {
-  if (!parsed || typeof parsed !== "object") return null
-  const state = (parsed as { state?: { token?: string } }).state
-  const token = state?.token
-  return typeof token === "string" && token.length > 0 ? token : null
+function getLocaleFromPathname(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean)
+  return segments[0] || "zh-CN"
 }
 
-/**
- * 获取 Bearer Token（供 request / upload / 路由守卫等复用）
- */
-export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY)
-  if (!raw) return null
-  try {
-    return readTokenFromPersistSnapshot(JSON.parse(raw))
-  } catch {
-    return null
-  }
-}
-
-export function getAuthorizationHeaderValue(): string {
-  const token = getAuthToken()
-  if (token) return `Bearer ${token}`
-  return DEFAULT_AUTHORIZATION_BEARER
-}
-
-/** 登出或 401 时清理本地会话（接入登录后可在登出按钮里调用） */
-export function clearAuthStorage(): void {
+function redirectToLoginNewChat(): void {
   if (typeof window === "undefined") return
-  localStorage.removeItem(AUTH_STORAGE_KEY)
+  if (unauthorizedRedirecting) return
+  unauthorizedRedirecting = true
+
+  clearAuthStorage()
+  const locale = getLocaleFromPathname(window.location.pathname)
+  const target = `/${locale}/creation-center/new?__authRedirect=1`
+  window.location.replace(target)
 }
 
 /**
@@ -136,15 +110,9 @@ async function handleResponseError(response: Response): Promise<never> {
 
   switch (status) {
     case 401:
-      /*
-       * 接入用户体系后：
-       * 1) 将文件顶部 AUTH_BACKEND_ENABLED 设为 true
-       * 2) 取消下面注释，或改为调用全局事件 / 路由（避免整页刷新时用 Next Router）
-       */
-      if (AUTH_BACKEND_ENABLED && typeof window !== "undefined") {
-        clearAuthStorage()
-        // handleUnauthorizedRedirect("401")
-        // 若需弹窗登录而非整页跳转，可改 dispatch 自定义事件，由 AppShell 监听
+      // 全局兜底：任何接口 401 都回到新对话页并弹登录（由 AuthRouteGuard 处理弹窗）
+      if (typeof window !== "undefined") {
+        redirectToLoginNewChat()
       }
       throw new Error("未授权，请重新登录")
     case 403:
@@ -165,7 +133,10 @@ function authHeadersInit(
   const defaults = { ...defaultJsonContentTypeIfNeeded(options), ...extraDefaults }
   const h = mergeHeaders(defaults, options.headers)
   if (!h.has("Authorization")) {
-    h.set("Authorization", getAuthorizationHeaderValue())
+    const authorization = getAuthorizationHeaderValue()
+    if (authorization) {
+      h.set("Authorization", authorization)
+    }
   }
   return h
 }

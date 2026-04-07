@@ -54,6 +54,7 @@ import {
   type PersonaResponse,
 } from "@/lib/api/personas";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
+import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { createArtifactTurndownService } from "@/components/langgraph/workspace/artifacts/artifact-editor-turndown";
 import { artifactEditorContentClassName } from "@/components/langgraph/workspace/artifacts/artifact-editor-prosemirror-classes";
 import {
@@ -136,6 +137,8 @@ export function CreationCenterNewChat() {
   );
 
   const [settings, setSettings] = useLocalSettings();
+  const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
+  const canUseAuthFeatures = authReady && isLoggedIn;
   const { context } = settings;
 
   const fakeThread = useMemo(() => ({ messages: [] }), []);
@@ -161,10 +164,11 @@ export function CreationCenterNewChat() {
     queryKey: ["personas", "list"],
     queryFn: () => listPersonas(),
     staleTime: 60_000,
+    enabled: canUseAuthFeatures,
   });
   const personas = useMemo(
-    () => personasData?.items ?? [],
-    [personasData],
+    () => (canUseAuthFeatures ? (personasData?.items ?? []) : []),
+    [canUseAuthFeatures, personasData],
   );
   const deletePersonaMutation = useMutation({
     mutationFn: async (personaId: string) => deletePersona(personaId),
@@ -247,6 +251,25 @@ export function CreationCenterNewChat() {
     () => new Map(personas.map((persona) => [persona.id, persona])),
     [personas],
   );
+
+  useEffect(() => {
+    if (canUseAuthFeatures) return;
+    setSelectedPersonaId(null);
+    if (
+      context.persona_id !== undefined ||
+      context.model_name !== undefined ||
+      context.mode !== "flash" ||
+      context.reasoning_effort !== undefined
+    ) {
+      setSettings("context", {
+        ...context,
+        persona_id: undefined,
+        model_name: undefined,
+        mode: "flash",
+        reasoning_effort: undefined,
+      });
+    }
+  }, [canUseAuthFeatures, context, setSettings]);
 
   useEffect(() => {
     const contextPersonaId =

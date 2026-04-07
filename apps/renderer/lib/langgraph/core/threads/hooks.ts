@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
+import { getAuthToken } from "@/lib/auth/session";
 
 import { getAPIClient } from "../api";
 import { useI18n } from "../i18n/hooks";
@@ -396,6 +397,10 @@ export function useThreadStream({
             context: {
               ...extraContext,
               ...context,
+              authorization: (() => {
+                const token = getAuthToken();
+                return token ? `Bearer ${token}` : undefined;
+              })(),
               thinking_enabled: context.mode !== "flash",
               is_plan_mode: context.mode === "pro" || context.mode === "ultra",
               subagent_enabled: context.mode === "ultra",
@@ -446,10 +451,13 @@ export function useThreads(
     sortOrder: "desc",
     select: ["thread_id", "updated_at", "values"],
   },
+  options?: { enabled?: boolean },
 ) {
   const apiClient = getAPIClient();
+  const enabled = options?.enabled ?? true;
   return useQuery<AgentThread[]>({
     queryKey: ["threads", "search", params],
+    enabled,
     queryFn: async () => {
       const maxResults = params.limit;
       const initialOffset = params.offset ?? 0;

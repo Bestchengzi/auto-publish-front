@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,15 @@ import { ChatBox, useSpecificChatMode } from "@/components/langgraph/workspace/c
 import { InputBox } from "@/components/langgraph/workspace/input-box";
 import { MessageList } from "@/components/langgraph/workspace/messages";
 import { ThreadContext } from "@/components/langgraph/workspace/messages/context";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 // import { TodoList } from "@/components/langgraph/workspace/todo-list";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useNotification } from "@/lib/langgraph/core/notification/hooks";
@@ -20,6 +29,58 @@ import { takePendingInitialMessage } from "@/lib/creation-center/pending-initial
 import { listPersonas } from "@/lib/api/personas";
 import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
+import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
+
+type InsufficientBalanceInfo = {
+  message: string;
+  availablePoints?: number;
+  requiredPoints?: number;
+};
+
+function readNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function extractInsufficientBalanceInfo(root: unknown): InsufficientBalanceInfo | null {
+  const visited = new WeakSet<object>();
+  const queue: unknown[] = [root];
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (!node || typeof node !== "object") continue;
+    if (visited.has(node)) continue;
+    visited.add(node);
+
+    const candidate = node as Record<string, unknown>;
+    const errorCode = candidate.error_code;
+    const message = candidate.message;
+
+    if (
+      errorCode === "BILLING_INSUFFICIENT_BALANCE" &&
+      typeof message === "string" &&
+      message.trim()
+    ) {
+      return {
+        message,
+        availablePoints: readNumber(candidate.available_points),
+        requiredPoints: readNumber(candidate.required_points),
+      };
+    }
+
+    for (const value of Object.values(candidate)) {
+      if (typeof value === "string" && value.includes("BILLING_INSUFFICIENT_BALANCE")) {
+        return {
+          message: "账户余额不足，请先充值后再试。",
+        };
+      }
+      if (value && typeof value === "object") {
+        queue.push(value);
+      }
+    }
+  }
+
+  return null;
+}
 
 /**
  * DeerFlow 风格聊天主区：无顶栏，仅消息列表 + 底部输入 + ChatBox 右侧产物栏。
@@ -32,6 +93,8 @@ export function CreationCenterLanggraphChat() {
 
   const threadId = params.thread_id ?? "";
   const locale = params.locale ?? "zh-CN";
+  const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
+  const canUseAuthFeatures = authReady && isLoggedIn;
 
   const isNewThread = false;
 
@@ -51,11 +114,36 @@ export function CreationCenterLanggraphChat() {
     queryKey: ["personas", "list"],
     queryFn: () => listPersonas(),
     staleTime: 60_000,
+    enabled: canUseAuthFeatures,
   });
   const personaOptions = useMemo(
-    () => (personasData?.items ?? []).map((persona) => ({ id: persona.id, name: persona.name })),
-    [personasData?.items],
+    () =>
+      canUseAuthFeatures
+        ? (personasData?.items ?? []).map((persona) => ({
+            id: persona.id,
+            name: persona.name,
+          }))
+        : [],
+    [canUseAuthFeatures, personasData?.items],
   );
+
+  useEffect(() => {
+    if (canUseAuthFeatures) return;
+    if (
+      settings.context.persona_id !== undefined ||
+      settings.context.model_name !== undefined ||
+      settings.context.mode !== "flash" ||
+      settings.context.reasoning_effort !== undefined
+    ) {
+      setSettings("context", {
+        ...settings.context,
+        persona_id: undefined,
+        model_name: undefined,
+        mode: "flash",
+        reasoning_effort: undefined,
+      });
+    }
+  }, [canUseAuthFeatures, setSettings, settings.context]);
 
   useEffect(() => {
     if (!personasFetched) return;
@@ -93,12 +181,34 @@ export function CreationCenterLanggraphChat() {
       }
     },
   });
+  const insufficientBalanceInfo = useMemo(
+    () => extractInsufficientBalanceInfo(thread),
+    [thread],
+  );
+  const [insufficientBalanceDialogOpen, setInsufficientBalanceDialogOpen] =
+    useState(false);
+  const lastShownBalanceAlertKeyRef = useRef<string | null>(null);
+  const balanceAlertKey = useMemo(() => {
+    if (!insufficientBalanceInfo) return null;
+    return `${insufficientBalanceInfo.message}|${insufficientBalanceInfo.availablePoints ?? ""}|${insufficientBalanceInfo.requiredPoints ?? ""}`;
+  }, [insufficientBalanceInfo]);
 
   const pendingBootstrapRef = useRef(false);
 
   useEffect(() => {
     pendingBootstrapRef.current = false;
   }, [threadId]);
+
+  useEffect(() => {
+    lastShownBalanceAlertKeyRef.current = null;
+  }, [threadId]);
+
+  useEffect(() => {
+    if (!balanceAlertKey) return;
+    if (lastShownBalanceAlertKeyRef.current === balanceAlertKey) return;
+    lastShownBalanceAlertKeyRef.current = balanceAlertKey;
+    setInsufficientBalanceDialogOpen(true);
+  }, [balanceAlertKey]);
 
   useEffect(() => {
     if (!threadId || thread.isThreadLoading || demoLocked) return;
@@ -197,6 +307,31 @@ export function CreationCenterLanggraphChat() {
             </div>
           </main>
         </div>
+        <Dialog
+          open={insufficientBalanceDialogOpen}
+          onOpenChange={setInsufficientBalanceDialogOpen}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>余额不足提醒</DialogTitle>
+              <DialogDescription className="pt-1 text-sm text-foreground/80">
+                {insufficientBalanceInfo?.message ?? "账户余额不足，请先充值后再试。"}
+                {typeof insufficientBalanceInfo?.availablePoints === "number" &&
+                typeof insufficientBalanceInfo?.requiredPoints === "number"
+                  ? `（当前余额：${insufficientBalanceInfo.availablePoints}，所需：${insufficientBalanceInfo.requiredPoints}）`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                onClick={() => setInsufficientBalanceDialogOpen(false)}
+              >
+                我知道了
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </ChatBox>
     </ThreadContext.Provider>
   );

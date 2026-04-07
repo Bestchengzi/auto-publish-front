@@ -36,6 +36,7 @@ export type ExternalTabApi = {
   goForward: (tabId: string) => void;
   onTitleChanged: (cb: (tabId: string, title: string) => void) => () => void;
   onFaviconChanged: (cb: (tabId: string, favicon: string) => void) => () => void;
+  onUrlChanged: (cb: (tabId: string, url: string) => void) => () => void;
   onLoading: (cb: (tabId: string, loading: boolean) => void) => () => void;
   onFailLoad: (
     cb: (tabId: string, code: number, description: string, validatedUrl: string) => void,
@@ -70,6 +71,32 @@ function subscribe(channel: string, cb: (...args: unknown[]) => void): () => voi
   return () => ipcRenderer.removeListener(channel, handler);
 }
 
+function detectEmbeddedView(): boolean {
+  try {
+    return Boolean(ipcRenderer.sendSync("desktop:is-embedded-view-sync"));
+  } catch {
+    return false;
+  }
+}
+
+function getAllowedRendererOrigins(): Set<string> {
+  const allow = new Set<string>([
+    "http://localhost:13200",
+    "http://127.0.0.1:13200",
+  ]);
+  const envUrl = process.env.ELECTRON_RENDERER_URL;
+  if (typeof envUrl === "string" && envUrl.trim()) {
+    try {
+      allow.add(new URL(envUrl).origin);
+    } catch {
+      // ignore invalid env url
+    }
+  }
+  return allow;
+}
+
+const allowedRendererOrigins = getAllowedRendererOrigins();
+
 const api: DesktopApi = {
   ping: () => ipcRenderer.invoke("app:ping"),
   startPlatformAuth: (platformId: string) =>
@@ -95,6 +122,7 @@ const api: DesktopApi = {
     loadPlatformAuth: (tabId, platformId) => ipcRenderer.send("external-tab:load-platform-auth", tabId, platformId),
     onTitleChanged: (cb) => subscribe("external-tab:title-changed", (tabId, title) => cb(tabId as string, title as string)),
     onFaviconChanged: (cb) => subscribe("external-tab:favicon-changed", (tabId, favicon) => cb(tabId as string, favicon as string)),
+    onUrlChanged: (cb) => subscribe("external-tab:url-changed", (tabId, url) => cb(tabId as string, url as string)),
     onLoading: (cb) => subscribe("external-tab:loading", (tabId, loading) => cb(tabId as string, loading as boolean)),
     onFailLoad: (cb) =>
       subscribe("external-tab:fail-load", (tabId, code, desc, validatedUrl) =>
@@ -116,5 +144,17 @@ const api: DesktopApi = {
   },
 };
 
-contextBridge.exposeInMainWorld("desktop", api);
+function shouldExposeDesktopApi() {
+  try {
+    const origin = window.location.origin;
+    return allowedRendererOrigins.has(origin);
+  } catch {
+    return false;
+  }
+}
+
+if (shouldExposeDesktopApi()) {
+  contextBridge.exposeInMainWorld("desktop", api);
+}
+contextBridge.exposeInMainWorld("__desktopEmbeddedView", detectEmbeddedView());
 

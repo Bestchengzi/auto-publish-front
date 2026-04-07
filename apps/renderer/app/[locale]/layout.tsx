@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthRouteGuard } from "@/components/auth/auth-route-guard";
 import { DesktopChromeWrapper } from "@/components/desktop-chrome-wrapper";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { getMessages } from "@/i18n/get-messages";
@@ -93,7 +94,7 @@ export default async function LocaleLayout({
 
   const messages = await getMessages(safeLocale);
   const cookieStore = await cookies();
-  const accent = cookieStore.get("UI_ACCENT")?.value ?? "neutral";
+  const accent = cookieStore.get("UI_ACCENT")?.value ?? "violet";
   const accentClass =
     accent === "blue"
       ? "ui-accent-blue"
@@ -115,7 +116,9 @@ export default async function LocaleLayout({
           <NextIntlClientProvider locale={safeLocale} messages={messages}>
             <QueryProvider>
               <TooltipProvider>
-                <DesktopChromeWrapper>{children}</DesktopChromeWrapper>
+                <AuthRouteGuard locale={safeLocale}>
+                  <DesktopChromeWrapper>{children}</DesktopChromeWrapper>
+                </AuthRouteGuard>
                 <Toaster />
               </TooltipProvider>
             </QueryProvider>

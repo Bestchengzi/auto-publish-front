@@ -2,6 +2,7 @@
 
 import { Client } from "@langchain/langgraph-sdk/client";
 
+import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 import { getLangGraphBaseUrl } from "@/lib/api/config";
 
 let _client: Client | null = null;
@@ -16,7 +17,17 @@ export function getLangGraphClient(): Client {
     throw new Error("NEXT_PUBLIC_LANGGRAPH_BASE_URL is not configured");
   }
   if (!_client || _clientApiUrl !== apiUrl) {
-    _client = new Client({ apiUrl });
+    _client = new Client({
+      apiUrl,
+      onRequest: async (_url: URL, init: RequestInit) => {
+        const authorization = getAuthorizationHeaderValue();
+        const headers = new Headers(init?.headers);
+        if (authorization) {
+          headers.set("Authorization", authorization);
+        }
+        return { ...init, headers };
+      },
+    });
     _clientApiUrl = apiUrl;
   }
   return _client;

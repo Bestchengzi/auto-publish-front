@@ -21,6 +21,7 @@ export type PlatformAuthResult =
 
 declare global {
   interface Window {
+    __desktopEmbeddedView?: boolean;
     desktop?: {
       ping: () => Promise<{ ok: true; ts: number }>;
       startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
@@ -44,6 +45,7 @@ declare global {
         goForward: (tabId: string) => void;
         onTitleChanged: (cb: (tabId: string, title: string) => void) => () => void;
         onFaviconChanged: (cb: (tabId: string, favicon: string) => void) => () => void;
+        onUrlChanged: (cb: (tabId: string, url: string) => void) => () => void;
         onLoading: (cb: (tabId: string, loading: boolean) => void) => () => void;
         onFailLoad: (
           cb: (tabId: string, code: number, description: string, validatedUrl: string) => void,

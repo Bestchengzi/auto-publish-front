@@ -64,6 +64,7 @@ import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useModels } from "@/lib/langgraph/core/models/hooks";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
 import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
+import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { request } from "@/lib/request";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +84,7 @@ import { ModeHoverGuide } from "./mode-hover-guide";
 import { Tooltip } from "./tooltip";
 
 type InputMode = "flash" | "thinking" | "pro" | "ultra";
+const SHOW_REASONING_EFFORT = false;
 
 type ModelSelectorNameProps = ComponentProps<"span">;
 
@@ -168,9 +170,12 @@ export function InputBox({
 }) {
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const { models } = useModels();
+  const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
+  const canUseAuthFeatures = authReady && isLoggedIn;
+  const { models } = useModels({ enabled: canUseAuthFeatures });
   const { thread } = useThread();
   const { textInput } = usePromptInputController();
+  const attachments = usePromptInputAttachments();
   const promptRootRef = useRef<HTMLDivElement | null>(null);
 
   const [followups, setFollowups] = useState<string[]>([]);
@@ -186,6 +191,12 @@ export function InputBox({
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [reasoningEffortMenuOpen, setReasoningEffortMenuOpen] = useState(false);
   const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!canUseAuthFeatures && modeMenuOpen) {
+      setModeMenuOpen(false);
+    }
+  }, [canUseAuthFeatures, modeMenuOpen]);
 
   useEffect(() => {
     if (models.length === 0) {
@@ -270,6 +281,12 @@ export function InputBox({
   );
 
   const selectedMode = getResolvedMode(context.mode, supportThinking);
+  const hasSubmitContent =
+    textInput.value.trim().length > 0 || attachments.files.length > 0;
+  const submitDisabled =
+    disabled ||
+    !canUseAuthFeatures ||
+    (status !== "streaming" && !hasSubmitContent);
   const selectedPersona = useMemo(() => {
     if (!personas || personas.length === 0) return null;
     if (selectedPersonaId) {
@@ -441,13 +458,19 @@ export function InputBox({
               />
             </PromptInputActionMenuContent>
           </PromptInputActionMenu> */}
-            <AddAttachmentsButton className="px-2!" />
+            <AddAttachmentsButton
+              className="px-2!"
+              disabled={disabled || !canUseAuthFeatures}
+            />
             <PromptInputActionMenu
               open={modeMenuOpen}
               onOpenChange={setModeMenuOpen}
             >
               <ModeHoverGuide mode={selectedMode}>
-                <PromptInputActionMenuTrigger className="gap-1! px-2!">
+                <PromptInputActionMenuTrigger
+                  className="gap-1! px-2!"
+                  disabled={disabled || !canUseAuthFeatures}
+                >
                   <div>
                     {selectedMode === "flash" && <ZapIcon className="size-3" />}
                     {selectedMode === "thinking" && (
@@ -579,7 +602,10 @@ export function InputBox({
                 <DropdownMenuTrigger
                   className="inline-flex border-0 bg-transparent p-0 shadow-none"
                   render={
-                    <PromptInputButton className="gap-1! px-2!">
+                    <PromptInputButton
+                      className="gap-1! px-2!"
+                      disabled={disabled || !canUseAuthFeatures}
+                    >
                       <span className="max-w-28 truncate text-xs font-normal">
                         {selectedPersona?.name ?? noPersonaLabel ?? ""}
                       </span>
@@ -683,12 +709,24 @@ export function InputBox({
             {addPersonaLabel &&
               onAddPersonaClick &&
               (!personas || personas.length === 0) && (
-                <PromptInputButton className="gap-1! px-2!" onClick={onAddPersonaClick}>
+                <PromptInputButton
+                  className="gap-1! px-2!"
+                  onClick={() => {
+                    if (disabled) return;
+                    if (!canUseAuthFeatures) {
+                      window.dispatchEvent(new Event("media-auth-open-login"));
+                      return;
+                    }
+                    onAddPersonaClick();
+                  }}
+                >
                   <PlusIcon className="size-3" />
                   <span className="text-xs font-normal">{addPersonaLabel}</span>
                 </PromptInputButton>
               )}
-            {supportReasoningEffort && selectedMode !== "flash" && (
+            {SHOW_REASONING_EFFORT &&
+              supportReasoningEffort &&
+              selectedMode !== "flash" && (
               <PromptInputActionMenu
                 open={reasoningEffortMenuOpen}
                 onOpenChange={setReasoningEffortMenuOpen}
@@ -815,7 +853,9 @@ export function InputBox({
               <DropdownMenuTrigger
                 className="inline-flex border-0 bg-transparent p-0 shadow-none"
                 render={
-                  <PromptInputButton>
+                  <PromptInputButton
+                    disabled={disabled || !canUseAuthFeatures || models.length === 0}
+                  >
                     <div className="flex min-w-0 flex-col items-start text-left">
                       <ModelSelectorName className="text-xs font-normal">
                         {selectedModel?.display_name}
@@ -856,7 +896,7 @@ export function InputBox({
             </DropdownMenu>
             <PromptInputSubmit
               className="rounded-full"
-              disabled={disabled}
+              disabled={submitDisabled}
               variant="outline"
               status={status}
             />
@@ -1003,14 +1043,24 @@ function SuggestionList() {
   );
 }
 
-function AddAttachmentsButton({ className }: { className?: string }) {
+function AddAttachmentsButton({
+  className,
+  disabled = false,
+}: {
+  className?: string;
+  disabled?: boolean;
+}) {
   const { t } = useI18n();
   const attachments = usePromptInputAttachments();
   return (
     <Tooltip content={t.inputBox.addAttachments}>
       <PromptInputButton
-        className={cn("px-2!", className)}
-        onClick={() => attachments.openFileDialog()}
+        className={cn("px-2!", disabled && "cursor-not-allowed opacity-40", className)}
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          attachments.openFileDialog();
+        }}
       >
         <PaperclipIcon className="size-3" />
       </PromptInputButton>

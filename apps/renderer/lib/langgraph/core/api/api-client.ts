@@ -2,6 +2,7 @@
 
 import { Client as LangGraphClient } from "@langchain/langgraph-sdk/client";
 
+import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 import { getLangGraphBaseURL } from "../config";
 
 import { sanitizeRunStreamOptions } from "./stream-mode";
@@ -9,6 +10,14 @@ import { sanitizeRunStreamOptions } from "./stream-mode";
 function createCompatibleClient(): LangGraphClient {
   const client = new LangGraphClient({
     apiUrl: getLangGraphBaseURL(),
+    onRequest: async (_url: URL, init: RequestInit) => {
+      const authorization = getAuthorizationHeaderValue();
+      const headers = new Headers(init?.headers);
+      if (authorization) {
+        headers.set("Authorization", authorization);
+      }
+      return { ...init, headers };
+    },
   });
 
   const originalRunStream = client.runs.stream.bind(client.runs);

@@ -197,18 +197,20 @@ export function BrowserChromeHeader({
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-input bg-muted/60 px-2.5 py-0.5">
             <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" />
-            <Input
-              type="text"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onUrlSubmit(urlInput);
-              }}
-              onBlur={() => setUrlInput(displayUrl)}
-              placeholder={t("browserChrome.urlPlaceholder")}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm rounded-none shadow-none focus-visible:ring-0"
-              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            />
+            <div className="min-w-0 flex-1">
+              <Input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onUrlSubmit(urlInput);
+                }}
+                onBlur={() => setUrlInput(displayUrl)}
+                placeholder={t("browserChrome.urlPlaceholder")}
+                className="h-6 w-full min-w-0 border-0 bg-transparent px-0 text-sm rounded-none shadow-none focus-visible:ring-0"
+                style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+              />
+            </div>
           </div>
           <button
             type="button"

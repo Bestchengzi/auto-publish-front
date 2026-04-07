@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+  UserRoundIcon,
+} from "lucide-react";
+
+import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 
 import {
   useDeleteThread,
@@ -42,12 +49,17 @@ export function RecentCreations({
   const t = useTranslations("sidebar.items");
   const pathname = usePathname();
   const router = useRouter();
-  const { data, isLoading, isFetching } = useThreads({
-    ...(typeof limit === "number" ? { limit } : {}),
-    sortBy: "updated_at",
-    sortOrder: "desc",
-    select: ["thread_id", "updated_at", "values"],
-  });
+  const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
+  const threadsEnabled = authReady && isLoggedIn;
+  const { data, isLoading } = useThreads(
+    {
+      ...(typeof limit === "number" ? { limit } : {}),
+      sortBy: "updated_at",
+      sortOrder: "desc",
+      select: ["thread_id", "updated_at", "values"],
+    },
+    { enabled: threadsEnabled },
+  );
 
   const threads = useMemo(() => data ?? [], [data]);
   const renameThread = useRenameThread();
@@ -105,7 +117,30 @@ export function RecentCreations({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto -mr-3 pr-0">
-        {!hasLoadedOnce && isLoading ? (
+        {!authReady ? (
+          <div className="space-y-1 px-2">
+            {Array.from({ length: 10 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex h-8 items-center rounded-md px-2"
+              >
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
+          </div>
+        ) : !isLoggedIn ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-6 pt-4 text-center">
+            <div className="mb-4 flex size-14 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <UserRoundIcon className="size-7" />
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              {t("loginPromptTitle")}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              {t("loginPromptSubtitle")}
+            </p>
+          </div>
+        ) : !hasLoadedOnce && isLoading ? (
           <div className="space-y-1 px-2">
             {Array.from({ length: 10 }).map((_, idx) => (
               <div

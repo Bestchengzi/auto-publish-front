@@ -5,12 +5,12 @@ import * as React from "react";
 import { getDesktop } from "@/lib/desktop-api";
 
 import type { TabItem } from "./types";
-import { generateTabId, getDomainFromUrl } from "./utils";
+import { generateTabId, getDomainFromUrl, getTitleKeyFromPath } from "./utils";
 
 type UseBrowserTabIpcParams = {
   setTabs: React.Dispatch<React.SetStateAction<TabItem[]>>;
   setActiveId: React.Dispatch<React.SetStateAction<string | null>>;
-  router: { push: (href: string) => void };
+  router?: { push: (href: string) => void };
   activeIdRef: React.MutableRefObject<string | null>;
   tabsRef: React.MutableRefObject<TabItem[]>;
   setCanGoBack: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,13 +22,44 @@ type UseBrowserTabIpcParams = {
 export function useBrowserTabIpc({
   setTabs,
   setActiveId,
-  router,
   activeIdRef,
   tabsRef,
   setCanGoBack,
   setCanGoForward,
   embedExternalVisible,
 }: UseBrowserTabIpcParams) {
+  const normalizeTabFromNavigatedUrl = React.useCallback(
+    (rawUrl: string, current: TabItem) => {
+      try {
+        const next = new URL(rawUrl);
+        const currentOrigin =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const isInternal = Boolean(currentOrigin) && next.origin === currentOrigin;
+        if (isInternal) {
+          next.searchParams.delete("__desktopEmbedded");
+          const cleanPath = `${next.pathname}${next.search}${next.hash}`;
+          return {
+            path: cleanPath || "/",
+            isExternal: false,
+            titleKey: getTitleKeyFromPath(cleanPath),
+          };
+        }
+        return {
+          path: rawUrl,
+          isExternal: true,
+          titleKey: getDomainFromUrl(rawUrl) || current.titleKey,
+        };
+      } catch {
+        return {
+          path: rawUrl,
+          isExternal: current.isExternal ?? true,
+          titleKey: current.titleKey,
+        };
+      }
+    },
+    [],
+  );
+
   React.useEffect(() => {
     if (!embedExternalVisible) getDesktop()?.externalTab?.hide?.();
   }, [embedExternalVisible]);
@@ -52,6 +83,25 @@ export function useBrowserTabIpc({
       );
     });
   }, [setTabs]);
+
+  React.useEffect(() => {
+    const desktop = getDesktop();
+    if (!desktop?.externalTab?.onUrlChanged) return;
+    return desktop.externalTab.onUrlChanged((tabId, url) => {
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          const normalized = normalizeTabFromNavigatedUrl(url, t);
+          return {
+            ...t,
+            path: normalized.path,
+            isExternal: normalized.isExternal,
+            titleKey: normalized.titleKey,
+          };
+        }),
+      );
+    });
+  }, [setTabs, normalizeTabFromNavigatedUrl]);
 
   React.useEffect(() => {
     const desktop = getDesktop();
@@ -142,15 +192,7 @@ export function useBrowserTabIpc({
         const newActive = next[Math.max(0, idx - 1)] ?? next[0];
         const nextId = newActive?.id ?? null;
         setActiveId(nextId);
-        if (
-          newActive?.path &&
-          !newActive?.isEmpty &&
-          !newActive?.isExternal &&
-          !newActive?.platformAuthId
-        ) {
-          router.push(newActive.path);
-        }
       }
     });
-  }, [router, setTabs, setActiveId, activeIdRef, tabsRef]);
+  }, [setTabs, setActiveId, activeIdRef, tabsRef]);
 }

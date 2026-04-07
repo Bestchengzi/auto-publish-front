@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, session, WebContentsView } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, session, webContents, WebContentsView } from "electron";
 import path from "node:path";
 
 import { fetchPageMeta } from "./fetch-page-meta";
@@ -112,6 +112,14 @@ ipcMain.handle("window:isMaximized", async () => {
   return win?.isMaximized() ?? false;
 });
 
+ipcMain.on("desktop:is-embedded-view-sync", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const isEmbedded = Boolean(
+    win && !win.isDestroyed() && event.sender.id !== win.webContents.id,
+  );
+  event.returnValue = isEmbedded;
+});
+
 ipcMain.handle("fetch-page-meta", async (_event, url: string) => {
   if (typeof url !== "string" || !url.startsWith("http")) return {};
   return fetchPageMeta(url);
@@ -120,12 +128,22 @@ ipcMain.handle("fetch-page-meta", async (_event, url: string) => {
 const externalTabs = new Map<string, WebContentsView>();
 /** 平台授权 tab 已做过首次 load+监听，避免 React Strict Mode 重复 IPC 导致二次 loadURL 中止首次导航 */
 const platformAuthTabInitialized = new Set<string>();
+/** 记录发起授权的 renderer，授权完成后仅定向回传给发起者（同时通知壳层用于收口 tab） */
+const platformAuthRequesterByTabId = new Map<string, number>();
+/** 按平台暂存发起者队列：收到 load-platform-auth 时再与新 tabId 绑定 */
+const pendingAuthRequesterQueueByPlatform = new Map<string, number[]>();
 let activeExternalTabId: string | null = null;
 let lastBounds: { x: number; y: number; width: number; height: number } = { x: 0, y: 0, width: 0, height: 0 };
 
 function getWindowFromIpcEvent(event: Electron.IpcMainEvent): BrowserWindow | null {
   const win = BrowserWindow.fromWebContents(event.sender);
   return win && !win.isDestroyed() ? win : null;
+}
+
+function sendToWebContentsId(targetId: number | undefined, channel: string, ...args: unknown[]) {
+  if (typeof targetId !== "number") return;
+  const target = webContents.fromId(targetId);
+  if (target && !target.isDestroyed()) target.send(channel, ...args);
 }
 
 function detachEmbeddedView(win: BrowserWindow, view: WebContentsView) {
@@ -153,6 +171,7 @@ function createExternalView(win: BrowserWindow, tabId: string) {
       contextIsolation: true,
       nodeIntegration: false,
       partition: "persist:external-browser",
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
   externalTabs.set(tabId, bv);
@@ -169,6 +188,12 @@ function createExternalView(win: BrowserWindow, tabId: string) {
   bv.webContents.on("page-favicon-updated", (_e, favicons) => {
     const favicon = Array.isArray(favicons) ? favicons[0] : undefined;
     if (favicon) send("external-tab:favicon-changed", tabId, favicon);
+  });
+  bv.webContents.on("did-navigate", (_e, url) => {
+    send("external-tab:url-changed", tabId, url);
+  });
+  bv.webContents.on("did-navigate-in-page", (_e, url) => {
+    send("external-tab:url-changed", tabId, url);
   });
 
   let loadingTimeout: NodeJS.Timeout | null = null;
@@ -285,6 +310,7 @@ ipcMain.on("external-tab:close", (event, tabId: string) => {
   const view = externalTabs.get(tabId);
   if (!view) return;
   platformAuthTabInitialized.delete(tabId);
+  platformAuthRequesterByTabId.delete(tabId);
   externalTabs.delete(tabId);
   if (activeExternalTabId === tabId) {
     activeExternalTabId = null;
@@ -321,6 +347,15 @@ ipcMain.on("external-tab:reload", (event, tabId: string) => {
 ipcMain.handle("platform-auth:open-in-tab", (event, platformId: string) => {
   if (!isPlatformAuthId(platformId)) return;
   const cfg = PLATFORM_AUTH_CONFIG[platformId];
+  const requesterWebContentsId = event.sender.id;
+  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
+  queue.push(requesterWebContentsId);
+  pendingAuthRequesterQueueByPlatform.set(platformId, queue);
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
+    win.webContents.send("open-platform-auth-tab", platformId, cfg.loginUrl);
+    return;
+  }
   event.sender.send("open-platform-auth-tab", platformId, cfg.loginUrl);
 });
 
@@ -353,6 +388,12 @@ function createPlatformAuthView(
     const favicon = Array.isArray(favicons) ? favicons[0] : undefined;
     if (favicon) send("external-tab:favicon-changed", tabId, favicon);
   });
+  bv.webContents.on("did-navigate", (_e, url) => {
+    send("external-tab:url-changed", tabId, url);
+  });
+  bv.webContents.on("did-navigate-in-page", (_e, url) => {
+    send("external-tab:url-changed", tabId, url);
+  });
   let loadingTimeout: NodeJS.Timeout | null = null;
   bv.webContents.on("did-start-loading", () => {
     send("external-tab:loading", tabId, true);
@@ -379,10 +420,17 @@ function createPlatformAuthView(
   return bv;
 }
 
-ipcMain.on("external-tab:load-platform-auth", (event, tabId: string, platformId: string) => {
+ipcMain.on(
+  "external-tab:load-platform-auth",
+  (event, tabId: string, platformId: string) => {
   if (typeof tabId !== "string" || typeof platformId !== "string" || !isPlatformAuthId(platformId)) return;
   const win = getWindowFromIpcEvent(event);
   if (!win) return;
+  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
+  const requesterId = queue.shift();
+  if (queue.length > 0) pendingAuthRequesterQueueByPlatform.set(platformId, queue);
+  else pendingAuthRequesterQueueByPlatform.delete(platformId);
+  platformAuthRequesterByTabId.set(tabId, requesterId ?? event.sender.id);
 
   if (platformAuthTabInitialized.has(tabId)) {
     showExternalTab(win, tabId);
@@ -401,9 +449,14 @@ ipcMain.on("external-tab:load-platform-auth", (event, tabId: string, platformId:
   const finish = (result: PlatformAuthResult) => {
     if (completed) return;
     completed = true;
+    const requesterId = platformAuthRequesterByTabId.get(tabId);
+    platformAuthRequesterByTabId.delete(tabId);
     platformAuthTabInitialized.delete(tabId);
-    if (win.webContents && !win.webContents.isDestroyed()) {
+    if (!win.webContents.isDestroyed()) {
       win.webContents.send("platform-auth:completed", tabId, result);
+    }
+    if (requesterId && requesterId !== win.webContents.id) {
+      sendToWebContentsId(requesterId, "platform-auth:completed", tabId, result);
     }
     externalTabs.delete(tabId);
     if (activeExternalTabId === tabId) {

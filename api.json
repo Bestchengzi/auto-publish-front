@@ -1259,26 +1259,48 @@
                 }
             }
         },
-        "/api/scheduled-publish-tasks/": {
-            "get": {
+        "/api/scheduled-publish-tasks/optimize-prompt": {
+            "post": {
                 "tags": [
                     "scheduled_publish"
                 ],
-                "summary": "List Scheduled Publish Tasks",
-                "operationId": "list_tasks_api_scheduled_publish_tasks__get",
+                "summary": "Optimize Scheduled Publish Prompt",
+                "operationId": "optimize_prompt_api_scheduled_publish_tasks_optimize_prompt_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScheduledPublishPromptOptimizeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ScheduledPublishTaskListResponse"
+                                    "$ref": "#/components/schemas/ScheduledPublishPromptOptimizeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
                                 }
                             }
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/scheduled-publish-tasks/": {
             "post": {
                 "tags": [
                     "scheduled_publish"
@@ -1286,14 +1308,14 @@
                 "summary": "Create Scheduled Publish Task",
                 "operationId": "create_task_api_scheduled_publish_tasks__post",
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/ScheduledPublishTaskCreate"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "201": {
@@ -1302,6 +1324,54 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ScheduledPublishTaskResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "scheduled_publish"
+                ],
+                "summary": "List Scheduled Publish Tasks",
+                "operationId": "list_tasks_api_scheduled_publish_tasks__get",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ScheduledPublishTaskListResponse"
                                 }
                             }
                         }
@@ -3519,7 +3589,7 @@
                     },
                     "follower_count": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Follower Count",
                         "default": 0
                     },
@@ -3837,7 +3907,7 @@
                         "anyOf": [
                             {
                                 "type": "integer",
-                                "minimum": 0.0
+                                "minimum": 0
                             },
                             {
                                 "type": "null"
@@ -4158,8 +4228,8 @@
                     },
                     "timeout": {
                         "type": "integer",
-                        "maximum": 600.0,
-                        "minimum": 1.0,
+                        "maximum": 600,
+                        "minimum": 1,
                         "title": "Timeout",
                         "default": 20
                     },
@@ -4311,7 +4381,7 @@
                     },
                     "required_points": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Required Points"
                     }
                 },
@@ -4392,25 +4462,25 @@
                     },
                     "requested_image_count": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Requested Image Count",
                         "default": 0
                     },
                     "success_image_count": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Success Image Count",
                         "default": 0
                     },
                     "points_per_image": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Points Per Image",
                         "default": 0
                     },
                     "points": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Points",
                         "default": 0
                     },
@@ -4470,7 +4540,7 @@
                     },
                     "points": {
                         "type": "integer",
-                        "exclusiveMinimum": 0.0,
+                        "exclusiveMinimum": 0,
                         "title": "Points",
                         "description": "Recharge points"
                     },
@@ -4870,31 +4940,31 @@
                     },
                     "input_tokens": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Input Tokens",
                         "default": 0
                     },
                     "output_tokens": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Output Tokens",
                         "default": 0
                     },
                     "cache_read_tokens": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Cache Read Tokens",
                         "default": 0
                     },
                     "total_tokens": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Total Tokens",
                         "default": 0
                     },
                     "points": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Points",
                         "default": 0
                     },
@@ -6324,7 +6394,7 @@
                         "anyOf": [
                             {
                                 "type": "number",
-                                "exclusiveMinimum": 0.0
+                                "exclusiveMinimum": 0
                             },
                             {
                                 "type": "string",
@@ -6979,8 +7049,8 @@
                     },
                     "timeout": {
                         "type": "integer",
-                        "maximum": 600.0,
-                        "minimum": 1.0,
+                        "maximum": 600,
+                        "minimum": 1,
                         "title": "Timeout",
                         "default": 20
                     },
@@ -7026,6 +7096,109 @@
                     "expression"
                 ],
                 "title": "ScheduledPublishCronSchedule"
+            },
+            "ScheduledPublishPromptOptimizeRequest": {
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Prompt"
+                    },
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 256
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "model_name": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 256,
+                                "minLength": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model Name"
+                    },
+                    "persona_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Persona Id"
+                    },
+                    "image_source": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "ai_generate",
+                                    "web_search",
+                                    "media_library"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Image Source"
+                    },
+                    "publish_targets": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "$ref": "#/components/schemas/ScheduledPublishTarget"
+                                },
+                                "propertyNames": {
+                                    "enum": [
+                                        "toutiao",
+                                        "wechat_mp",
+                                        "rednote",
+                                        "zhihu",
+                                        "baijiahao",
+                                        "csdn"
+                                    ]
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Publish Targets"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "title": "ScheduledPublishPromptOptimizeRequest"
+            },
+            "ScheduledPublishPromptOptimizeResponse": {
+                "properties": {
+                    "optimized_prompt": {
+                        "type": "string",
+                        "title": "Optimized Prompt"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "optimized_prompt"
+                ],
+                "title": "ScheduledPublishPromptOptimizeResponse"
             },
             "ScheduledPublishTarget": {
                 "properties": {
@@ -7077,7 +7250,7 @@
                     },
                     "jitter_minutes": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Jitter Minutes",
                         "default": 0
                     },
@@ -7108,7 +7281,26 @@
                         "title": "Timezone"
                     },
                     "schedule": {
-                        "$ref": "#/components/schemas/ScheduledPublishCronSchedule"
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ScheduledPublishCronSchedule"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "schedule_text": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 512
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Schedule Text"
                     },
                     "publish_targets": {
                         "additionalProperties": {
@@ -7135,7 +7327,6 @@
                     "prompt",
                     "image_source",
                     "timezone",
-                    "schedule",
                     "publish_targets"
                 ],
                 "title": "ScheduledPublishTaskCreate"
@@ -7236,6 +7427,17 @@
                         "type": "string",
                         "title": "Timezone"
                     },
+                    "schedule_text": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Schedule Text"
+                    },
                     "schedule": {
                         "$ref": "#/components/schemas/ScheduledPublishCronSchedule"
                     },
@@ -7313,6 +7515,7 @@
                     "persona_id",
                     "image_source",
                     "timezone",
+                    "schedule_text",
                     "schedule",
                     "publish_targets",
                     "next_run_at",
@@ -7519,7 +7722,7 @@
                     },
                     "jitter_minutes": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Jitter Minutes",
                         "default": 0
                     },
@@ -7550,7 +7753,26 @@
                         "title": "Timezone"
                     },
                     "schedule": {
-                        "$ref": "#/components/schemas/ScheduledPublishCronSchedule"
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ScheduledPublishCronSchedule"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "schedule_text": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 512
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Schedule Text"
                     },
                     "publish_targets": {
                         "additionalProperties": {
@@ -7578,7 +7800,6 @@
                     "schedule_enabled",
                     "image_source",
                     "timezone",
-                    "schedule",
                     "publish_targets"
                 ],
                 "title": "ScheduledPublishTaskUpdate"
@@ -7972,20 +8193,20 @@
                 "properties": {
                     "monthly_price_amount": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Monthly Price Amount",
                         "description": "Monthly price in cents"
                     },
                     "monthly_points": {
                         "type": "integer",
-                        "minimum": 0.0,
+                        "minimum": 0,
                         "title": "Monthly Points",
                         "description": "Monthly granted points"
                     },
                     "annual_discount_rate": {
                         "type": "number",
-                        "maximum": 1.0,
-                        "exclusiveMinimum": 0.0,
+                        "maximum": 1,
+                        "exclusiveMinimum": 0,
                         "title": "Annual Discount Rate",
                         "description": "Annual discount rate"
                     },
@@ -8036,8 +8257,8 @@
                     },
                     "n": {
                         "type": "integer",
-                        "maximum": 5.0,
-                        "minimum": 1.0,
+                        "maximum": 5,
+                        "minimum": 1,
                         "title": "N",
                         "description": "Number of suggestions to generate",
                         "default": 3

@@ -8,8 +8,25 @@
     "backToHome": "返回首页"
   },
   "app": {
-    "name": "媒小蜂",
+    "name": "可达AI",
     "metaDescription": "基于 Next.js + Electron + shadcn/ui 的跨端发布工具，内置 SEO、主题与多语言骨架。"
+  },
+  "auth": {
+    "loginDialog": {
+      "close": "关闭",
+      "loading": "加载中…",
+      "tabQrcode": "扫码登录",
+      "wechatScanBadge": "微信扫码",
+      "qrcodeExpired": "二维码已过期",
+      "tapToRefresh": "点击刷新二维码",
+      "qrcodeLoadFailed": "获取二维码失败",
+      "agreePrefix": "扫码登录代表同意",
+      "agreeMiddle": "和",
+      "userAgreement": "《用户协议》",
+      "privacyPolicy": "《隐私政策》",
+      "legalUserHref": "/home/legal/user",
+      "legalPrivacyHref": "/home/legal/privacy"
+    }
   },
   "home": {
     "title": "一次开发，同时适配 Web 与桌面端",
@@ -85,7 +102,10 @@
       "workList": "作品列表",
       "worksLibrary": "发布记录",
       "account": "账号",
-      "assetLibrary": "素材库"
+      "assetLibrary": "素材库",
+      "login": "登录",
+      "loginPromptTitle": "请先登录",
+      "loginPromptSubtitle": "登录后可使用对话功能"
     }
   },
   "account": {

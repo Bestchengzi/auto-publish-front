@@ -22,6 +22,7 @@ import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initia
 import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import { createThread } from "@/lib/langgraph-client";
 import { PageEmptyState } from "@/components/common/page-empty-state";
+import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -299,6 +300,7 @@ function HotListCard({
 export function TopicCenter() {
   const t = useTranslations();
   const tTopicCenter = useTranslations("topicCenter");
+  const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
@@ -309,6 +311,11 @@ export function TopicCenter() {
     async (title: string, itemKey: string) => {
       const normalizedTitle = title.trim();
       if (!normalizedTitle || pendingItemKey) return;
+      if (!authReady) return;
+      if (!isLoggedIn) {
+        window.dispatchEvent(new Event("media-auth-open-login"));
+        return;
+      }
 
       setPendingItemKey(itemKey);
       try {
@@ -349,7 +356,7 @@ export function TopicCenter() {
         setPendingItemKey(null);
       }
     },
-    [locale, pendingItemKey, queryClient, router, tTopicCenter],
+    [authReady, isLoggedIn, locale, pendingItemKey, queryClient, router, tTopicCenter],
   );
 
   const hotRankQuery = useQuery({

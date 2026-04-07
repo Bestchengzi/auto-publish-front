@@ -10,13 +10,17 @@ export function DesktopChromeWrapper({
   children: React.ReactNode;
 }) {
   const [isDesktopEnv, setIsDesktopEnv] = React.useState(false);
+  const [isEmbeddedView, setIsEmbeddedView] = React.useState(false);
 
   /** 用 layout effect 在绘制前切换壳层，避免整页刷新后出现一帧「无浏览器壳」布局，主内容区高度突变把选题中心等页顶栏挤出视口 */
   React.useLayoutEffect(() => {
     setIsDesktopEnv(isDesktop());
+    if (typeof window !== "undefined") {
+      setIsEmbeddedView(Boolean(window.__desktopEmbeddedView));
+    }
   }, []);
 
-  if (!isDesktopEnv) {
+  if (!isDesktopEnv || isEmbeddedView) {
     return (
       <div className="flex h-screen min-h-screen flex-col">
         {children}

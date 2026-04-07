@@ -10,9 +10,8 @@ import {
   UserRoundIcon,
 } from "lucide-react";
 
-import { LocaleToggle } from "@/components/locale-toggle";
-import { StyleToggle } from "@/components/style-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppShellProtectedNavItem } from "@/components/app-shell-protected-nav-item";
+import { AppShellSidebarFooter } from "@/components/app-shell-sidebar-footer";
 import { RecentCreations } from "@/components/recent-creations/recent-creations";
 import { Separator } from "@/components/ui/separator";
 
@@ -98,7 +97,7 @@ export async function AppShell({
                 icon={<LightbulbIcon className="size-4" />}
                 label={t("sidebar.items.topicCenter")}
               />
-              <NavItem
+              <AppShellProtectedNavItem
                 href={`/${locale}/auto-publish`}
                 active={activeKey === "autoPublish"}
                 icon={<SendIcon className="size-4" />}
@@ -110,19 +109,19 @@ export async function AppShell({
               <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">
                 {t("sidebar.groups.assets")}
               </div>
-              <NavItem
+              <AppShellProtectedNavItem
                 href={`/${locale}/account`}
                 active={activeKey === "account"}
                 icon={<UserRoundIcon className="size-4" />}
                 label={t("sidebar.items.account")}
               />
-              <NavItem
+              <AppShellProtectedNavItem
                 href={`/${locale}/asset-library`}
                 active={activeKey === "assetLibrary"}
                 icon={<ImagesIcon className="size-4" />}
                 label={t("sidebar.items.assetLibrary")}
               />
-              <NavItem
+              <AppShellProtectedNavItem
                 href={`/${locale}/works-library`}
                 active={activeKey === "worksLibrary"}
                 icon={<ListIcon className="size-4" />}
@@ -140,25 +139,7 @@ export async function AppShell({
 
           <div className="mt-auto">
             <Separator />
-            <div className="p-3 flex items-center gap-2">
-              <StyleToggle
-                label={t("nav.style.label")}
-                neutralLabel={t("nav.style.neutral")}
-                blueLabel={t("nav.style.blue")}
-                violetLabel={t("nav.style.violet")}
-              />
-              <LocaleToggle
-                label={t("nav.locale.label")}
-                zhLabel={t("nav.locale.zh")}
-                enLabel={t("nav.locale.en")}
-              />
-              <ThemeToggle
-                label={t("nav.theme.label")}
-                lightLabel={t("nav.theme.light")}
-                darkLabel={t("nav.theme.dark")}
-                systemLabel={t("nav.theme.system")}
-              />
-            </div>
+            <AppShellSidebarFooter />
           </div>
         </aside>
 
