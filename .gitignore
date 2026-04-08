@@ -1,7 +1,6 @@
 # dependencies (monorepo)
 node_modules/
 **/node_modules/
-deer-flow/
 
 # logs
 npm-debug.log*
@@ -20,7 +19,8 @@ Thumbs.db
 dist/
 build/
 .next/
-out/
+apps/desktop/release/
+apps/desktop/release-local-*/
 
 # analysis reports
 apps/renderer/ts-prune-report.txt
