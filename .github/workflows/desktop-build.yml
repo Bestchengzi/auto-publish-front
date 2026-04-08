@@ -12,19 +12,21 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: windows-x64
             os: windows-latest
-            cmd: cd apps/desktop && npm run build && npx electron-builder --win nsis --publish never
+            cmd: cd apps/desktop && npm run build && npx electron-builder --win nsis --publish always
           - name: macos-intel-x64
             os: macos-latest
-            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --x64 --publish never
+            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --x64 --publish always
           - name: macos-apple-silicon-arm64
             os: macos-14
-            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --arm64 --publish never
+            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --arm64 --publish always
 
     runs-on: ${{ matrix.os }}
 
@@ -45,6 +47,7 @@ jobs:
 
       - name: Build installers
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_OWNER: ${{ secrets.GH_OWNER }}
           GH_REPO: ${{ secrets.GH_REPO }}
         run: ${{ matrix.cmd }}

@@ -133,13 +133,19 @@ export function parseHotRankItemTitles(items: unknown[] | undefined): string[] {
 }
 
 /** 热门榜单区块顺序与接口字段（与账号平台无关） */
-export type HotRankListId = "baidu" | "toutiao" | "weibo" | "zhihu";
+export type HotRankListId =
+  | "baidu"
+  | "toutiao"
+  | "weibo"
+  | "zhihu"
+  | "zhixunbao";
 
 export const HOT_RANK_LIST_ORDER: HotRankListId[] = [
   "baidu",
   "toutiao",
   "weibo",
   "zhihu",
+  "zhixunbao",
 ];
 
 /** 每个热榜对应接口响应中的键（可扩展别名） */
@@ -148,6 +154,7 @@ const HOT_RANK_API_KEYS: Record<HotRankListId, string[]> = {
   toutiao: ["toutiao"],
   weibo: ["weibo"],
   zhihu: ["zhihu"],
+  zhixunbao: ["zhixunbao"],
 };
 
 /** `public/platform-logos/` 下文件名（不含扩展名），与 HOT_RANK_LIST_ORDER 一一对应 */
@@ -156,6 +163,7 @@ const HOT_RANK_LOGO_BASENAME: Record<HotRankListId, string> = {
   toutiao: "jin-ri-tou-tiao",
   weibo: "xin-lang-wei-bo",
   zhihu: "zhihu",
+  zhixunbao: "zhi-xun-bao",
 };
 
 export function getHotRankLogoPath(listId: HotRankListId): string {

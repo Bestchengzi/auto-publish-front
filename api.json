@@ -1851,6 +1851,119 @@
                 }
             }
         },
+        "/api/billing/model-pricing": {
+            "get": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "List Model Token Pricing",
+                "operationId": "get_model_pricing_api_billing_model_pricing_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingModelPricingListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/model-pricing/{model_name}": {
+            "put": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Upsert Model Token Pricing",
+                "operationId": "put_model_pricing_api_billing_model_pricing__model_name__put",
+                "parameters": [
+                    {
+                        "name": "model_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Model Name"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BillingModelPricingUpsertRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingModelPricingResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Delete Model Token Pricing",
+                "operationId": "remove_model_pricing_api_billing_model_pricing__model_name__delete",
+                "parameters": [
+                    {
+                        "name": "model_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Model Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingModelPricingDeleteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/billing/recharge": {
             "post": {
                 "tags": [
@@ -2150,6 +2263,48 @@
                 }
             }
         },
+        "/api/billing/subscription-orders/{order_id}": {
+            "get": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Get Subscription Order",
+                "operationId": "get_subscription_order_detail_api_billing_subscription_orders__order_id__get",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Order Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubscriptionOrderEnvelope"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/billing/subscription-orders/{order_id}/confirm-payment": {
             "post": {
                 "tags": [
@@ -2206,6 +2361,84 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SubscriptionCancelResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/client-versions/current": {
+            "get": {
+                "tags": [
+                    "client_versions"
+                ],
+                "summary": "Get Current Client Version",
+                "operationId": "get_current_client_version_api_client_versions_current_get",
+                "parameters": [
+                    {
+                        "name": "platform",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32,
+                            "title": "Platform"
+                        }
+                    },
+                    {
+                        "name": "arch",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32,
+                            "title": "Arch"
+                        }
+                    },
+                    {
+                        "name": "current_version",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32,
+                            "title": "Current Version"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16,
+                            "default": "stable",
+                            "title": "Channel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientVersionCheckResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
                                 }
                             }
                         }
@@ -4377,7 +4610,7 @@
                             }
                         ],
                         "title": "Owner Id",
-                        "description": "Optional owner id override"
+                        "description": "Optional owner id for internal requests; must match the resolved owner"
                     },
                     "required_points": {
                         "type": "integer",
@@ -4425,7 +4658,7 @@
                             }
                         ],
                         "title": "Owner Id",
-                        "description": "Optional owner id override"
+                        "description": "Optional owner id for internal requests; must match the resolved owner"
                     },
                     "thread_id": {
                         "anyOf": [
@@ -4524,6 +4757,101 @@
                 ],
                 "title": "BillingImageChargeResponse"
             },
+            "BillingModelPricingDeleteResponse": {
+                "properties": {
+                    "deleted": {
+                        "type": "boolean",
+                        "title": "Deleted"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "deleted"
+                ],
+                "title": "BillingModelPricingDeleteResponse"
+            },
+            "BillingModelPricingListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/BillingModelPricingResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items"
+                ],
+                "title": "BillingModelPricingListResponse"
+            },
+            "BillingModelPricingResponse": {
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "title": "Model Name"
+                    },
+                    "input_per_1k_tokens": {
+                        "type": "integer",
+                        "title": "Input Per 1K Tokens"
+                    },
+                    "output_per_1k_tokens": {
+                        "type": "integer",
+                        "title": "Output Per 1K Tokens"
+                    },
+                    "cache_read_per_1k_tokens": {
+                        "type": "integer",
+                        "title": "Cache Read Per 1K Tokens"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "model_name",
+                    "input_per_1k_tokens",
+                    "output_per_1k_tokens",
+                    "cache_read_per_1k_tokens",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "BillingModelPricingResponse"
+            },
+            "BillingModelPricingUpsertRequest": {
+                "properties": {
+                    "input_per_1k_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "title": "Input Per 1K Tokens"
+                    },
+                    "output_per_1k_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "title": "Output Per 1K Tokens"
+                    },
+                    "cache_read_per_1k_tokens": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "title": "Cache Read Per 1K Tokens"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "input_per_1k_tokens",
+                    "output_per_1k_tokens",
+                    "cache_read_per_1k_tokens"
+                ],
+                "title": "BillingModelPricingUpsertRequest"
+            },
             "BillingRechargeRequest": {
                 "properties": {
                     "owner_id": {
@@ -4536,7 +4864,7 @@
                             }
                         ],
                         "title": "Owner Id",
-                        "description": "Optional owner id override"
+                        "description": "Optional owner id for internal requests; must match the resolved owner"
                     },
                     "points": {
                         "type": "integer",
@@ -4892,7 +5220,7 @@
                             }
                         ],
                         "title": "Owner Id",
-                        "description": "Optional owner id override"
+                        "description": "Optional owner id for internal requests; must match the resolved owner"
                     },
                     "thread_id": {
                         "anyOf": [
@@ -4966,6 +5294,7 @@
                         "type": "integer",
                         "minimum": 0,
                         "title": "Points",
+                        "description": "Compatibility field; Gateway recalculates points from token usage",
                         "default": 0
                     },
                     "idempotency_key": {
@@ -5379,6 +5708,76 @@
                     "channels"
                 ],
                 "title": "ChannelStatusResponse"
+            },
+            "ClientVersionCheckResponse": {
+                "properties": {
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "windows",
+                            "macos",
+                            "linux"
+                        ],
+                        "title": "Platform"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "x86_64",
+                            "arm64"
+                        ],
+                        "title": "Arch"
+                    },
+                    "requested_channel": {
+                        "type": "string",
+                        "enum": [
+                            "stable",
+                            "beta"
+                        ],
+                        "title": "Requested Channel"
+                    },
+                    "resolved_status": {
+                        "type": "string",
+                        "enum": [
+                            "stable",
+                            "beta"
+                        ],
+                        "title": "Resolved Status"
+                    },
+                    "current_version": {
+                        "type": "string",
+                        "title": "Current Version"
+                    },
+                    "latest_version": {
+                        "type": "string",
+                        "title": "Latest Version"
+                    },
+                    "need_update": {
+                        "type": "boolean",
+                        "title": "Need Update"
+                    },
+                    "download_url": {
+                        "type": "string",
+                        "title": "Download Url"
+                    },
+                    "release_notes": {
+                        "type": "string",
+                        "title": "Release Notes"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "platform",
+                    "arch",
+                    "requested_channel",
+                    "resolved_status",
+                    "current_version",
+                    "latest_version",
+                    "need_update",
+                    "download_url",
+                    "release_notes"
+                ],
+                "title": "ClientVersionCheckResponse"
             },
             "ContextSection": {
                 "properties": {
@@ -7991,13 +8390,19 @@
                         "type": "string",
                         "minLength": 1,
                         "title": "Order Type"
+                    },
+                    "pay_platform": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Pay Platform"
                     }
                 },
                 "type": "object",
                 "required": [
                     "plan_code",
                     "billing_cycle",
-                    "order_type"
+                    "order_type",
+                    "pay_platform"
                 ],
                 "title": "SubscriptionOrderCreateRequest"
             },
@@ -8095,6 +8500,61 @@
                         ],
                         "title": "Applied At"
                     },
+                    "code_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Code Url"
+                    },
+                    "pay_platform": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Pay Platform"
+                    },
+                    "transaction_number": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Transaction Number"
+                    },
+                    "third_transaction_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Third Transaction Id"
+                    },
+                    "third_payer_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Third Payer Id"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -8124,6 +8584,11 @@
                     "payable_amount",
                     "paid_at",
                     "applied_at",
+                    "code_url",
+                    "pay_platform",
+                    "transaction_number",
+                    "third_transaction_id",
+                    "third_payer_id",
                     "created_at",
                     "updated_at"
                 ],
@@ -8556,6 +9021,10 @@
         {
             "name": "billing",
             "description": "Manage points balances and record token/image billing charges"
+        },
+        {
+            "name": "client_versions",
+            "description": "Query the latest client version for one OS, architecture, and release channel"
         },
         {
             "name": "health",
