@@ -71,6 +71,7 @@ export function BrowserChromeHeader({
   onUpdateBadgeClick,
 }: BrowserChromeHeaderProps) {
   const t = useTranslations();
+  const addressEditable = activeId !== initialTabId;
 
   return (
     <header className="flex shrink-0 flex-col border-b border-border bg-muted/30 dark:bg-muted/20">
@@ -215,12 +216,17 @@ export function BrowserChromeHeader({
               <Input
                 type="text"
                 value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
+                onChange={(e) => {
+                  if (!addressEditable) return;
+                  setUrlInput(e.target.value);
+                }}
                 onKeyDown={(e) => {
+                  if (!addressEditable) return;
                   if (e.key === "Enter") onUrlSubmit(urlInput);
                 }}
                 onBlur={() => setUrlInput(displayUrl)}
                 placeholder={t("browserChrome.urlPlaceholder")}
+                readOnly={!addressEditable}
                 className="h-6 w-full min-w-0 border-0 bg-transparent px-0 text-sm rounded-none shadow-none focus-visible:ring-0"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               />
