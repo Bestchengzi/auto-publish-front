@@ -17,10 +17,10 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            cmd: npm --prefix apps/desktop run dist:win
+            cmd: npm --prefix apps/desktop run build && npx --prefix apps/desktop electron-builder --win nsis --publish never
             artifact_path: apps/desktop/release/*
           - os: macos-latest
-            cmd: npm --prefix apps/desktop run dist:mac
+            cmd: npm --prefix apps/desktop run build && npx --prefix apps/desktop electron-builder --mac dmg zip --publish never
             artifact_path: apps/desktop/release/*
 
     runs-on: ${{ matrix.os }}
