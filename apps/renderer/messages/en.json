@@ -408,7 +408,8 @@
       "baidu": "Baidu Hot List",
       "toutiao": "Toutiao Hot List",
       "weibo": "Weibo Hot List",
-      "zhihu": "Zhihu Hot List"
+      "zhihu": "Zhihu Hot List",
+      "zhixunbao": "Zhixunbao Hot List"
     },
     "platforms": {
       "toutiao": "Toutiao",

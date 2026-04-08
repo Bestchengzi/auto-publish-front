@@ -408,7 +408,8 @@
       "baidu": "百度热榜",
       "toutiao": "头条热榜",
       "weibo": "微博热榜",
-      "zhihu": "知乎热榜"
+      "zhihu": "知乎热榜",
+      "zhixunbao": "知讯宝热榜"
     },
     "platforms": {
       "toutiao": "今日头条",

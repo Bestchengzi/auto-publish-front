@@ -12,9 +12,11 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 
 import { LoginDialog } from "@/components/auth/login-dialog";
+import { SubscriptionPlanDialog } from "@/components/billing/subscription-plan-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -32,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
+import { getBillingAccount } from "@/lib/api/billing";
 import { clearAuthRelatedQueryCache } from "@/lib/auth/query-cache";
 import { clearAuthStorage, getAuthUser } from "@/lib/auth/session";
 import {
@@ -71,6 +74,13 @@ export function AppShellSidebarFooter() {
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [accent, setAccent] = useState<AccentPreset>("violet");
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const { data: billingAccount } = useQuery({
+    queryKey: ["billing", "account"],
+    queryFn: getBillingAccount,
+    enabled: ready && isLoggedIn,
+    staleTime: 20_000,
+  });
 
   useEffect(() => {
     const syncUserName = () => {
@@ -130,6 +140,10 @@ export function AppShellSidebarFooter() {
       locale === "en"
         ? { "zh-CN": "Chinese", en: "English" }
         : { "zh-CN": "中文", en: "英文" };
+    const planDisplayName =
+      billingAccount?.account.subscription?.plan_display_name?.trim() || "免费版";
+    const balancePoints = billingAccount?.account.balance_points ?? 0;
+    const billingHint = `${planDisplayName} · 剩余积分 ${balancePoints.toLocaleString("zh-CN")}`;
     return (
       <>
         <DropdownMenu>
@@ -137,15 +151,20 @@ export function AppShellSidebarFooter() {
             render={
               <button
                 type="button"
-                className="flex min-h-12 w-full items-center gap-2 rounded-md p-3 text-left hover:bg-muted"
+                className="flex min-h-14 w-full items-center gap-2 rounded-md p-3 text-left hover:bg-muted"
               />
             }
           >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
               {avatarLetter}
             </div>
-            <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-              {userName || "未命名用户"}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium text-foreground">
+                {userName || "未命名用户"}
+              </div>
+              <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                {billingHint}
+              </div>
             </div>
             <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
           </DropdownMenuTrigger>
@@ -189,7 +208,10 @@ export function AppShellSidebarFooter() {
               <HouseIcon className="size-4" />
               访问官网
             </DropdownMenuItem>
-            <DropdownMenuItem className="py-2">
+            <DropdownMenuItem
+              className="py-2"
+              onClick={() => setPlanDialogOpen(true)}
+            >
               <CreditCardIcon className="size-4" />
               购买套餐
             </DropdownMenuItem>
@@ -404,6 +426,11 @@ export function AppShellSidebarFooter() {
             </div>
           </DialogContent>
         </Dialog>
+        <SubscriptionPlanDialog
+          open={planDialogOpen}
+          onOpenChange={setPlanDialogOpen}
+          account={billingAccount?.account ?? null}
+        />
       </>
     );
   }

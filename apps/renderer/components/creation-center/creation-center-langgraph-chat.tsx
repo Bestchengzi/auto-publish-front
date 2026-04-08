@@ -264,7 +264,7 @@ export function CreationCenterLanggraphChat() {
                 thread={thread}
               />
             </div>
-            <div className="z-30 flex shrink-0 justify-center px-4 pb-4 pt-2">
+            <div className="z-30 flex shrink-0 justify-center px-4 pb-4 pt-4">
               <div className="relative w-full max-w-(--container-width-md)">
                 <InputBox
                   className={cn(
