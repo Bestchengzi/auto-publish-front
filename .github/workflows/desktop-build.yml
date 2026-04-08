@@ -16,12 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - name: windows-x64
+            os: windows-latest
             cmd: cd apps/desktop && npm run build && npx electron-builder --win nsis --publish never
-            artifact_path: apps/desktop/release/*
-          - os: macos-latest
-            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --publish never
-            artifact_path: apps/desktop/release/*
+          - name: macos-intel-x64
+            os: macos-13
+            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --x64 --publish never
+          - name: macos-apple-silicon-arm64
+            os: macos-14
+            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --arm64 --publish never
 
     runs-on: ${{ matrix.os }}
 
@@ -49,5 +52,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
-          path: ${{ matrix.artifact_path }}
+          name: desktop-${{ matrix.name }}
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+            !apps/desktop/release/*.blockmap
