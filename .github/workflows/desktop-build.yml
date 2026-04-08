@@ -22,9 +22,6 @@ jobs:
           - name: macos-intel-x64
             os: macos-13
             cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --x64 --publish never
-          - name: macos-apple-silicon-arm64
-            os: macos-14
-            cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --arm64 --publish never
 
     runs-on: ${{ matrix.os }}
 
