@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
@@ -20,7 +20,7 @@ function isAllowedWhenLoggedOut(pathname: string, locale: string): boolean {
   );
 }
 
-export function AuthRouteGuard({
+function AuthRouteGuardInner({
   locale,
   children,
 }: {
@@ -69,4 +69,19 @@ export function AuthRouteGuard({
   }
 
   return <>{children}</>;
+}
+
+/** Suspense 包裹：静态导出 + useSearchParams 要求 */
+export function AuthRouteGuard({
+  locale,
+  children,
+}: {
+  locale: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <AuthRouteGuardInner locale={locale}>{children}</AuthRouteGuardInner>
+    </Suspense>
+  );
 }

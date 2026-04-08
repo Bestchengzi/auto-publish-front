@@ -8,7 +8,6 @@ import {
   LogOutIcon,
   SettingsIcon,
   UserIcon,
-  UserRoundIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -35,11 +34,15 @@ import {
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { clearAuthRelatedQueryCache } from "@/lib/auth/query-cache";
 import { clearAuthStorage, getAuthUser } from "@/lib/auth/session";
+import {
+  ACCENT_STORAGE_KEY,
+  applyAccent,
+  readAccentStorage,
+  setAccentStorage,
+  type AccentPreset,
+} from "@/lib/ui-accent";
 
 type SettingsTab = "account" | "settings";
-type AccentPreset = "neutral" | "blue" | "violet";
-
-const ACCENT_COOKIE = "UI_ACCENT";
 
 function setLocaleCookie(locale: "zh-CN" | "en") {
   document.cookie = `NEXT_LOCALE=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax`;
@@ -55,26 +58,6 @@ function switchLocalePath(pathname: string, nextLocale: "zh-CN" | "en") {
   return `/${nextLocale}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
 }
 
-function setAccentCookie(preset: AccentPreset) {
-  document.cookie = `${ACCENT_COOKIE}=${encodeURIComponent(preset)}; Path=/; Max-Age=31536000; SameSite=Lax`;
-}
-
-function applyAccent(preset: AccentPreset) {
-  const body = document.body;
-  body.classList.remove("ui-accent-blue", "ui-accent-violet");
-  if (preset === "blue") body.classList.add("ui-accent-blue");
-  if (preset === "violet") body.classList.add("ui-accent-violet");
-}
-
-function readAccentCookie(): AccentPreset {
-  const match = document.cookie
-    .split(";")
-    .map((p) => p.trim())
-    .find((p) => p.startsWith(`${ACCENT_COOKIE}=`));
-  const raw = match?.split("=").slice(1).join("=");
-  return raw === "blue" || raw === "violet" ? raw : "neutral";
-}
-
 export function AppShellSidebarFooter() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -87,7 +70,7 @@ export function AppShellSidebarFooter() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("account");
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
-  const [accent, setAccent] = useState<AccentPreset>("neutral");
+  const [accent, setAccent] = useState<AccentPreset>("violet");
 
   useEffect(() => {
     const syncUserName = () => {
@@ -122,8 +105,17 @@ export function AppShellSidebarFooter() {
   }, []);
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    setAccent(readAccentCookie());
+    if (typeof window === "undefined") return;
+    setAccent(readAccentStorage());
+
+    const syncAccent = (event: StorageEvent) => {
+      if (event.key && event.key !== ACCENT_STORAGE_KEY) return;
+      setAccent(readAccentStorage());
+    };
+    window.addEventListener("storage", syncAccent);
+    return () => {
+      window.removeEventListener("storage", syncAccent);
+    };
   }, []);
 
   if (!ready) {
@@ -391,9 +383,8 @@ export function AppShellSidebarFooter() {
                               variant="outline"
                               onClick={() => {
                                 setAccent(item.key);
-                                setAccentCookie(item.key);
+                                setAccentStorage(item.key);
                                 applyAccent(item.key);
-                                router.refresh();
                               }}
                               className={`h-8 rounded-md px-3 text-xs hover:text-current ${
                                 accent === item.key

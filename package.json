@@ -11,7 +11,8 @@
     "dev:web": "npm -w apps/renderer run dev",
     "dev:desktop": "npm --prefix apps/desktop run dev",
     "build:web": "npm -w apps/renderer run build",
-    "build:desktop": "npm --prefix apps/desktop run build"
+    "build:desktop": "npm --prefix apps/desktop run build",
+    "build:desktop:win": "npm --prefix apps/desktop run dist:win"
   },
   "devDependencies": {
     "kill-port": "^2.0.1",

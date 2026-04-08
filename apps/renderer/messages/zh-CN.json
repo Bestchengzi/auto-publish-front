@@ -40,6 +40,13 @@
   "browserChrome": {
     "newTab": "新标签页",
     "newVersion": "新版本",
+    "updater": {
+      "checking": "检查更新中",
+      "available": "发现新版本",
+      "downloading": "下载中 {percent}%",
+      "ready": "重启更新",
+      "error": "更新失败，点击重试"
+    },
     "back": "后退",
     "forward": "前进",
     "refresh": "刷新",

@@ -40,6 +40,13 @@
   "browserChrome": {
     "newTab": "New tab",
     "newVersion": "New version",
+    "updater": {
+      "checking": "Checking updates",
+      "available": "Update available",
+      "downloading": "Downloading {percent}%",
+      "ready": "Restart to update",
+      "error": "Update failed, click to retry"
+    },
     "back": "Back",
     "forward": "Forward",
     "refresh": "Refresh",

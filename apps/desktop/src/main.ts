@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, session, webContents, WebContentsView } from "electron";
 import path from "node:path";
+import { autoUpdater } from "electron-updater";
 
 import { fetchPageMeta } from "./fetch-page-meta";
 import {
@@ -12,13 +13,108 @@ import {
   PLATFORM_AUTH_CONFIG,
 } from "./platform-auth-config";
 
-function getRendererUrl() {
-  // Dev: use running Next dev server (fixed port 13200)
-  if (!app.isPackaged)
-    return process.env.ELECTRON_RENDERER_URL ?? "http://localhost:13200";
+type UpdatePhase =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "not-available"
+  | "error";
 
-  // Prod: placeholder (later you can switch to loadFile for static export)
-  return process.env.ELECTRON_RENDERER_URL ?? "http://localhost:13200";
+type UpdateState = {
+  phase: UpdatePhase;
+  currentVersion: string;
+  availableVersion?: string;
+  percent?: number;
+  transferred?: number;
+  total?: number;
+  message?: string;
+  checkedAt?: number;
+};
+
+let updateState: UpdateState = {
+  phase: "idle",
+  currentVersion: app.getVersion(),
+};
+
+let autoUpdaterInitialized = false;
+
+function broadcastUpdateState() {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+      win.webContents.send("app:update:state-changed", updateState);
+    }
+  }
+}
+
+function setUpdateState(next: Partial<UpdateState>) {
+  updateState = { ...updateState, ...next, currentVersion: app.getVersion() };
+  broadcastUpdateState();
+}
+
+function setupAutoUpdater() {
+  if (autoUpdaterInitialized) return;
+  autoUpdaterInitialized = true;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = true;
+
+  autoUpdater.on("checking-for-update", () => {
+    setUpdateState({
+      phase: "checking",
+      message: undefined,
+      percent: undefined,
+      transferred: undefined,
+      total: undefined,
+      checkedAt: Date.now(),
+    });
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    setUpdateState({
+      phase: "available",
+      availableVersion: info.version,
+      checkedAt: Date.now(),
+    });
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    setUpdateState({
+      phase: "downloading",
+      percent: progress.percent,
+      transferred: progress.transferred,
+      total: progress.total,
+    });
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    setUpdateState({
+      phase: "not-available",
+      availableVersion: undefined,
+      percent: undefined,
+      transferred: undefined,
+      total: undefined,
+      checkedAt: Date.now(),
+    });
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    setUpdateState({
+      phase: "downloaded",
+      availableVersion: info.version,
+      percent: 100,
+      checkedAt: Date.now(),
+    });
+  });
+
+  autoUpdater.on("error", (error) => {
+    setUpdateState({
+      phase: "error",
+      message: error?.message ?? String(error),
+      checkedAt: Date.now(),
+    });
+  });
 }
 
 async function createMainWindow() {
@@ -40,25 +136,23 @@ async function createMainWindow() {
     win.maximize();
   });
 
-  const url = getRendererUrl();
+  const envRendererUrl = process.env.ELECTRON_RENDERER_URL?.trim();
+  const rendererUrl = (typeof envRendererUrl === "string" && /^https?:\/\//i.test(envRendererUrl))
+    ? envRendererUrl
+    : (app.isPackaged ? "http://192.168.88.30:13200" : "http://localhost:13200");
   try {
-    await win.loadURL(url);
+    await win.loadURL(rendererUrl);
   } catch (error) {
-    if (!app.isPackaged) {
-      const message =
-        "无法连接到渲染端（Next dev server）。\n\n" +
-        "请先在项目根目录运行：npm run dev\n" +
-        "或单独运行：npm run dev:web\n\n" +
-        `当前尝试访问：${url}`;
-
-      await win.loadURL(
-        `data:text/html,${encodeURIComponent(
-          `<html><head><meta charset="utf-8"/></head><body style="font-family: system-ui; padding: 24px;"><h2>Renderer 未启动</h2><pre>${message}</pre></body></html>`
-        )}`
-      );
-      return;
-    }
-    throw error;
+    const modeHint = app.isPackaged
+      ? "请设置 ELECTRON_RENDERER_URL 为线上地址。"
+      : "请先在项目根目录运行：npm run dev（或 npm run dev:web）。";
+    const detail = error instanceof Error ? error.message : String(error);
+    await win.loadURL(
+      `data:text/html,${encodeURIComponent(
+        `<html><head><meta charset="utf-8"/></head><body style="font-family: system-ui; padding: 24px;"><h2>无法加载渲染端</h2><p>${modeHint}</p><p>当前尝试访问：</p><pre>${rendererUrl}</pre><pre>${detail}</pre></body></html>`,
+      )}`,
+    );
+    return;
   }
 
   if (!app.isPackaged) {
@@ -75,6 +169,34 @@ async function createMainWindow() {
 
 ipcMain.handle("app:ping", async () => {
   return { ok: true, ts: Date.now() };
+});
+
+ipcMain.handle("app:update:get-state", async () => {
+  return updateState;
+});
+
+ipcMain.handle("app:update:check", async () => {
+  if (!app.isPackaged) {
+    return { ok: false, reason: "not_packaged" as const };
+  }
+  try {
+    await autoUpdater.checkForUpdates();
+    return { ok: true as const };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setUpdateState({ phase: "error", message, checkedAt: Date.now() });
+    return { ok: false as const, reason: "check_failed" as const, message };
+  }
+});
+
+ipcMain.handle("app:update:install", async () => {
+  if (updateState.phase !== "downloaded") {
+    return { ok: false as const, reason: "not_ready" as const };
+  }
+  setImmediate(() => {
+    autoUpdater.quitAndInstall();
+  });
+  return { ok: true as const };
 });
 
 /** 主壳窗口（Next 渲染进程）自身的历史栈，用于内部标签的前进/后退按钮状态 */
@@ -320,23 +442,43 @@ ipcMain.on("external-tab:close", (event, tabId: string) => {
 });
 
 ipcMain.handle("external-tab:can-go-back", async (_event, tabId: string) => {
-  const view = externalTabs.get(tabId);
-  return view?.webContents?.canGoBack() ?? false;
+  const wc = externalTabs.get(tabId)?.webContents;
+  try {
+    if (!wc || wc.isDestroyed()) return false;
+    return wc.navigationHistory.canGoBack();
+  } catch {
+    return false;
+  }
 });
 
 ipcMain.handle("external-tab:can-go-forward", async (_event, tabId: string) => {
-  const view = externalTabs.get(tabId);
-  return view?.webContents?.canGoForward() ?? false;
+  const wc = externalTabs.get(tabId)?.webContents;
+  try {
+    if (!wc || wc.isDestroyed()) return false;
+    return wc.navigationHistory.canGoForward();
+  } catch {
+    return false;
+  }
 });
 
 ipcMain.on("external-tab:go-back", (event, tabId: string) => {
-  const view = externalTabs.get(tabId);
-  if (view?.webContents?.canGoBack()) view.webContents.goBack();
+  const wc = externalTabs.get(tabId)?.webContents;
+  try {
+    if (!wc || wc.isDestroyed()) return;
+    if (wc.navigationHistory.canGoBack()) wc.goBack();
+  } catch {
+    // ignore
+  }
 });
 
 ipcMain.on("external-tab:go-forward", (event, tabId: string) => {
-  const view = externalTabs.get(tabId);
-  if (view?.webContents?.canGoForward()) view.webContents.goForward();
+  const wc = externalTabs.get(tabId)?.webContents;
+  try {
+    if (!wc || wc.isDestroyed()) return;
+    if (wc.navigationHistory.canGoForward()) wc.goForward();
+  } catch {
+    // ignore
+  }
 });
 
 ipcMain.on("external-tab:reload", (event, tabId: string) => {
@@ -426,16 +568,16 @@ ipcMain.on(
   if (typeof tabId !== "string" || typeof platformId !== "string" || !isPlatformAuthId(platformId)) return;
   const win = getWindowFromIpcEvent(event);
   if (!win) return;
-  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
-  const requesterId = queue.shift();
-  if (queue.length > 0) pendingAuthRequesterQueueByPlatform.set(platformId, queue);
-  else pendingAuthRequesterQueueByPlatform.delete(platformId);
-  platformAuthRequesterByTabId.set(tabId, requesterId ?? event.sender.id);
 
   if (platformAuthTabInitialized.has(tabId)) {
     showExternalTab(win, tabId);
     return;
   }
+  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
+  const requesterId = queue.shift();
+  if (queue.length > 0) pendingAuthRequesterQueueByPlatform.set(platformId, queue);
+  else pendingAuthRequesterQueueByPlatform.delete(platformId);
+  platformAuthRequesterByTabId.set(tabId, requesterId ?? event.sender.id);
   platformAuthTabInitialized.add(tabId);
 
   const cfg = PLATFORM_AUTH_CONFIG[platformId];
@@ -488,8 +630,18 @@ app.on("window-all-closed", () => {
 
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
+  setupAutoUpdater();
   registerPlatformAuthIpc();
   await createMainWindow();
+
+  if (app.isPackaged) {
+    setTimeout(() => {
+      void autoUpdater.checkForUpdates().catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setUpdateState({ phase: "error", message, checkedAt: Date.now() });
+      });
+    }, 15_000);
+  }
 
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) await createMainWindow();

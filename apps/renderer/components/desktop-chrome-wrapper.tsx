@@ -1,26 +1,21 @@
 "use client";
 
-import * as React from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { BrowserChrome } from "@/components/browser-chrome";
-import { isDesktop } from "@/lib/desktop-api";
+import { getDesktopChromeMode } from "@/lib/desktop-chrome-mode";
 
 export function DesktopChromeWrapper({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const [isDesktopEnv, setIsDesktopEnv] = React.useState(false);
-  const [isEmbeddedView, setIsEmbeddedView] = React.useState(false);
+  const mode = useSyncExternalStore(
+    () => () => {},
+    getDesktopChromeMode,
+    () => "web",
+  );
 
-  /** 用 layout effect 在绘制前切换壳层，避免整页刷新后出现一帧「无浏览器壳」布局，主内容区高度突变把选题中心等页顶栏挤出视口 */
-  React.useLayoutEffect(() => {
-    setIsDesktopEnv(isDesktop());
-    if (typeof window !== "undefined") {
-      setIsEmbeddedView(Boolean(window.__desktopEmbeddedView));
-    }
-  }, []);
-
-  if (!isDesktopEnv || isEmbeddedView) {
+  if (mode === "embedded" || mode === "web") {
     return (
       <div className="flex h-screen min-h-screen flex-col">
         {children}
@@ -28,9 +23,5 @@ export function DesktopChromeWrapper({
     );
   }
 
-  return (
-    <BrowserChrome>
-      <div className="h-full min-h-0 overflow-hidden">{children}</div>
-    </BrowserChrome>
-  );
+  return <BrowserChrome />;
 }

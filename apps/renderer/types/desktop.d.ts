@@ -19,6 +19,17 @@ export type PlatformAuthResult =
       message?: string;
     };
 
+export type DesktopUpdateState = {
+  phase: "idle" | "checking" | "available" | "downloading" | "downloaded" | "not-available" | "error";
+  currentVersion: string;
+  availableVersion?: string;
+  percent?: number;
+  transferred?: number;
+  total?: number;
+  message?: string;
+  checkedAt?: number;
+};
+
 declare global {
   interface Window {
     __desktopEmbeddedView?: boolean;
@@ -54,6 +65,15 @@ declare global {
         onOpenInTab: (cb: (url: string) => void) => () => void;
         onPlatformAuthTabRequest: (cb: (platformId: string, loginUrl: string) => void) => () => void;
         onPlatformAuthCompleted: (cb: (tabId: string, result: PlatformAuthResult) => void) => () => void;
+      };
+      updater: {
+        getState: () => Promise<DesktopUpdateState>;
+        check: () => Promise<
+          | { ok: true }
+          | { ok: false; reason: "not_packaged" | "check_failed"; message?: string }
+        >;
+        install: () => Promise<{ ok: true } | { ok: false; reason: "not_ready" }>;
+        onStateChanged: (cb: (state: DesktopUpdateState) => void) => () => void;
       };
       window: {
         minimize: () => void;

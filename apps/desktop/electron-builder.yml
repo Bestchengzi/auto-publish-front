@@ -1,0 +1,41 @@
+appId: com.mediaautopublish.desktop
+productName: MediaAutoPublish
+
+directories:
+  output: release
+
+files:
+  - "dist/**"
+  - "package.json"
+  - "renderer/**"
+
+asar: true
+
+win:
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+
+mac:
+  target:
+    - target: dmg
+    - target: zip
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  category: public.app-category.productivity
+
+linux:
+  target:
+    - target: AppImage
+  category: Utility
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+
+publish:
+  provider: github
+  owner: "${env.GH_OWNER}"
+  repo: "${env.GH_REPO}"

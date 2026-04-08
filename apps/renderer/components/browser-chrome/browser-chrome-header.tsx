@@ -24,6 +24,7 @@ import { TabIcon } from "./tab-icon";
 export type BrowserChromeHeaderProps = {
   tabs: TabItem[];
   activeId: string | null;
+  initialTabId: string;
   onSelectTab: (tab: TabItem) => void;
   onCloseTab: (e: React.MouseEvent, id: string) => void;
   onAddTab: () => void;
@@ -41,11 +42,14 @@ export type BrowserChromeHeaderProps = {
   onBack: () => void;
   onForward: () => void;
   onRefresh: () => void;
+  updateBadgeText?: string | null;
+  onUpdateBadgeClick?: () => void;
 };
 
 export function BrowserChromeHeader({
   tabs,
   activeId,
+  initialTabId,
   onSelectTab,
   onCloseTab,
   onAddTab,
@@ -63,6 +67,8 @@ export function BrowserChromeHeader({
   onBack,
   onForward,
   onRefresh,
+  updateBadgeText,
+  onUpdateBadgeClick,
 }: BrowserChromeHeaderProps) {
   const t = useTranslations();
 
@@ -87,7 +93,7 @@ export function BrowserChromeHeader({
                 aria-selected={tab.id === activeId}
                 onClick={() => onSelectTab(tab)}
                 className={cn(
-                  "group flex min-w-0 max-w-[180px] shrink-0 cursor-pointer items-center gap-1.5 rounded-t-md px-3 py-1.5 transition-colors",
+                  "group flex min-w-0 max-w-[180px] shrink-0 cursor-default items-center gap-1.5 rounded-t-md px-3 py-1.5 transition-colors",
                   tab.id === activeId
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -95,14 +101,16 @@ export function BrowserChromeHeader({
               >
                 <TabIcon tab={tab} />
                 <span className="min-w-0 truncate text-sm">{displayTitle}</span>
-                <button
-                  type="button"
-                  onClick={(e) => onCloseTab(e, tab.id)}
-                  className="ml-0.5 shrink-0 rounded p-0.5 opacity-60 outline-none ring-0 hover:bg-muted hover:opacity-100 focus-visible:outline-none focus-visible:ring-0"
-                  aria-label="关闭"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
+                {tab.id !== initialTabId && (
+                  <button
+                    type="button"
+                    onClick={(e) => onCloseTab(e, tab.id)}
+                    className="ml-0.5 shrink-0 rounded p-0.5 opacity-60 outline-none ring-0 hover:bg-muted hover:opacity-100 focus-visible:outline-none focus-visible:ring-0"
+                    aria-label="关闭"
+                  >
+                    <XIcon className="size-3.5" />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -125,9 +133,15 @@ export function BrowserChromeHeader({
           className="flex shrink-0 items-center gap-1 pl-2"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <span className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
-            {t("browserChrome.newVersion")}
-          </span>
+          {updateBadgeText ? (
+            <button
+              type="button"
+              onClick={onUpdateBadgeClick}
+              className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+            >
+              {updateBadgeText}
+            </button>
+          ) : null}
           <div className="flex items-center gap-1">
             <button
               type="button"

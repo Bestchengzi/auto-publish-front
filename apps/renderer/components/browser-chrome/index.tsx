@@ -4,7 +4,9 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { dismissAppBootstrapOverlay } from "@/lib/app-bootstrap-overlay";
 import { getDesktop } from "@/lib/desktop-api";
+import { useDesktopUpdater } from "@/lib/desktop-updater";
 
 import { BrowserChromeHeader } from "./browser-chrome-header";
 import { ExternalTabPlaceholder } from "./external-tab-placeholder";
@@ -20,13 +22,14 @@ import {
 
 export type { TabItem } from "./types";
 
-export function BrowserChrome({ children: _children }: { children: React.ReactNode }) {
+export function BrowserChrome() {
   const pathname = usePathname();
   const t = useTranslations();
   const locale = pathname.split("/")[1] || "zh-CN";
+  const [initialTabId] = React.useState(() => generateTabId());
   const [tabs, setTabs] = React.useState<TabItem[]>(() => [
     {
-      id: generateTabId(),
+      id: initialTabId,
       path: pathname || `/${locale}`,
       titleKey: getTitleKeyFromPath(pathname) || "browserChrome.newTab",
       isEmpty: false,
@@ -46,6 +49,11 @@ export function BrowserChrome({ children: _children }: { children: React.ReactNo
 
   const [canGoBack, setCanGoBack] = React.useState(false);
   const [canGoForward, setCanGoForward] = React.useState(false);
+  const { state: updateState, check: checkUpdates, install: installUpdates } = useDesktopUpdater();
+
+  React.useLayoutEffect(() => {
+    dismissAppBootstrapOverlay();
+  }, []);
 
   React.useEffect(() => {
     getDesktop()?.window?.isMaximized?.().then(setIsMaximized);
@@ -152,6 +160,7 @@ export function BrowserChrome({ children: _children }: { children: React.ReactNo
 
   const handleCloseTab = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    if (id === initialTabId) return;
     const tab = tabs.find((t) => t.id === id);
     if (!tab) return;
     const idx = tabs.findIndex((t) => t.id === id);
@@ -233,11 +242,39 @@ export function BrowserChrome({ children: _children }: { children: React.ReactNo
     setIsMaximized((v) => !v);
   };
 
+  const updateBadgeText = React.useMemo(() => {
+    if (!getDesktop()) return null;
+    if (updateState.phase === "checking") return t("browserChrome.updater.checking");
+    if (updateState.phase === "available") return t("browserChrome.updater.available");
+    if (updateState.phase === "downloading") {
+      const pct = Math.max(0, Math.min(100, Math.round(updateState.percent ?? 0)));
+      return t("browserChrome.updater.downloading", { percent: pct });
+    }
+    if (updateState.phase === "downloaded") return t("browserChrome.updater.ready");
+    if (updateState.phase === "error") return t("browserChrome.updater.error");
+    return null;
+  }, [t, updateState]);
+
+  const handleUpdateBadgeClick = React.useCallback(() => {
+    if (updateState.phase === "downloaded") {
+      void installUpdates();
+      return;
+    }
+    if (
+      updateState.phase === "idle"
+      || updateState.phase === "not-available"
+      || updateState.phase === "error"
+    ) {
+      void checkUpdates();
+    }
+  }, [checkUpdates, installUpdates, updateState.phase]);
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-muted/40 dark:bg-muted/40">
       <BrowserChromeHeader
         tabs={tabs}
         activeId={activeId}
+        initialTabId={initialTabId}
         onSelectTab={handleSelectTab}
         onCloseTab={handleCloseTab}
         onAddTab={handleAddTab}
@@ -255,6 +292,8 @@ export function BrowserChrome({ children: _children }: { children: React.ReactNo
         onBack={handleBack}
         onForward={handleForward}
         onRefresh={handleRefresh}
+        updateBadgeText={updateBadgeText}
+        onUpdateBadgeClick={handleUpdateBadgeClick}
       />
 
       <div className="relative min-h-0 flex-1 overflow-hidden">

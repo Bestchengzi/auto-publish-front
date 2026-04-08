@@ -49,6 +49,17 @@ export type ExternalTabApi = {
 
 export type ShellNavState = { canGoBack: boolean; canGoForward: boolean };
 
+export type DesktopUpdateState = {
+  phase: "idle" | "checking" | "available" | "downloading" | "downloaded" | "not-available" | "error";
+  currentVersion: string;
+  availableVersion?: string;
+  percent?: number;
+  transferred?: number;
+  total?: number;
+  message?: string;
+  checkedAt?: number;
+};
+
 export type DesktopApi = {
   ping: () => Promise<{ ok: true; ts: number }>;
   startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
@@ -57,6 +68,15 @@ export type DesktopApi = {
   /** 主窗口（产品页）自身 history，与 externalTab 无关 */
   shellNav: { getState: () => Promise<ShellNavState> };
   externalTab: ExternalTabApi;
+  updater: {
+    getState: () => Promise<DesktopUpdateState>;
+    check: () => Promise<
+      | { ok: true }
+      | { ok: false; reason: "not_packaged" | "check_failed"; message?: string }
+    >;
+    install: () => Promise<{ ok: true } | { ok: false; reason: "not_ready" }>;
+    onStateChanged: (cb: (state: DesktopUpdateState) => void) => () => void;
+  };
   window: {
     minimize: () => void;
     maximize: () => void;
@@ -83,6 +103,7 @@ function getAllowedRendererOrigins(): Set<string> {
   const allow = new Set<string>([
     "http://localhost:13200",
     "http://127.0.0.1:13200",
+    "http://192.168.88.30:13200",
   ]);
   const envUrl = process.env.ELECTRON_RENDERER_URL;
   if (typeof envUrl === "string" && envUrl.trim()) {
@@ -136,6 +157,13 @@ const api: DesktopApi = {
     onPlatformAuthCompleted: (cb) =>
       subscribe("platform-auth:completed", (tabId, result) => cb(tabId as string, result as PlatformAuthResult)),
   },
+  updater: {
+    getState: () => ipcRenderer.invoke("app:update:get-state"),
+    check: () => ipcRenderer.invoke("app:update:check"),
+    install: () => ipcRenderer.invoke("app:update:install"),
+    onStateChanged: (cb) =>
+      subscribe("app:update:state-changed", (state) => cb(state as DesktopUpdateState)),
+  },
   window: {
     minimize: () => ipcRenderer.send("window:minimize"),
     maximize: () => ipcRenderer.send("window:maximize"),
@@ -146,7 +174,8 @@ const api: DesktopApi = {
 
 function shouldExposeDesktopApi() {
   try {
-    const origin = window.location.origin;
+    const { protocol, origin } = window.location;
+    if (protocol === "file:") return true;
     return allowedRendererOrigins.has(origin);
   } catch {
     return false;

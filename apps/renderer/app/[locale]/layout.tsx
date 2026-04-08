@@ -6,10 +6,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthRouteGuard } from "@/components/auth/auth-route-guard";
 import { DesktopChromeWrapper } from "@/components/desktop-chrome-wrapper";
+import { AccentProvider } from "@/components/providers/accent-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { getMessages } from "@/i18n/get-messages";
 import { defaultLocale, locales, type AppLocale } from "@/i18n/config";
-import { cookies } from "next/headers";
+import { APP_BOOTSTRAP_OVERLAY_SCRIPT } from "@/lib/app-bootstrap-overlay";
+import { ACCENT_INIT_SCRIPT } from "@/lib/ui-accent";
 import { setRequestLocale } from "next-intl/server";
 
 const geistSans = Geist({
@@ -93,37 +95,35 @@ export default async function LocaleLayout({
   setRequestLocale(safeLocale);
 
   const messages = await getMessages(safeLocale);
-  const cookieStore = await cookies();
-  const accent = cookieStore.get("UI_ACCENT")?.value ?? "violet";
-  const accentClass =
-    accent === "blue"
-      ? "ui-accent-blue"
-      : accent === "violet"
-        ? "ui-accent-violet"
-        : "";
 
   return (
     <html lang={safeLocale} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased ${accentClass}`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NextIntlClientProvider locale={safeLocale} messages={messages}>
-            <QueryProvider>
-              <TooltipProvider>
-                <AuthRouteGuard locale={safeLocale}>
-                  <DesktopChromeWrapper>{children}</DesktopChromeWrapper>
-                </AuthRouteGuard>
-                <Toaster />
-              </TooltipProvider>
-            </QueryProvider>
-          </NextIntlClientProvider>
-        </ThemeProvider>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{ __html: APP_BOOTSTRAP_OVERLAY_SCRIPT }}
+        />
+        <AccentProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <NextIntlClientProvider locale={safeLocale} messages={messages}>
+              <QueryProvider>
+                <TooltipProvider>
+                  <AuthRouteGuard locale={safeLocale}>
+                    <DesktopChromeWrapper>{children}</DesktopChromeWrapper>
+                  </AuthRouteGuard>
+                  <Toaster />
+                </TooltipProvider>
+              </QueryProvider>
+            </NextIntlClientProvider>
+          </ThemeProvider>
+        </AccentProvider>
       </body>
     </html>
   );
