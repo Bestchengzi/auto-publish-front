@@ -25,3 +25,5 @@ apps/desktop/release-local-*/
 # analysis reports
 apps/renderer/ts-prune-report.txt
 
+apps/desktop/release/
+apps/desktop/release-local-*/
