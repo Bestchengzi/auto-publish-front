@@ -1,0 +1,13 @@
+.git
+.github
+.cursor
+.DS_Store
+.env*
+**/.env*
+node_modules
+**/node_modules
+apps/desktop
+apps/renderer/.next
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
