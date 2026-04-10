@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/request";
 import * as accountsApi from "@/lib/api/accounts";
@@ -47,6 +48,11 @@ export function useAccountManagementActions({
   refreshData,
   fetchGroups,
 }: UseAccountManagementActionsArgs) {
+  const queryClient = useQueryClient();
+  const invalidateAccountManagementQueries = React.useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["account-management"] });
+  }, [queryClient]);
+
   const createGroup = React.useCallback(async () => {
     const name = newGroupName.trim();
     if (!name) return;
@@ -104,13 +110,14 @@ export function useAccountManagementActions({
       if (Number.isNaN(numId)) return;
       try {
         await accountGroupsApi.deleteAccountGroup(numId);
+        await invalidateAccountManagementQueries();
         await refreshData();
       } catch (e) {
         console.error("Failed to delete group:", e);
         toast.error(getApiErrorMessage(e, t("common.error")));
       }
     },
-    [refreshData, t],
+    [invalidateAccountManagementQueries, refreshData, t],
   );
 
   const moveSelectedToGroup = React.useCallback(
@@ -131,6 +138,7 @@ export function useAccountManagementActions({
         );
         const failed = results.filter((r) => r.status === "rejected");
         setSelectedIds(new Set());
+        await invalidateAccountManagementQueries();
         await refreshData();
         if (failed.length > 0) {
           toast.error(
@@ -142,7 +150,13 @@ export function useAccountManagementActions({
         toast.error(getApiErrorMessage(e, t("common.error")));
       }
     },
-    [refreshData, selectedIds, setSelectedIds, t],
+    [
+      invalidateAccountManagementQueries,
+      refreshData,
+      selectedIds,
+      setSelectedIds,
+      t,
+    ],
   );
 
   const deleteSelected = React.useCallback(async () => {
@@ -154,6 +168,7 @@ export function useAccountManagementActions({
       );
       const failed = results.filter((r) => r.status === "rejected");
       setSelectedIds(new Set());
+      await invalidateAccountManagementQueries();
       await refreshData();
       if (failed.length > 0) {
         toast.error(
@@ -164,7 +179,13 @@ export function useAccountManagementActions({
       console.error("Failed to delete accounts:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
     }
-  }, [refreshData, selectedIds, setSelectedIds, t]);
+  }, [
+    invalidateAccountManagementQueries,
+    refreshData,
+    selectedIds,
+    setSelectedIds,
+    t,
+  ]);
 
   const openEditDrawer = React.useCallback(
     (account: Account) => {
@@ -182,12 +203,20 @@ export function useAccountManagementActions({
         .filter((n) => !Number.isNaN(n));
       await accountsApi.updateAccount(editingAccountId, { group_ids: groupIds });
       setEditingAccountId(null);
+      await invalidateAccountManagementQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to update account:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
     }
-  }, [editingAccountId, editingGroupIds, refreshData, setEditingAccountId, t]);
+  }, [
+    editingAccountId,
+    editingGroupIds,
+    invalidateAccountManagementQueries,
+    refreshData,
+    setEditingAccountId,
+    t,
+  ]);
 
   const deleteOne = React.useCallback(
     async (id: string) => {
@@ -199,13 +228,20 @@ export function useAccountManagementActions({
           return n;
         });
         setEditingAccountId((prev) => (prev === id ? null : prev));
+        await invalidateAccountManagementQueries();
         await refreshData();
       } catch (e) {
         console.error("Failed to delete account:", e);
         toast.error(getApiErrorMessage(e, t("common.error")));
       }
     },
-    [refreshData, setEditingAccountId, setSelectedIds, t],
+    [
+      invalidateAccountManagementQueries,
+      refreshData,
+      setEditingAccountId,
+      setSelectedIds,
+      t,
+    ],
   );
 
   return {

@@ -77,7 +77,7 @@ const SUPPORTED_PLATFORM_IDS: PlatformId[] = [
   "csdn",
   "baijiahao",
 ];
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 20;
 
 type PublishRecordsPageData = {
   items: Work[];

@@ -203,6 +203,7 @@ export interface Translations {
     createXiaohongshu: string;
     createMediumLongArticle: string;
     skillInstallTooltip: string;
+    imageGenerationFailed: string;
   };
 
   // Uploads

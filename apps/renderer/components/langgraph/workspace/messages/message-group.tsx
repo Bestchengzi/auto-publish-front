@@ -5,6 +5,7 @@ import {
   FolderOpenIcon,
   GlobeIcon,
   ImageIcon,
+  ImageOffIcon,
   LightbulbIcon,
   ListTodoIcon,
   MessageCircleQuestionMarkIcon,
@@ -49,7 +50,37 @@ type GenerateImageArtifact = {
   artifact_url?: string;
   status?: string;
   filename?: string;
+  error?: string;
 };
+
+const IMAGE_GEN_ERROR_PREVIEW_MAX = 480;
+
+function truncateForPreview(text: string, max = IMAGE_GEN_ERROR_PREVIEW_MAX): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+function isGenerateImageArtifactFailed(
+  item: GenerateImageArtifact | undefined,
+): boolean {
+  if (!item) return false;
+  const st = item.status?.toLowerCase();
+  if (st === "failed" || st === "error") return true;
+  if (typeof item.error === "string" && item.error.trim().length > 0) return true;
+  return false;
+}
+
+function getGenerateImageArtifactErrorMessage(
+  item: GenerateImageArtifact | undefined,
+): string | null {
+  if (!item) return null;
+  if (typeof item.error === "string") {
+    const msg = item.error.trim();
+    if (msg) return msg;
+  }
+  return null;
+}
 
 type ToolMessageWithArtifact = Message & {
   type: "tool";
@@ -268,6 +299,19 @@ export function MessageGroup({
                   const item = artifacts.find((a) => a?.index === idx);
                   const src = item?.artifact_url ? getGenImageUrl(item.artifact_url) : "";
                   const completed = item?.status === "completed" && !!src;
+                  const failed = isGenerateImageArtifactFailed(item);
+                  const errMsg = getGenerateImageArtifactErrorMessage(item);
+                  const failedBody = (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-destructive/5 px-2 text-center">
+                      <ImageOffIcon
+                        className="size-8 shrink-0 text-destructive/75"
+                        aria-hidden
+                      />
+                      <span className="line-clamp-2 text-xs font-medium text-destructive/90">
+                        {t.toolCalls.imageGenerationFailed}
+                      </span>
+                    </div>
+                  );
                   return (
                     <div
                       key={`${batch.key}-${idx}`}
@@ -281,6 +325,22 @@ export function MessageGroup({
                             alt={item?.filename ?? `image-${idx}`}
                             className="h-full w-full object-cover"
                           />
+                        ) : failed ? (
+                          errMsg ? (
+                            <Tooltip
+                              content={
+                                <p className="max-w-sm whitespace-pre-wrap break-words text-left text-xs">
+                                  {truncateForPreview(errMsg)}
+                                </p>
+                              }
+                            >
+                              <div className="h-full w-full cursor-default outline-none">
+                                {failedBody}
+                              </div>
+                            </Tooltip>
+                          ) : (
+                            failedBody
+                          )
                         ) : (
                           <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted/85 via-muted/50 to-muted/75">
                             <motion.div

@@ -33,6 +33,12 @@ type UpdateState = {
   checkedAt?: number;
 };
 
+type WillDownloadListener = (
+  event: Electron.Event,
+  item: Electron.DownloadItem,
+  webContents: Electron.WebContents,
+) => void;
+
 let updateState: UpdateState = {
   phase: "idle",
   currentVersion: app.getVersion(),
@@ -302,6 +308,18 @@ function createExternalView(win: BrowserWindow, tabId: string) {
       win.webContents.send(channel, ...args);
     }
   };
+  const onWillDownload: WillDownloadListener = (_event, _item, wc) => {
+    if (!wc || wc.id !== bv.webContents.id) return;
+    send("external-tab:download-started", tabId);
+  };
+  bv.webContents.session.on("will-download", onWillDownload);
+  bv.webContents.once("destroyed", () => {
+    try {
+      bv.webContents.session.removeListener("will-download", onWillDownload);
+    } catch {
+      // ignore cleanup errors
+    }
+  });
 
   bv.webContents.on("page-title-updated", (_e, title) => {
     send("external-tab:title-changed", tabId, title);

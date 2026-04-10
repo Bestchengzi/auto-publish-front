@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useParams } from "next/navigation";
 import {
   PlusIcon,
   SettingsIcon,
@@ -10,9 +11,16 @@ import {
   MoreHorizontalIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -63,6 +71,8 @@ import { cn } from "@/lib/utils";
 
 export function AccountManagement() {
   const t = useTranslations();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "zh-CN";
 
   const platforms = React.useMemo(
     () => getPlatformsWithNames((id) => t(`account.platforms.${id}`)),
@@ -80,6 +90,7 @@ export function AccountManagement() {
   >(null);
   const [pendingBatchDeleteOpen, setPendingBatchDeleteOpen] =
     React.useState(false);
+  const [needDesktopDialogOpen, setNeedDesktopDialogOpen] = React.useState(false);
   const [newGroupName, setNewGroupName] = React.useState("");
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(
     null,
@@ -687,14 +698,33 @@ export function AccountManagement() {
             const desktop =
               typeof window !== "undefined" ? window.desktop : undefined;
             if (!desktop?.openPlatformAuthInTab) {
-              toast.error(t("account.addAccount.authNeedDesktop"), {
-                duration: 2500,
-              });
+              setNeedDesktopDialogOpen(true);
               return;
             }
             desktop.openPlatformAuthInTab(platformId);
           }}
         />
+
+        <Dialog open={needDesktopDialogOpen} onOpenChange={setNeedDesktopDialogOpen}>
+          <DialogContent closeLabel={t("account.groups.close")} className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("account.addAccount.authNeedDesktopTitle")}</DialogTitle>
+              <DialogDescription>{t("account.addAccount.authNeedDesktopWithDownload")}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNeedDesktopDialogOpen(false)}>
+                {t("account.addAccount.authNeedDesktopCancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  window.open(`/${locale}/site/download`, "_blank", "noopener,noreferrer");
+                }}
+              >
+                {t("account.addAccount.authNeedDesktopGoDownload")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <DeleteConfirmDialog
           open={pendingDeleteAccountId !== null}

@@ -1,5 +1,5 @@
 /**
- * 统一平台常量，按顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝、知乎、CSDN、百家号
+ * 统一平台常量，按顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知乎、CSDN、百家号
  */
 export type PlatformId =
   | "toutiao"
@@ -18,14 +18,13 @@ export type Platform = {
   logo: string;
 };
 
-/** 平台列表，按固定顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知讯宝、知乎、CSDN、百家号 */
+/** 平台列表，按固定顺序：今日头条、小红书、抖音、微信公众号、微信视频号、知乎、CSDN、百家号 */
 export const PLATFORM_IDS: PlatformId[] = [
   "toutiao",
   "rednote",
   "douyin",
   "wechat_mp",
   "wechat_channels",
-  "zhixunbao",
   "zhihu",
   "csdn",
   "baijiahao",
@@ -38,7 +37,6 @@ export const PLATFORMS: Platform[] = [
   // { id: "douyin", logo: "dou-yin.png" },
   { id: "wechat_mp", logo: "wei-xin-gong-zhong-hao.png" },
   // { id: "wechat_channels", logo: "wei-xin-shi-pin-hao.png" },
-  { id: "zhixunbao", logo: "zhi-xun-bao.png" },
   { id: "zhihu", logo: "zhihu.png" },
   { id: "csdn", logo: "CSDN.png" },
   { id: "baijiahao", logo: "bai-jia-hao.png" },

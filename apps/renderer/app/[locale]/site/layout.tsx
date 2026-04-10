@@ -1,0 +1,5 @@
+import { MarketingShell } from "@/components/marketing-site/marketing-shell";
+
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
+  return <MarketingShell>{children}</MarketingShell>;
+}

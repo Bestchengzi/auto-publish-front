@@ -253,7 +253,9 @@ export function CreationCenterNewChat() {
   );
 
   useEffect(() => {
-    if (canUseAuthFeatures) return;
+    // Wait auth bootstrap; avoid wiping persisted persona on hard refresh.
+    if (!authReady) return;
+    if (isLoggedIn) return;
     setSelectedPersonaId(null);
     if (
       context.persona_id !== undefined ||
@@ -269,7 +271,7 @@ export function CreationCenterNewChat() {
         reasoning_effort: undefined,
       });
     }
-  }, [canUseAuthFeatures, context, setSettings]);
+  }, [authReady, context, isLoggedIn, setSettings]);
 
   useEffect(() => {
     const contextPersonaId =

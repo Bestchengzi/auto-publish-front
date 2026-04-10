@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRef } from "react";
 import { debounce } from "lodash";
-import { useQuery, type QueryKey } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import {
   PlusIcon,
   PencilIcon,
@@ -103,6 +103,7 @@ function mapMediaResponseToMaterial(m: mediaApi.MediaResponse): Material {
 
 export function MaterialLibrary() {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [groupSettingsOpen, setGroupSettingsOpen] = React.useState(false);
@@ -223,12 +224,17 @@ export function MaterialLibrary() {
     }
   }, [groupsQuery, materialsQuery, t]);
 
+  const invalidateMaterialLibraryQueries = React.useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["material-library"] });
+  }, [queryClient]);
+
   async function createGroup() {
     const name = newGroupName.trim();
     if (!name) return;
     try {
       await mediaGroupsApi.createMediaGroup(name);
       setNewGroupName("");
+      await invalidateMaterialLibraryQueries();
       await fetchGroups();
     } catch (e) {
       console.error("Failed to create group:", e);
@@ -259,6 +265,7 @@ export function MaterialLibrary() {
     if (Number.isNaN(numId)) return;
     try {
       await mediaGroupsApi.deleteMediaGroup(numId);
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to delete group:", e);
@@ -325,6 +332,7 @@ export function MaterialLibrary() {
           : groupId,
       );
       setSelectedIds(new Set());
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to move media:", e);
@@ -338,6 +346,7 @@ export function MaterialLibrary() {
     try {
       await mediaApi.deleteMedia(ids);
       setSelectedIds(new Set());
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to delete media:", e);
@@ -354,6 +363,7 @@ export function MaterialLibrary() {
         return n;
       });
       setEditingMaterial((prev) => (prev?.id === id ? null : prev));
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to delete media:", e);
@@ -381,6 +391,7 @@ export function MaterialLibrary() {
         remark: updates.description ?? null,
         group_ids: updates.groupId === "ungrouped" ? [] : groupIds,
       });
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to update media:", e);
@@ -414,6 +425,7 @@ export function MaterialLibrary() {
           parseInt(targetGroupId, 10),
         );
       }
+      await invalidateMaterialLibraryQueries();
       await refreshData();
     } catch (e) {
       console.error("Failed to upload media:", e);

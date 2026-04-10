@@ -14,40 +14,8 @@ import {
 } from "@/lib/api/billing";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getSubscriptionPlanFeatures } from "@/lib/marketing/plan-features";
 import { getApiErrorMessage } from "@/lib/request";
-
-const PLAN_LEVEL: Record<string, number> = {
-  FREE: 0,
-  PRO: 1,
-  TEAM: 2,
-};
-
-const PLAN_FEATURES: Record<string, string[]> = {
-  LITE: [
-    "专属积分补给",
-    "月度积分配额",
-    "基础深度创作",
-    "标准输出质量",
-    "多任务并发支持",
-    "定时任务执行",
-  ],
-  PRO: [
-    "专属积分补给",
-    "更高月度积分配额",
-    "进阶深度创作",
-    "更强任务稳定性",
-    "多任务并发支持",
-    "定时任务执行",
-  ],
-  MAX: [
-    "专属积分补给",
-    "超高月度积分配额",
-    "高强度深度创作",
-    "大批量任务处理",
-    "多任务并发支持",
-    "定时任务执行",
-  ],
-};
 
 function toDisplayAmount(raw: number): string {
   return (raw / 100).toFixed(2).replace(/\.00$/, "");
@@ -55,11 +23,6 @@ function toDisplayAmount(raw: number): string {
 
 function toDisplayPoints(raw: number): string {
   return (raw / 100).toLocaleString("zh-CN");
-}
-
-function getPlanFeatures(planCode: string): string[] {
-  const normalized = planCode.toUpperCase();
-  return PLAN_FEATURES[normalized] ?? PLAN_FEATURES.PRO;
 }
 
 function openPaymentPage(codeUrl: string): boolean {
@@ -132,6 +95,13 @@ export function SubscriptionPlanDialog({
   );
 
   const currentPlanCode = account?.subscription?.plan_code ?? null;
+  /** 套餐等级与列表排序一致：月价升序，索引越大等级越高 */
+  const currentPlanIndex = useMemo(() => {
+    if (!currentPlanCode) return -1;
+    const idx = plans.findIndex((p) => p.code === currentPlanCode);
+    return idx;
+  }, [plans, currentPlanCode]);
+
   const annualDiscountPercent = useMemo(() => {
     const first = plans.find((plan) => plan.annual_discount_rate > 0);
     if (!first) return 0;
@@ -261,26 +231,26 @@ export function SubscriptionPlanDialog({
                 cycle === "MONTHLY" ? plan.monthly_price_amount : plan.annual_price_amount;
               const isCurrent = currentPlanCode === plan.code;
               const isMiddleCard = index === 1;
-              const isDowngrade = Boolean(
-                currentPlanCode &&
-                  PLAN_LEVEL[currentPlanCode] !== undefined &&
-                  PLAN_LEVEL[plan.code] !== undefined &&
-                  PLAN_LEVEL[plan.code] < PLAN_LEVEL[currentPlanCode],
-              );
+              const isDowngrade =
+                currentPlanIndex >= 0 && index < currentPlanIndex;
               const isPurchasing = purchasingCode === plan.code;
 
               return (
                 <div
                   key={plan.code}
-                  className={`relative flex min-h-[330px] flex-col rounded-xl border p-[18px] ${
+                  className={`relative flex flex-col rounded-xl border p-[18px] ${
                     isCurrent
-                      ? "border-primary bg-primary/5"
+                      ? "min-h-[330px] border-emerald-500/45 bg-emerald-500/[0.08] shadow-[0_0_0_1px_rgba(16,185,129,0.22)] dark:border-emerald-400/35 dark:bg-emerald-950/35"
                       : isMiddleCard
                         ? "min-h-[380px] border-primary/80 bg-primary/5 shadow-[0_0_0_1px_hsl(var(--primary)/0.35)]"
-                        : "border-border"
+                        : "min-h-[330px] border-border"
                   }`}
                 >
-                  {isMiddleCard && !isCurrent ? (
+                  {isCurrent ? (
+                    <div className="absolute top-3 right-3 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
+                      当前套餐
+                    </div>
+                  ) : isMiddleCard ? (
                     <div className="absolute top-3 right-3 rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">
                       推荐
                     </div>
@@ -296,7 +266,7 @@ export function SubscriptionPlanDialog({
                     每月 {toDisplayPoints(plan.monthly_points)} 积分
                   </div>
                   <div className="mt-5 space-y-2">
-                    {getPlanFeatures(plan.code).map((feature) => (
+                    {getSubscriptionPlanFeatures(plan.code).map((feature) => (
                       <div
                         key={`${plan.code}-${feature}`}
                         className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -309,19 +279,23 @@ export function SubscriptionPlanDialog({
 
                   <Button
                     type="button"
-                    variant={isCurrent ? "secondary" : isMiddleCard ? "default" : "outline"}
+                    variant={isCurrent ? "outline" : isMiddleCard ? "default" : "outline"}
                     className={
-                      isMiddleCard
-                        ? "mt-auto h-11 w-full text-[17px]"
-                        : "mt-auto h-11 w-full border-primary text-[17px] text-primary hover:bg-primary/5 hover:text-primary"
+                      isCurrent
+                        ? "mt-auto h-11 w-full border-emerald-600 text-[17px] text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 dark:border-emerald-500 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300"
+                        : isMiddleCard
+                          ? "mt-auto h-11 w-full text-[17px]"
+                          : "mt-auto h-11 w-full border-primary text-[17px] text-primary hover:bg-primary/5 hover:text-primary"
                     }
-                    disabled={Boolean(purchasingCode) || isCurrent || isDowngrade}
+                    disabled={Boolean(purchasingCode) || isDowngrade}
                     onClick={() => void handlePurchase(plan)}
                   >
-                    {isCurrent
-                      ? "当前套餐"
-                      : isDowngrade
-                        ? "已包含在更高套餐"
+                    {isDowngrade
+                      ? "不可降级购买"
+                      : isCurrent
+                        ? isPurchasing
+                          ? "跳转支付中..."
+                          : "续购叠加"
                         : isPurchasing
                           ? "跳转支付中..."
                           : "立即购买"}

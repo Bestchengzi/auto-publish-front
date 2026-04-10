@@ -266,6 +266,7 @@ export const enUS: Translations = {
     createXiaohongshu: "Create Xiaohongshu post",
     createMediumLongArticle: "Create medium-to-long article",
     skillInstallTooltip: "Install skill and make it available to DeerFlow",
+    imageGenerationFailed: "Generation failed",
   },
 
   // Subtasks

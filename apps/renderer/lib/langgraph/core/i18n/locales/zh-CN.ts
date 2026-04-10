@@ -254,6 +254,7 @@ export const zhCN: Translations = {
     createXiaohongshu: "创作小红书",
     createMediumLongArticle: "创建中长文",
     skillInstallTooltip: "安装技能并使其可在 DeerFlow 中使用",
+    imageGenerationFailed: "生成失败",
   },
 
   uploads: {

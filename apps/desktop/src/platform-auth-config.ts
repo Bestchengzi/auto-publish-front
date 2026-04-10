@@ -4,10 +4,12 @@
 export type PlatformAuthId =
   | "toutiao"
   | "rednote"
-  | "xhs"
   | "douyin"
   | "wechat_mp"
-  | "wechat_channels";
+  | "wechat_channels"
+  | "zhihu"
+  | "baijiahao"
+  | "csdn";
 
 export type PlatformAuthEntry = {
   loginUrl: string;
@@ -27,16 +29,10 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
     successUrlPatterns: ["^https://mp\\.toutiao\\.com/(?!auth/page/login)"],
   },
   rednote: {
-    loginUrl: "https://creator.xiaohongshu.com/login",
-    cookieUrls: ["https://creator.xiaohongshu.com/"],
-    successUrlPatterns: [
-      "^https://creator\\.xiaohongshu\\.com/(?!login(?:/|[?#]|$))",
+    loginUrl: "https://creator.xiaohongshu.com/login?selfLogout=true",
+    cookieUrls: [
+      "https://creator.xiaohongshu.com/",
     ],
-  },
-  // Backward-compatible alias for historical id naming.
-  xhs: {
-    loginUrl: "https://creator.xiaohongshu.com/login",
-    cookieUrls: ["https://creator.xiaohongshu.com/"],
     successUrlPatterns: [
       "^https://creator\\.xiaohongshu\\.com/(?!login(?:/|[?#]|$))",
     ],
@@ -59,6 +55,26 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
     loginUrl: "https://channels.weixin.qq.com/login.html",
     cookieUrls: ["https://channels.weixin.qq.com/"],
     successUrlPatterns: ["^https://channels\\.weixin\\.qq\\.com/(?!login\\.html)"],
+  },
+  zhihu: {
+    loginUrl: "https://www.zhihu.com/signin?next=%2Fcreator",
+    cookieUrls: ["https://www.zhihu.com/"],
+    successUrlPatterns: ["^https://www\\.zhihu\\.com/creator"],
+  },
+  baijiahao: {
+    loginUrl: "https://baijiahao.baidu.com/builder/theme/bjh/login",
+    cookieUrls: ["https://baijiahao.baidu.com/"],
+    successUrlPatterns: [
+      "^https://baijiahao\\.baidu\\.com/builder/(?!theme/bjh/login(?:/|[?#]|$))",
+    ],
+  },
+  csdn: {
+    loginUrl: "https://passport.csdn.net/login?code=applets",
+    cookieUrls: ["https://passport.csdn.net/", "https://www.csdn.net/"],
+    successUrlPatterns: [
+      "^https://passport\\.csdn\\.net/(?!login(?:/|[?#]|$))",
+      "^https://www\\.csdn\\.net/",
+    ],
   },
 };
 

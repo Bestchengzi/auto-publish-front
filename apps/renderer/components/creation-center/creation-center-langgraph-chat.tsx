@@ -128,7 +128,9 @@ export function CreationCenterLanggraphChat() {
   );
 
   useEffect(() => {
-    if (canUseAuthFeatures) return;
+    // Wait auth bootstrap; avoid wiping persisted persona on hard refresh.
+    if (!authReady) return;
+    if (isLoggedIn) return;
     if (
       settings.context.persona_id !== undefined ||
       settings.context.model_name !== undefined ||
@@ -143,7 +145,7 @@ export function CreationCenterLanggraphChat() {
         reasoning_effort: undefined,
       });
     }
-  }, [canUseAuthFeatures, setSettings, settings.context]);
+  }, [authReady, isLoggedIn, setSettings, settings.context]);
 
   useEffect(() => {
     if (!personasFetched) return;

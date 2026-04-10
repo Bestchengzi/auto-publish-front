@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,10 @@ function WeChatQRContent({
 }) {
   const queryClient = useQueryClient();
   const t = useTranslations("auth.loginDialog");
+  const locale = useLocale();
+  const legalLocale = locale === "en" ? "en" : "zh-CN";
+  const legalUserHref = `/${legalLocale}/site/terms`;
+  const legalPrivacyHref = `/${legalLocale}/site/privacy`;
   const [qrcodeUrl, setQrcodeUrl] = useState("");
   const [ticket, setTicket] = useState("");
   const [status, setStatus] = useState<"loading" | "pending" | "expired">(
@@ -197,7 +201,7 @@ function WeChatQRContent({
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {t("agreePrefix")}
         <a
-          href={t("legalUserHref")}
+          href={legalUserHref}
           target="_blank"
           rel="noopener noreferrer"
           className="mx-0.5 text-primary hover:underline"
@@ -206,7 +210,7 @@ function WeChatQRContent({
         </a>
         {t("agreeMiddle")}
         <a
-          href={t("legalPrivacyHref")}
+          href={legalPrivacyHref}
           target="_blank"
           rel="noopener noreferrer"
           className="ml-0.5 text-primary hover:underline"

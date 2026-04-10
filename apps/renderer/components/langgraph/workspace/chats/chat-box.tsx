@@ -90,7 +90,6 @@ const PLATFORM_OPTIONS_ORDER: Record<string, string[]> = {
     "cover_mode",
     "enable_ad",
     "first_publish",
-    "sync_to_weitoutiao",
     "work_statement",
     "info_source",
     "source_author_uid",
@@ -176,7 +175,6 @@ function prettyFieldName(field: string): string {
 
 const TOUTIAO_WORK_STATEMENT_OPTIONS = [
   "取材网络",
-  "引用站内",
   "个人观点，仅供参考",
   "引用AI",
   "虚构演绎，故事经历",
@@ -230,7 +228,11 @@ const FIELD_ID_TITLE = "__title__";
 const FIELD_ID_COVER_MODE = "cover_mode";
 const FIELD_ID_ENABLE_AD = "enable_ad";
 const HIDDEN_PLATFORM_FIELD_IDS = new Set(["info_source", "source_author_uid"]);
-const REMOVED_TOUTIAO_FIELD_IDS = new Set(["position", "collection_id"]);
+const REMOVED_TOUTIAO_FIELD_IDS = new Set([
+  "position",
+  "collection_id",
+  "sync_to_weitoutiao",
+]);
 const REDNOTE_ALLOWED_FIELD_IDS = new Set(["privacy", "original", "note_copyable"]);
 const ZHIHU_ALLOWED_FIELD_IDS = new Set(["cover_image"]);
 const WECHAT_ALLOWED_FIELD_IDS = new Set([

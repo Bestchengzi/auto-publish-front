@@ -75,6 +75,7 @@ export function AppShellSidebarFooter() {
   const [userPhone, setUserPhone] = useState("");
   const [accent, setAccent] = useState<AccentPreset>("violet");
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const purchaseAfterLoginKey = "media-open-plan-after-login";
   const { data: billingAccount } = useQuery({
     queryKey: ["billing", "account"],
     queryFn: getBillingAccount,
@@ -115,6 +116,14 @@ export function AppShellSidebarFooter() {
   }, []);
 
   useEffect(() => {
+    const openPlanDialog = () => setPlanDialogOpen(true);
+    window.addEventListener("media-billing-open-plan", openPlanDialog);
+    return () => {
+      window.removeEventListener("media-billing-open-plan", openPlanDialog);
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     setAccent(readAccentStorage());
 
@@ -143,7 +152,8 @@ export function AppShellSidebarFooter() {
     const planDisplayName =
       billingAccount?.account.subscription?.plan_display_name?.trim() || "免费版";
     const balancePoints = billingAccount?.account.balance_points ?? 0;
-    const billingHint = `${planDisplayName} · 剩余积分 ${balancePoints.toLocaleString("zh-CN")}`;
+    const displayBalancePoints = Math.round(balancePoints / 100);
+    const billingHint = `${planDisplayName} · 剩余积分 ${displayBalancePoints.toLocaleString("zh-CN")}`;
     return (
       <>
         <DropdownMenu>
@@ -203,7 +213,13 @@ export function AppShellSidebarFooter() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="py-2"
-              onClick={() => window.open("/", "_blank", "noopener,noreferrer")}
+              onClick={() =>
+                window.open(
+                  `/${locale}/site`,
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
             >
               <HouseIcon className="size-4" />
               访问官网
@@ -444,7 +460,18 @@ export function AppShellSidebarFooter() {
       >
         {t("login")}
       </Button>
-      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+      <LoginDialog
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        onLoginSuccess={() => {
+          if (typeof window === "undefined") return;
+          const shouldOpenPlan =
+            window.sessionStorage.getItem(purchaseAfterLoginKey) === "1";
+          if (!shouldOpenPlan) return;
+          window.sessionStorage.removeItem(purchaseAfterLoginKey);
+          setPlanDialogOpen(true);
+        }}
+      />
     </div>
   );
 }

@@ -14,10 +14,13 @@ function normalizePath(pathname: string): string {
 
 function isAllowedWhenLoggedOut(pathname: string, locale: string): boolean {
   const normalized = normalizePath(pathname);
-  return (
-    normalized === `/${locale}/creation-center/new` ||
-    normalized === `/${locale}/topic-center`
-  );
+  if (normalized === `/${locale}/creation-center/new` || normalized === `/${locale}/topic-center`) {
+    return true;
+  }
+  if (normalized === `/${locale}/site` || normalized.startsWith(`/${locale}/site/`)) {
+    return true;
+  }
+  return false;
 }
 
 function AuthRouteGuardInner({
@@ -32,6 +35,8 @@ function AuthRouteGuardInner({
   const { ready, isLoggedIn } = useAuthLoggedIn();
   const targetPath = `/${locale}/creation-center/new`;
   const redirectFlag = "__authRedirect";
+  const purchaseFlag = "__openPurchase";
+  const purchaseAfterLoginKey = "media-open-plan-after-login";
   const normalizedPath = pathname ? normalizePath(pathname) : "";
   const isAllowedPath =
     pathname != null ? isAllowedWhenLoggedOut(pathname, locale) : true;
@@ -49,6 +54,35 @@ function AuthRouteGuardInner({
     isLoggedIn,
     normalizedPath,
     pathname,
+    ready,
+    searchParams,
+    targetPath,
+  ]);
+
+  useEffect(() => {
+    if (!ready || !pathname) return;
+    if (normalizedPath !== targetPath) return;
+    if (searchParams.get(purchaseFlag) !== "1") return;
+
+    if (isLoggedIn) {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(purchaseAfterLoginKey);
+      }
+      window.dispatchEvent(new Event("media-billing-open-plan"));
+    } else {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(purchaseAfterLoginKey, "1");
+      }
+      window.dispatchEvent(new Event("media-auth-open-login"));
+    }
+    const nextUrl = `${targetPath}${window.location.hash || ""}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [
+    isLoggedIn,
+    normalizedPath,
+    pathname,
+    purchaseFlag,
+    purchaseAfterLoginKey,
     ready,
     searchParams,
     targetPath,

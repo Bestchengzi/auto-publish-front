@@ -21,6 +21,7 @@ import { formatUpdateAgoMinutesToHours } from "@/lib/date";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
 import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import { createThread } from "@/lib/langgraph-client";
+import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import { PageEmptyState } from "@/components/common/page-empty-state";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { Button } from "@/components/ui/button";
@@ -304,8 +305,13 @@ export function TopicCenter() {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const [settings] = useLocalSettings();
   const locale = pathname?.split("/").filter(Boolean)[0] ?? "zh-CN";
   const [pendingItemKey, setPendingItemKey] = React.useState<string | null>(null);
+  const selectedPersonaId =
+    typeof settings.context.persona_id === "string"
+      ? settings.context.persona_id
+      : null;
 
   const handleDiverge = React.useCallback(
     async (title: string, itemKey: string) => {
@@ -347,6 +353,7 @@ export function TopicCenter() {
         stashPendingInitialMessage({
           threadId,
           text: `${tTopicCenter("actions.divergePromptPrefix")}${normalizedTitle}`,
+          personaId: selectedPersonaId,
         });
         router.push(`/${locale}/creation-center/${threadId}`);
       } catch (err) {
@@ -356,7 +363,16 @@ export function TopicCenter() {
         setPendingItemKey(null);
       }
     },
-    [authReady, isLoggedIn, locale, pendingItemKey, queryClient, router, tTopicCenter],
+    [
+      authReady,
+      isLoggedIn,
+      locale,
+      pendingItemKey,
+      queryClient,
+      router,
+      selectedPersonaId,
+      tTopicCenter,
+    ],
   );
 
   const hotRankQuery = useQuery({

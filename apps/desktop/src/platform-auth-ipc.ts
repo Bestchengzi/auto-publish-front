@@ -51,6 +51,7 @@ async function collectCookies(
   for (const url of cookieUrls) {
     const list = await ses.cookies.get({ url });
     for (const c of list) {
+      console.log(c.name)
       const key = `${c.domain}\0${c.path}\0${c.name}`;
       merged.set(key, c);
     }

@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "../globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -14,14 +14,14 @@ import { APP_BOOTSTRAP_OVERLAY_SCRIPT } from "@/lib/app-bootstrap-overlay";
 import { ACCENT_INIT_SCRIPT } from "@/lib/ui-accent";
 import { setRequestLocale } from "next-intl/server";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../fonts/Geist/Geist-VariableFont_wght.ttf",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../fonts/Geist_Mono/GeistMono-VariableFont_wght.ttf",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export function generateStaticParams() {

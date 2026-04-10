@@ -15,6 +15,13 @@ export const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        /** 官网等场景：避免 Link 命中 default 的 [a]:hover:bg-primary */
+        marketingPrimary:
+          "border-transparent bg-blue-600 text-white shadow-sm hover:bg-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-600",
+        marketingSecondary:
+          "border border-slate-300/90 bg-white/90 text-slate-700 hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-900/70 dark:text-zinc-200 dark:hover:bg-zinc-800/80",
+        marketingTertiary:
+          "border border-blue-500/35 bg-transparent text-blue-800 hover:bg-blue-500/[0.08] dark:border-cyan-500/35 dark:text-cyan-200 dark:hover:bg-cyan-950/35",
       },
       size: {
         default:
