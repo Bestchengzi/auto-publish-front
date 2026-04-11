@@ -18,7 +18,7 @@ export const config = {
   matcher: [
     // Skip next internals、静态资源、以及 next.config 中的 /baseApi 反向代理前缀。
     // 否则 localePrefix: "always" 会把 /baseApi/... 重写成 /zh-CN/baseApi/...，本地 fetch 得到 404。
-    "/((?!_next|.*\\..*|baseApi).*)"
+    "/((?!_next|.*\\..*|media).*)"
   ]
 };
 
