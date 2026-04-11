@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:20-alpine AS deps
 WORKDIR /app
 
@@ -5,7 +7,8 @@ COPY package.json package-lock.json ./
 COPY .npmrc ./.npmrc
 COPY apps/renderer/package.json apps/renderer/package.json
 
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --progress=false
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -31,7 +34,8 @@ COPY package.json package-lock.json ./
 COPY .npmrc ./.npmrc
 COPY apps/renderer ./apps/renderer
 
-RUN npm -w apps/renderer exec next build
+RUN --mount=type=cache,target=/app/apps/renderer/.next/cache \
+    npm -w apps/renderer exec next build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
