@@ -34,7 +34,6 @@ export const zhCN: Translations = {
     artifacts: "文件",
     public: "公共",
     custom: "自定义",
-    notAvailableInDemoMode: "在演示模式下不可用",
     loading: "加载中...",
     version: "版本",
     lastUpdated: "最后更新",
@@ -42,7 +41,6 @@ export const zhCN: Translations = {
     preview: "预览",
     cancel: "取消",
     save: "保存",
-    install: "安装",
     create: "创建",
     export: "导出",
     exportAsMarkdown: "导出为 Markdown",
@@ -253,7 +251,6 @@ export const zhCN: Translations = {
     startCreation: "开始创作",
     createXiaohongshu: "创作小红书",
     createMediumLongArticle: "创建中长文",
-    skillInstallTooltip: "安装技能并使其可在 DeerFlow 中使用",
     imageGenerationFailed: "生成失败",
   },
 

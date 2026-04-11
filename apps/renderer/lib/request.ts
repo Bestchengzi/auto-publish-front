@@ -4,6 +4,7 @@
  * 鉴权：401 侧效应已预留，默认不执行跳转/清栈。
  * Token 与用户会话读写位于 `@/lib/auth/session`。
  */
+import { applyStreamingProxyClientHints } from "@/lib/api/streaming-fetch-headers"
 import { clearAuthStorage, getAuthorizationHeaderValue } from "@/lib/auth/session"
 
 let unauthorizedRedirecting = false
@@ -223,6 +224,7 @@ export async function streamRequest<T = unknown>(
   abortSignal?: AbortSignal,
 ): Promise<void> {
   const headers = authHeadersInit(options)
+  applyStreamingProxyClientHints(headers)
 
   try {
     const response = await fetch(url, {

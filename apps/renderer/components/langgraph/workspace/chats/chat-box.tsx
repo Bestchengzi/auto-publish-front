@@ -48,7 +48,6 @@ import * as accountsApi from "@/lib/api/accounts";
 import * as mediaApi from "@/lib/api/media";
 import { getPlatformsWithNames } from "@/lib/platforms";
 import { getApiErrorMessage } from "@/lib/request";
-import { env } from "@/lib/langgraph/env";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
 import { uploadFiles } from "@/lib/langgraph/core/uploads/api";
 import { cn } from "@/lib/utils";
@@ -420,7 +419,6 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const layoutRef = useRef<GroupImperativeHandle>(null);
 
   const {
-    artifacts,
     open: artifactsOpen,
     setOpen: setArtifactsOpen,
     setArtifacts,
@@ -431,7 +429,6 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     closePublishPreview,
   } = useArtifacts();
 
-  const [autoSelectFirstArtifact, setAutoSelectFirstArtifact] = useState(true);
   const [activePublishPlatform, setActivePublishPlatform] = useState("");
   const [formValuesByPlatform, setFormValuesByPlatform] = useState<
     Record<string, Record<string, unknown>>
@@ -600,25 +597,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     // ) {
     //   deselect();
     // }
-
-    if (
-      env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true" &&
-      autoSelectFirstArtifact
-    ) {
-      if (markdownArtifacts.length > 0) {
-        setAutoSelectFirstArtifact(false);
-        selectArtifact(markdownArtifacts[0]!);
-      }
-    }
-  }, [
-    threadId,
-    autoSelectFirstArtifact,
-    deselect,
-    selectArtifact,
-    selectedArtifact,
-    setArtifacts,
-    markdownArtifacts,
-  ]);
+  }, [threadId, deselect, setArtifacts, markdownArtifacts]);
 
   useEffect(() => {
     const nextSet = new Set(markdownArtifacts);
@@ -639,22 +618,15 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     prevMarkdownArtifactsRef.current = nextSet;
   }, [markdownArtifacts, selectArtifact, setArtifactsOpen]);
 
-  const artifactPanelOpen = useMemo(() => {
-    if (env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true") {
-      return artifactsOpen && artifacts?.length > 0;
-    }
-    return artifactsOpen;
-  }, [artifactsOpen, artifacts]);
-
   useEffect(() => {
     if (layoutRef.current) {
-      if (artifactPanelOpen) {
+      if (artifactsOpen) {
         layoutRef.current.setLayout(OPEN_MODE);
       } else {
         layoutRef.current.setLayout(CLOSE_MODE);
       }
     }
-  }, [artifactPanelOpen]);
+  }, [artifactsOpen]);
 
   const publishPlatformMap = useMemo(
     () => ({
@@ -1300,7 +1272,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
             className={cn(
               "h-full transition-transform duration-300 ease-in-out",
               selectedArtifact ? "p-0" : "p-4",
-              artifactPanelOpen
+              artifactsOpen
                 ? "translate-x-0 border-l border-border"
                 : "translate-x-full border-l-0",
             )}

@@ -2,6 +2,7 @@
   "common": {
     "loading": "加载中…",
     "error": "出错了",
+    "groupNameRequired": "请输入分组名称",
     "errorRetry": "重试",
     "notFound": "页面不存在",
     "notFoundDesc": "抱歉，您访问的页面不存在。",
@@ -176,7 +177,6 @@
       "empty": "暂无分组",
       "emptyHint": "在上方输入名称并点击「新建分组」添加",
       "rename": "重命名",
-      "renameNotSupported": "分组重命名功能暂未对接",
       "deleteConfirm": "确定删除该分组吗？",
       "confirm": "确定",
       "cancel": "取消",
@@ -347,8 +347,7 @@
       "cancel": "取消",
       "all": "全部素材",
       "default": "默认分组",
-      "ungrouped": "未分组",
-      "renameNotSupported": "分组重命名功能暂未对接"
+      "ungrouped": "未分组"
     },
     "table": {
       "selectAll": "全选",

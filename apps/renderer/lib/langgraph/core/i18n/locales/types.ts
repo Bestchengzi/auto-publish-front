@@ -23,7 +23,6 @@ export interface Translations {
     artifacts: string;
     public: string;
     custom: string;
-    notAvailableInDemoMode: string;
     loading: string;
     version: string;
     lastUpdated: string;
@@ -31,7 +30,6 @@ export interface Translations {
     preview: string;
     cancel: string;
     save: string;
-    install: string;
     create: string;
     export: string;
     exportAsMarkdown: string;
@@ -202,7 +200,6 @@ export interface Translations {
     startCreation: string;
     createXiaohongshu: string;
     createMediumLongArticle: string;
-    skillInstallTooltip: string;
     imageGenerationFailed: string;
   };
 

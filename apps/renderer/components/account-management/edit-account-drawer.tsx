@@ -34,8 +34,19 @@ export function EditAccountDrawer({
   const t = useTranslations();
 
   function toggleGroup(groupId: string, checked: boolean) {
+    if (groupId === "ungrouped") {
+      if (checked) {
+        onSelectedGroupIdsChange(["ungrouped"]);
+      } else {
+        onSelectedGroupIdsChange(selectedGroupIds.filter((id) => id !== "ungrouped"));
+      }
+      return;
+    }
     if (checked) {
-      onSelectedGroupIdsChange([...selectedGroupIds, groupId]);
+      onSelectedGroupIdsChange([
+        ...selectedGroupIds.filter((id) => id !== "ungrouped"),
+        groupId,
+      ]);
     } else {
       onSelectedGroupIdsChange(selectedGroupIds.filter((id) => id !== groupId));
     }

@@ -2,8 +2,9 @@
 
 import { Client } from "@langchain/langgraph-sdk/client";
 
-import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 import { getLangGraphBaseUrl } from "@/lib/api/config";
+import { applyStreamingProxyClientHints } from "@/lib/api/streaming-fetch-headers";
+import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 
 let _client: Client | null = null;
 let _clientApiUrl: string | null = null;
@@ -14,7 +15,7 @@ let _clientApiUrl: string | null = null;
 export function getLangGraphClient(): Client {
   const apiUrl = getLangGraphBaseUrl();
   if (!apiUrl) {
-    throw new Error("NEXT_PUBLIC_LANGGRAPH_BASE_URL is not configured");
+    throw new Error("LangGraph API base URL is empty");
   }
   if (!_client || _clientApiUrl !== apiUrl) {
     _client = new Client({
@@ -22,6 +23,7 @@ export function getLangGraphClient(): Client {
       onRequest: async (_url: URL, init: RequestInit) => {
         const authorization = getAuthorizationHeaderValue();
         const headers = new Headers(init?.headers);
+        applyStreamingProxyClientHints(headers);
         if (authorization) {
           headers.set("Authorization", authorization);
         }

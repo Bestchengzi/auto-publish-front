@@ -29,7 +29,7 @@ type GroupSettingsDialogProps = {
   editingGroupName: string;
   onEditingGroupNameChange: (v: string) => void;
   onStartRename: (g: Group) => void;
-  onSaveRename: () => void;
+  onSaveRename: () => void | Promise<void>;
   onCancelRename: () => void;
   onDeleteGroup: (id: string) => void;
   t: (key: string) => string;

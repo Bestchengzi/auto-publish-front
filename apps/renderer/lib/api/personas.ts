@@ -32,7 +32,7 @@ export type PersonaListResponse = {
 };
 
 export async function listPersonas(): Promise<PersonaListResponse> {
-  return request<PersonaListResponse>(apiUrl("/api/personas/"), {
+  return request<PersonaListResponse>(apiUrl("/api/personas"), {
     method: "GET",
   });
 }
@@ -40,7 +40,7 @@ export async function listPersonas(): Promise<PersonaListResponse> {
 export async function createPersona(
   payload: PersonaCreateRequest,
 ): Promise<PersonaResponse> {
-  return request<PersonaResponse>(apiUrl("/api/personas/"), {
+  return request<PersonaResponse>(apiUrl("/api/personas"), {
     method: "POST",
     body: JSON.stringify(payload),
   });

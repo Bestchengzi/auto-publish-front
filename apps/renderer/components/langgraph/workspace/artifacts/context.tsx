@@ -6,7 +6,6 @@ import {
   type ReactNode,
 } from "react";
 
-import { env } from "@/lib/langgraph/env";
 import type { PublishEditResponse } from "@/lib/api/publish";
 
 /** 创作中心无 DeerFlow 侧边栏，折叠主侧栏为空操作 */
@@ -52,9 +51,7 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
   const [artifacts, setArtifacts] = useState<string[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
   const [autoSelect, setAutoSelect] = useState(true);
-  const [open, setOpen] = useState(
-    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
-  );
+  const [open, setOpen] = useState(false);
   const [autoOpen, setAutoOpen] = useState(true);
   const [publishPreview, setPublishPreview] =
     useState<PublishPreviewPayload | null>(null);
@@ -63,9 +60,7 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
   const select = useCallback(
     (artifact: string, autoSelect = false) => {
       setSelectedArtifact(artifact);
-      if (env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY !== "true") {
-        setSidebarOpen(false);
-      }
+      setSidebarOpen(false);
       if (!autoSelect) {
         setAutoSelect(false);
       }

@@ -2,6 +2,7 @@
 
 import { Client as LangGraphClient } from "@langchain/langgraph-sdk/client";
 
+import { applyStreamingProxyClientHints } from "@/lib/api/streaming-fetch-headers";
 import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 import { getLangGraphBaseURL } from "../config";
 
@@ -13,6 +14,7 @@ function createCompatibleClient(): LangGraphClient {
     onRequest: async (_url: URL, init: RequestInit) => {
       const authorization = getAuthorizationHeaderValue();
       const headers = new Headers(init?.headers);
+      applyStreamingProxyClientHints(headers);
       if (authorization) {
         headers.set("Authorization", authorization);
       }

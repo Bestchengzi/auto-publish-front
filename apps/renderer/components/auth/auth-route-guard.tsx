@@ -14,6 +14,10 @@ function normalizePath(pathname: string): string {
 
 function isAllowedWhenLoggedOut(pathname: string, locale: string): boolean {
   const normalized = normalizePath(pathname);
+  // 语言根路径：由 HomeRootRedirect 按 token 决定去 /site 或 /creation-center/new
+  if (normalized === `/${locale}`) {
+    return true;
+  }
   if (normalized === `/${locale}/creation-center/new` || normalized === `/${locale}/topic-center`) {
     return true;
   }

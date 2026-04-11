@@ -74,24 +74,40 @@ export function useAccountManagementActions({
     [setEditingGroupId, setEditingGroupName],
   );
 
-  const saveRename = React.useCallback(() => {
+  const saveRename = React.useCallback(async () => {
     if (!editingGroupId) return;
+    const name = editingGroupName.trim();
+    if (!name) {
+      toast.error(t("common.groupNameRequired"));
+      return;
+    }
     const isApiGroup = /^\d+$/.test(editingGroupId);
     if (isApiGroup) {
-      toast.error(t("account.groups.renameNotSupported"));
-    } else {
-      const name = editingGroupName.trim();
-      if (name) {
-        setGroups((prev) =>
-          prev.map((g) => (g.id === editingGroupId ? { ...g, name } : g)),
+      try {
+        await accountGroupsApi.renameAccountGroup(
+          parseInt(editingGroupId, 10),
+          name,
         );
+        setEditingGroupId(null);
+        setEditingGroupName("");
+        await invalidateAccountManagementQueries();
+        await refreshData();
+      } catch (e) {
+        console.error("Failed to rename group:", e);
+        toast.error(getApiErrorMessage(e, t("common.error")));
       }
+    } else {
+      setGroups((prev) =>
+        prev.map((g) => (g.id === editingGroupId ? { ...g, name } : g)),
+      );
+      setEditingGroupId(null);
+      setEditingGroupName("");
     }
-    setEditingGroupId(null);
-    setEditingGroupName("");
   }, [
     editingGroupId,
     editingGroupName,
+    invalidateAccountManagementQueries,
+    refreshData,
     setEditingGroupId,
     setEditingGroupName,
     setGroups,
@@ -190,7 +206,9 @@ export function useAccountManagementActions({
   const openEditDrawer = React.useCallback(
     (account: Account) => {
       setEditingAccountId(account.id);
-      setEditingGroupIds([...account.groupIds]);
+      setEditingGroupIds(
+        account.groupIds.length === 0 ? ["ungrouped"] : [...account.groupIds],
+      );
     },
     [setEditingAccountId, setEditingGroupIds],
   );
@@ -199,6 +217,7 @@ export function useAccountManagementActions({
     if (!editingAccountId) return;
     try {
       const groupIds = editingGroupIds
+        .filter((id) => id !== "ungrouped")
         .map((id) => parseInt(id, 10))
         .filter((n) => !Number.isNaN(n));
       await accountsApi.updateAccount(editingAccountId, { group_ids: groupIds });

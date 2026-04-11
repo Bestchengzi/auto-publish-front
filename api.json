@@ -1300,13 +1300,13 @@
                 }
             }
         },
-        "/api/scheduled-publish-tasks/": {
+        "/api/scheduled-publish-tasks": {
             "post": {
                 "tags": [
                     "scheduled_publish"
                 ],
                 "summary": "Create Scheduled Publish Task",
-                "operationId": "create_task_api_scheduled_publish_tasks__post",
+                "operationId": "create_task_api_scheduled_publish_tasks_post",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1345,7 +1345,7 @@
                     "scheduled_publish"
                 ],
                 "summary": "List Scheduled Publish Tasks",
-                "operationId": "list_tasks_api_scheduled_publish_tasks__get",
+                "operationId": "list_tasks_api_scheduled_publish_tasks_get",
                 "parameters": [
                     {
                         "name": "name",
@@ -1581,110 +1581,6 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/plan_order": {
-            "post": {
-                "tags": [
-                    "plan_order"
-                ],
-                "summary": "创建 plan_order 订单",
-                "operationId": "create_plan_order_api_plan_order_post",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PlanOrderCreateRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlanOrderCreateResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/plan_order/pay/status/{order_id}": {
-            "get": {
-                "tags": [
-                    "plan_order"
-                ],
-                "summary": "查询订单支付状态",
-                "operationId": "get_plan_order_pay_status_api_plan_order_pay_status__order_id__get",
-                "parameters": [
-                    {
-                        "name": "order_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "title": "Order Id"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PlanOrderStatusResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/plan_order/ali/callback": {
-            "post": {
-                "tags": [
-                    "plan_order"
-                ],
-                "summary": "支付宝异步回调",
-                "operationId": "alipay_callback_api_plan_order_ali_callback_post",
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "text/plain": {
-                                "schema": {
-                                    "type": "string"
                                 }
                             }
                         }
@@ -2305,6 +2201,27 @@
                 }
             }
         },
+        "/api/billing/subscription-orders/ali/callback": {
+            "post": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Handle Subscription Order Alipay Callback",
+                "operationId": "subscription_order_alipay_callback_api_billing_subscription_orders_ali_callback_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/billing/subscription-orders/{order_id}/confirm-payment": {
             "post": {
                 "tags": [
@@ -2446,14 +2363,14 @@
                 }
             }
         },
-        "/api/channels/": {
+        "/api/channels": {
             "get": {
                 "tags": [
                     "channels"
                 ],
                 "summary": "Get Channels Status",
                 "description": "Get the status of all IM channels.",
-                "operationId": "get_channels_status_api_channels__get",
+                "operationId": "get_channels_status_api_channels_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -2511,13 +2428,13 @@
                 }
             }
         },
-        "/api/accounts/": {
+        "/api/accounts": {
             "post": {
                 "tags": [
                     "accounts"
                 ],
                 "summary": "Create Account",
-                "operationId": "create_account_api_accounts__post",
+                "operationId": "create_account_api_accounts_post",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2556,7 +2473,7 @@
                     "accounts"
                 ],
                 "summary": "List Accounts",
-                "operationId": "list_accounts_api_accounts__get",
+                "operationId": "list_accounts_api_accounts_get",
                 "parameters": [
                     {
                         "name": "status",
@@ -2768,13 +2685,13 @@
                 }
             }
         },
-        "/api/account-groups/": {
+        "/api/account-groups": {
             "post": {
                 "tags": [
                     "account_groups"
                 ],
                 "summary": "Create Group",
-                "operationId": "create_group_api_account_groups__post",
+                "operationId": "create_group_api_account_groups_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2810,6 +2727,56 @@
             }
         },
         "/api/account-groups/{group_id}": {
+            "put": {
+                "tags": [
+                    "account_groups"
+                ],
+                "summary": "Rename Group",
+                "operationId": "rename_group_api_account_groups__group_id__put",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GroupUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "account_groups"
@@ -2955,13 +2922,13 @@
                 }
             }
         },
-        "/api/media/": {
+        "/api/media": {
             "get": {
                 "tags": [
                     "media"
                 ],
                 "summary": "List Media",
-                "operationId": "list_media_api_media__get",
+                "operationId": "list_media_api_media_get",
                 "parameters": [
                     {
                         "name": "name",
@@ -3059,7 +3026,7 @@
                     "media"
                 ],
                 "summary": "Delete Media",
-                "operationId": "delete_media_api_media__delete",
+                "operationId": "delete_media_api_media_delete",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3078,7 +3045,7 @@
                                 "schema": {
                                     "type": "object",
                                     "additionalProperties": true,
-                                    "title": "Response Delete Media Api Media  Delete"
+                                    "title": "Response Delete Media Api Media Delete"
                                 }
                             }
                         }
@@ -3234,13 +3201,13 @@
                 }
             }
         },
-        "/api/media-groups/": {
+        "/api/media-groups": {
             "post": {
                 "tags": [
                     "media_groups"
                 ],
                 "summary": "Create Group",
-                "operationId": "create_group_api_media_groups__post",
+                "operationId": "create_group_api_media_groups_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3276,6 +3243,56 @@
             }
         },
         "/api/media-groups/{group_id}": {
+            "put": {
+                "tags": [
+                    "media_groups"
+                ],
+                "summary": "Rename Group",
+                "operationId": "rename_group_api_media_groups__group_id__put",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Group Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GroupUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GroupResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "delete": {
                 "tags": [
                     "media_groups"
@@ -3340,13 +3357,13 @@
                 }
             }
         },
-        "/api/personas/": {
+        "/api/personas": {
             "get": {
                 "tags": [
                     "personas"
                 ],
                 "summary": "List Personas",
-                "operationId": "list_personas_api_personas__get",
+                "operationId": "list_personas_api_personas_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -3365,7 +3382,7 @@
                     "personas"
                 ],
                 "summary": "Create Persona",
-                "operationId": "create_persona_api_personas__post",
+                "operationId": "create_persona_api_personas_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3714,13 +3731,13 @@
                 }
             }
         },
-        "/api/hot-rank/": {
+        "/api/hot-rank": {
             "get": {
                 "tags": [
                     "hot_rank"
                 ],
                 "summary": "Get Hot Rank",
-                "operationId": "get_hot_rank_api_hot_rank__get",
+                "operationId": "get_hot_rank_api_hot_rank_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -5952,6 +5969,21 @@
                 ],
                 "title": "GroupResponse"
             },
+            "GroupUpdate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "title": "Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "GroupUpdate"
+            },
             "HTTPValidationError": {
                 "properties": {
                     "detail": {
@@ -6786,298 +6818,6 @@
                     "content"
                 ],
                 "title": "PersonaUpdate"
-            },
-            "PlanOrderCreateRequest": {
-                "properties": {
-                    "total": {
-                        "anyOf": [
-                            {
-                                "type": "number",
-                                "exclusiveMinimum": 0
-                            },
-                            {
-                                "type": "string",
-                                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-                            }
-                        ],
-                        "title": "Total",
-                        "description": "订单金额"
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "RENEW",
-                            "NEW"
-                        ],
-                        "title": "Type",
-                        "description": "订单类型",
-                        "default": "NEW"
-                    },
-                    "pay_platform": {
-                        "type": "string",
-                        "enum": [
-                            "ALI",
-                            "WECHAT"
-                        ],
-                        "title": "Pay Platform",
-                        "description": "支付平台",
-                        "default": "ALI"
-                    },
-                    "buy_price_info": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Buy Price Info",
-                        "description": "购买套餐信息"
-                    },
-                    "buy_price_status": {
-                        "type": "string",
-                        "enum": [
-                            "SUCCESS",
-                            "FAIL",
-                            "WAIT"
-                        ],
-                        "title": "Buy Price Status",
-                        "description": "购买套餐结果状态",
-                        "default": "WAIT"
-                    },
-                    "currency": {
-                        "type": "string",
-                        "title": "Currency",
-                        "description": "币种，ISO4217 三位字母",
-                        "default": "CNY"
-                    },
-                    "return_url": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Return Url",
-                        "description": "支付完成同步跳转 URL"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "total"
-                ],
-                "title": "PlanOrderCreateRequest"
-            },
-            "PlanOrderCreateResponse": {
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "title": "Id"
-                    },
-                    "pay_platform": {
-                        "type": "string",
-                        "title": "Pay Platform"
-                    },
-                    "currency": {
-                        "type": "string",
-                        "title": "Currency"
-                    },
-                    "code_url": {
-                        "type": "string",
-                        "title": "Code Url"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "SUCCESS",
-                            "CODE_FAIL",
-                            "NOT_PAY",
-                            "PAY_TIMEOUT",
-                            "CANCEL",
-                            "PAY_ERROR"
-                        ],
-                        "title": "Status"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "id",
-                    "pay_platform",
-                    "currency",
-                    "code_url",
-                    "status"
-                ],
-                "title": "PlanOrderCreateResponse"
-            },
-            "PlanOrderStatusResponse": {
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "title": "Id"
-                    },
-                    "total": {
-                        "type": "string",
-                        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                        "title": "Total"
-                    },
-                    "pay_status": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "enum": [
-                                    "NOTPAY",
-                                    "SUCCESS",
-                                    "CLOSED",
-                                    "FAIL"
-                                ]
-                            },
-                            {
-                                "type": "string"
-                            }
-                        ],
-                        "title": "Pay Status"
-                    },
-                    "status": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "enum": [
-                                    "SUCCESS",
-                                    "CODE_FAIL",
-                                    "NOT_PAY",
-                                    "PAY_TIMEOUT",
-                                    "CANCEL",
-                                    "PAY_ERROR"
-                                ]
-                            },
-                            {
-                                "type": "string"
-                            }
-                        ],
-                        "title": "Status"
-                    },
-                    "user_id": {
-                        "type": "string",
-                        "title": "User Id"
-                    },
-                    "pay_platform": {
-                        "type": "string",
-                        "title": "Pay Platform"
-                    },
-                    "code_url": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Code Url"
-                    },
-                    "type": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Type"
-                    },
-                    "transaction_number": {
-                        "anyOf": [
-                            {
-                                "type": "integer"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Transaction Number"
-                    },
-                    "third_transaction_id": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Third Transaction Id"
-                    },
-                    "third_payer_id": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Third Payer Id"
-                    },
-                    "buy_price_info": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Buy Price Info"
-                    },
-                    "buy_price_status": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Buy Price Status"
-                    },
-                    "currency": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Currency"
-                    },
-                    "create_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "title": "Create At"
-                    },
-                    "update_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "title": "Update At"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "id",
-                    "total",
-                    "pay_status",
-                    "status",
-                    "user_id",
-                    "pay_platform",
-                    "create_at",
-                    "update_at"
-                ],
-                "title": "PlanOrderStatusResponse"
             },
             "PublishEditAccountResponse": {
                 "properties": {
@@ -9061,10 +8801,6 @@
         {
             "name": "scheduled_publish",
             "description": "Manage unattended scheduled publish tasks and query their execution records"
-        },
-        {
-            "name": "plan_order",
-            "description": "Manage independent Alipay scan-payment orders"
         },
         {
             "name": "user",

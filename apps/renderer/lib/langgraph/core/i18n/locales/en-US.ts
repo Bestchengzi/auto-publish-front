@@ -34,7 +34,6 @@ export const enUS: Translations = {
     artifacts: "Artifacts",
     public: "Public",
     custom: "Custom",
-    notAvailableInDemoMode: "Not available in demo mode",
     loading: "Loading...",
     version: "Version",
     lastUpdated: "Last updated",
@@ -42,7 +41,6 @@ export const enUS: Translations = {
     preview: "Preview",
     cancel: "Cancel",
     save: "Save",
-    install: "Install",
     create: "Create",
     export: "Export",
     exportAsMarkdown: "Export as Markdown",
@@ -265,7 +263,6 @@ export const enUS: Translations = {
     startCreation: "Start creating",
     createXiaohongshu: "Create Xiaohongshu post",
     createMediumLongArticle: "Create medium-to-long article",
-    skillInstallTooltip: "Install skill and make it available to DeerFlow",
     imageGenerationFailed: "Generation failed",
   },
 

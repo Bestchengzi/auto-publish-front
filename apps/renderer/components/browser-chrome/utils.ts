@@ -21,7 +21,7 @@ export function getDomainFromUrl(url: string): string {
 }
 
 export function getAppFaviconUrl(): string {
-  if (typeof window === "undefined") return "/logo.png";
+  if (typeof window === "undefined") return "/favicon.ico";
   const link =
     document.querySelector<HTMLLinkElement>('link[rel="icon"]') ??
     document.querySelector<HTMLLinkElement>('link[rel="shortcut icon"]');
@@ -29,10 +29,10 @@ export function getAppFaviconUrl(): string {
     try {
       return new URL(link.href, window.location.origin).href;
     } catch {
-      return `${window.location.origin}/logo.png`;
+      return `${window.location.origin}/favicon.ico`;
     }
   }
-  return `${window.location.origin}/logo.png`;
+  return `${window.location.origin}/favicon.ico`;
 }
 
 export function displayHostForExternalError(url: string): string {

@@ -2,8 +2,6 @@ import {
   CopyIcon,
   DownloadIcon,
   Loader2Icon,
-  LoaderIcon,
-  PackageIcon,
   Redo2Icon,
   Undo2Icon,
   XIcon,
@@ -42,10 +40,8 @@ import { useArtifactContent } from "@/lib/langgraph/core/artifacts/hooks";
 import { urlOfArtifact } from "@/lib/langgraph/core/artifacts/utils";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
-import { installSkill } from "@/lib/langgraph/core/skills/api";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
 import { getFileName } from "@/lib/langgraph/core/utils/files";
-import { env } from "@/lib/langgraph/env";
 import { getApiErrorMessage } from "@/lib/request";
 import { cn } from "@/lib/utils";
 import { buildPublishEditPayload } from "@/lib/api/publish";
@@ -119,7 +115,6 @@ export function ArtifactFileDetail({
     return lower.endsWith(".md") && lower.startsWith("persona");
   }, [artifactFileName]);
 
-  const [isInstalling, setIsInstalling] = useState(false);
   const isSavingRef = useRef(false);
   const [openColorPanel, setOpenColorPanel] = useState<
     "text" | "highlight" | null
@@ -430,28 +425,6 @@ export function ArtifactFileDetail({
     return () => clearTimeout(id);
   }, [canPersist, displayContent, editorMarkdown, persistArtifact]);
 
-  const handleInstallSkill = useCallback(async () => {
-    if (isInstalling) return;
-
-    setIsInstalling(true);
-    try {
-      const result = await installSkill({
-        thread_id: threadId,
-        path: filepath,
-      });
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message ?? "Failed to install skill");
-      }
-    } catch (error) {
-      console.error("Failed to install skill:", error);
-      toast.error("Failed to install skill");
-    } finally {
-      setIsInstalling(false);
-    }
-  }, [threadId, filepath, isInstalling]);
-
   const openPublishPreviewForAccounts = useCallback(
     async (accountIds: string[]) => {
       if (accountIds.length === 0) return;
@@ -567,17 +540,6 @@ export function ArtifactFileDetail({
         <div className="min-w-0 grow" />
         <div className="flex items-center gap-2">
           <ArtifactActions className="gap-3">
-            {!isWriteFile && filepath.endsWith(".skill") && (
-              <ArtifactAction
-                icon={isInstalling ? LoaderIcon : PackageIcon}
-                label={t.common.install}
-                tooltip={t.toolCalls.skillInstallTooltip}
-                disabled={
-                  isInstalling || env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true"
-                }
-                onClick={handleInstallSkill}
-              />
-            )}
             {!isWriteFile && (
               <>
                 <ArtifactAction
@@ -657,7 +619,6 @@ export function ArtifactFileDetail({
                 size="lg"
                 className="shrink-0"
                 disabled={
-                  env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true" ||
                   isPreparingPublishPreview ||
                   isSavingPersona
                 }

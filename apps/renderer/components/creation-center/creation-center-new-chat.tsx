@@ -41,7 +41,6 @@ import {
 import { PlatformLogo } from "@/components/account-management/platform-logo";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import type { PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
-import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
 import { createThread } from "@/lib/langgraph-client";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
@@ -130,11 +129,6 @@ export function CreationCenterNewChat() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const locale = pathname?.split("/").filter(Boolean)[0] ?? "zh-CN";
-
-  const demoLocked = useMemo(
-    () => env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
-    [],
-  );
 
   const [settings, setSettings] = useLocalSettings();
   const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
@@ -356,7 +350,6 @@ export function CreationCenterNewChat() {
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
-      if (demoLocked) return;
       if (isStarting) return;
       const text = message.text.trim();
       if (!text) return;
@@ -364,14 +357,13 @@ export function CreationCenterNewChat() {
       // 这里先仅支持发送文本；附件会在进入聊天页后再由对应逻辑处理。
       await startThreadWithText(text);
     },
-    [demoLocked, isStarting, startThreadWithText],
+    [isStarting, startThreadWithText],
   );
 
   const handleAddPersona = useCallback(async () => {
-    if (demoLocked) return;
     if (isStarting) return;
     await startThreadWithText(t("addPersonaPrompt"));
-  }, [demoLocked, isStarting, startThreadWithText, t]);
+  }, [isStarting, startThreadWithText, t]);
 
   const extractNameFromMarkdown = useCallback((markdown: string): string | null => {
     const lines = markdown.split("\n");
@@ -442,7 +434,7 @@ export function CreationCenterNewChat() {
               autoFocus={false}
               status={"ready"}
               context={context}
-              disabled={demoLocked || isStarting}
+              disabled={isStarting}
               clearTextOnSubmit={false}
               onContextChange={(nextContext) =>
                 setSettings("context", nextContext)
@@ -476,11 +468,6 @@ export function CreationCenterNewChat() {
               onStop={undefined}
             />
           </ThreadContext.Provider>
-          {demoLocked && (
-            <div className="text-muted-foreground/67 w-full -mt-2 text-center text-xs">
-              {t("notAvailableInDemoMode")}
-            </div>
-          )}
         </div>
       </div>
       <DeleteConfirmDialog

@@ -247,12 +247,39 @@ export function MaterialLibrary() {
     setEditingGroupName(g.name);
   }
 
-  function saveRename() {
+  const saveRename = React.useCallback(async () => {
     if (!editingGroupId) return;
-    toast.error(t("material.groups.renameNotSupported"));
-    setEditingGroupId(null);
-    setEditingGroupName("");
-  }
+    const name = editingGroupName.trim();
+    if (!name) {
+      toast.error(t("common.groupNameRequired"));
+      return;
+    }
+    const isApiGroup = /^\d+$/.test(editingGroupId);
+    if (!isApiGroup) {
+      setEditingGroupId(null);
+      setEditingGroupName("");
+      return;
+    }
+    try {
+      await mediaGroupsApi.renameMediaGroup(
+        parseInt(editingGroupId, 10),
+        name,
+      );
+      setEditingGroupId(null);
+      setEditingGroupName("");
+      await invalidateMaterialLibraryQueries();
+      await refreshData();
+    } catch (e) {
+      console.error("Failed to rename media group:", e);
+      toast.error(getApiErrorMessage(e, t("common.error")));
+    }
+  }, [
+    editingGroupId,
+    editingGroupName,
+    invalidateMaterialLibraryQueries,
+    refreshData,
+    t,
+  ]);
 
   function cancelRename() {
     setEditingGroupId(null);

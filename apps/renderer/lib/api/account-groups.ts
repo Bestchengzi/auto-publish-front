@@ -28,8 +28,18 @@ export async function listAccountGroupsWithCounts(): Promise<GroupAggregateRespo
 }
 
 export async function createAccountGroup(name: string): Promise<GroupResponse> {
-  return request<GroupResponse>(apiUrl("/api/account-groups/"), {
+  return request<GroupResponse>(apiUrl("/api/account-groups"), {
     method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function renameAccountGroup(
+  groupId: number,
+  name: string,
+): Promise<GroupResponse> {
+  return request<GroupResponse>(apiUrl(`/api/account-groups/${groupId}`), {
+    method: "PUT",
     body: JSON.stringify({ name }),
   });
 }

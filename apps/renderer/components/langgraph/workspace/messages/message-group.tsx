@@ -34,7 +34,6 @@ import {
 } from "@/lib/langgraph/core/messages/utils";
 import { useRehypeSplitWordsIntoSpans } from "@/lib/langgraph/core/rehype";
 import { extractTitleFromMarkdown } from "@/lib/langgraph/core/utils/markdown";
-import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
 import { getGenImageUrl } from "@/lib/utils";
 import Image from "next/image";
@@ -99,12 +98,8 @@ export function MessageGroup({
   isLoading?: boolean;
 }) {
   const { t } = useI18n();
-  const [showAbove, setShowAbove] = useState(
-    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
-  );
-  const [showLastThinking, setShowLastThinking] = useState(
-    env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
-  );
+  const [showAbove, setShowAbove] = useState(false);
+  const [showLastThinking, setShowLastThinking] = useState(false);
   const steps = useMemo(() => convertToSteps(messages), [messages]);
   const lastToolCallStep = useMemo(() => {
     const filteredSteps = steps.filter((step) => step.type === "toolCall");

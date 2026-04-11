@@ -26,8 +26,18 @@ export async function listMediaGroupsWithCounts(): Promise<GroupAggregateRespons
 }
 
 export async function createMediaGroup(name: string): Promise<GroupResponse> {
-  return request<GroupResponse>(apiUrl("/api/media-groups/"), {
+  return request<GroupResponse>(apiUrl("/api/media-groups"), {
     method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function renameMediaGroup(
+  groupId: number,
+  name: string,
+): Promise<GroupResponse> {
+  return request<GroupResponse>(apiUrl(`/api/media-groups/${groupId}`), {
+    method: "PUT",
     body: JSON.stringify({ name }),
   });
 }

@@ -6,12 +6,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },
-  async redirects() {
+  async rewrites() {
     return [
       {
-        source: "/favicon.ico",
-        destination: "/logo.png",
-        permanent: false,
+        source: "/baseApi/:path*",
+        destination: "http://192.168.88.30:22026/:path*",
       },
     ];
   },

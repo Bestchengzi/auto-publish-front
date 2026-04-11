@@ -111,7 +111,7 @@ export const SCHEDULED_PUBLISH_PLATFORM_IDS: ScheduledPublishPlatform[] = [
 
 export async function listScheduledPublishTasks(): Promise<ScheduledPublishTaskListResponse> {
   return request<ScheduledPublishTaskListResponse>(
-    apiUrl("/api/scheduled-publish-tasks/"),
+    apiUrl("/api/scheduled-publish-tasks"),
     { method: "GET" },
   );
 }
@@ -120,7 +120,7 @@ export async function createScheduledPublishTask(
   body: ScheduledPublishTaskCreateBody,
 ): Promise<ScheduledPublishTaskResponse> {
   return request<ScheduledPublishTaskResponse>(
-    apiUrl("/api/scheduled-publish-tasks/"),
+    apiUrl("/api/scheduled-publish-tasks"),
     { method: "POST", body: JSON.stringify(body) },
   );
 }

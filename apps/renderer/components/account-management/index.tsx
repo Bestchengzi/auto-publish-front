@@ -49,7 +49,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getPlatformsWithNames } from "@/lib/platforms";
-import type { PlatformId, Account } from "./types";
+import type { PlatformId, Account, Group } from "./types";
 import { formatFollowers } from "./utils";
 import { EditAccountDrawer } from "./edit-account-drawer";
 import { Avatar } from "./avatar";
@@ -132,6 +132,13 @@ export function AccountManagement() {
   const editableGroups = groups.filter(
     (g) => g.id !== "all" && g.id !== "ungrouped",
   );
+  const editDrawerGroups = React.useMemo((): Group[] => {
+    const ungrouped: Group = {
+      id: "ungrouped",
+      name: t("account.groups.ungrouped"),
+    };
+    return [ungrouped, ...editableGroups];
+  }, [editableGroups, t]);
 
   usePlatformAuthSync({ t, refreshData });
 
@@ -779,7 +786,7 @@ export function AccountManagement() {
           open={editingAccountId !== null}
           onOpenChange={(open) => !open && setEditingAccountId(null)}
           account={activeEditingAccount}
-          editableGroups={editableGroups}
+          editableGroups={editDrawerGroups}
           selectedGroupIds={editingGroupIds}
           onSelectedGroupIdsChange={setEditingGroupIds}
           onSave={saveEditAccount}

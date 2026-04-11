@@ -64,12 +64,12 @@ export async function listAccounts(params?: {
   if (params?.group_id !== undefined && params?.group_id !== null)
     search.set("group_id", String(params.group_id));
   const qs = search.toString();
-  const path = `/api/accounts/${qs ? `?${qs}` : ""}`;
+  const path = `/api/accounts${qs ? `?${qs}` : ""}`;
   return request<AccountListResponse>(apiUrl(path));
 }
 
 export async function createAccount(body: AccountCreateBody): Promise<AccountResponse> {
-  return request<AccountResponse>(apiUrl("/api/accounts/"), {
+  return request<AccountResponse>(apiUrl("/api/accounts"), {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -79,7 +79,7 @@ export async function createAccount(body: AccountCreateBody): Promise<AccountRes
 export async function createAccountFromAuth(
   body: CreateAccountFromAuthBody,
 ): Promise<AccountResponse> {
-  return request<AccountResponse>(apiUrl("/api/accounts/"), {
+  return request<AccountResponse>(apiUrl("/api/accounts"), {
     method: "POST",
     body: JSON.stringify(body),
   });

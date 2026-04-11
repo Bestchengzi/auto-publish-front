@@ -1,6 +1,5 @@
-import { DownloadIcon, LoaderIcon, PackageIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { DownloadIcon } from "lucide-react";
+import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { urlOfArtifact } from "@/lib/langgraph/core/artifacts/utils";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
-import { installSkill } from "@/lib/langgraph/core/skills/api";
 import {
   getFileExtensionDisplayName,
   getFileIcon,
@@ -33,7 +31,6 @@ export function ArtifactFileList({
 }) {
   const { t } = useI18n();
   const { select: selectArtifact, setOpen } = useArtifacts();
-  const [installingFile, setInstallingFile] = useState<string | null>(null);
   const markdownFiles = files.filter((file) => file.toLowerCase().endsWith(".md"));
 
   const handleClick = useCallback(
@@ -42,34 +39,6 @@ export function ArtifactFileList({
       setOpen(true);
     },
     [selectArtifact, setOpen],
-  );
-
-  const handleInstallSkill = useCallback(
-    async (e: React.MouseEvent, filepath: string) => {
-      e.stopPropagation();
-      e.preventDefault();
-
-      if (installingFile) return;
-
-      setInstallingFile(filepath);
-      try {
-        const result = await installSkill({
-          thread_id: threadId,
-          path: filepath,
-        });
-        if (result.success) {
-          toast.success(result.message);
-        } else {
-          toast.error(result.message || "Failed to install skill");
-        }
-      } catch (error) {
-        console.error("Failed to install skill:", error);
-        toast.error("Failed to install skill");
-      } finally {
-        setInstallingFile(null);
-      }
-    },
-    [threadId, installingFile],
   );
 
   if (markdownFiles.length === 0) {
@@ -95,20 +64,6 @@ export function ArtifactFileList({
               {getFileExtensionDisplayName(file)} file
             </CardDescription>
             <CardAction>
-              {file.endsWith(".skill") && (
-                <Button
-                  variant="ghost"
-                  disabled={installingFile === file}
-                  onClick={(e) => handleInstallSkill(e, file)}
-                >
-                  {installingFile === file ? (
-                    <LoaderIcon className="size-4 animate-spin" />
-                  ) : (
-                    <PackageIcon className="size-4" />
-                  )}
-                  {t.common.install}
-                </Button>
-              )}
               <a
                 href={urlOfArtifact({
                   filepath: file,

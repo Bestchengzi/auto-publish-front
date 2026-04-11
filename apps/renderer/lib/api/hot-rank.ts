@@ -202,5 +202,5 @@ export function getHotRankUpdateTimeForList(
 }
 
 export async function fetchHotRank(): Promise<HotRankResponse> {
-  return request<HotRankResponse>(apiUrl("/api/hot-rank/"));
+  return request<HotRankResponse>(apiUrl("/api/hot-rank"));
 }

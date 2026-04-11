@@ -20,14 +20,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 // import { TodoList } from "@/components/langgraph/workspace/todo-list";
-import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useNotification } from "@/lib/langgraph/core/notification/hooks";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import { useThreadStream } from "@/lib/langgraph/core/threads/hooks";
 import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
 import { takePendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
 import { listPersonas } from "@/lib/api/personas";
-import { env } from "@/lib/langgraph/env";
 import { cn } from "@/lib/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 
@@ -86,7 +84,6 @@ function extractInsufficientBalanceInfo(root: unknown): InsufficientBalanceInfo 
  * DeerFlow 风格聊天主区：无顶栏，仅消息列表 + 底部输入 + ChatBox 右侧产物栏。
  */
 export function CreationCenterLanggraphChat() {
-  const { t } = useI18n();
   const tCreation = useTranslations("creationCenter.new");
   const [settings, setSettings] = useLocalSettings();
   const params = useParams<{ locale: string; thread_id: string }>();
@@ -97,11 +94,6 @@ export function CreationCenterLanggraphChat() {
   const canUseAuthFeatures = authReady && isLoggedIn;
 
   const isNewThread = false;
-
-  const demoLocked = useMemo(
-    () => env.NEXT_PUBLIC_STATIC_WEBSITE_ONLY === "true",
-    [],
-  );
 
   useSpecificChatMode();
 
@@ -213,7 +205,7 @@ export function CreationCenterLanggraphChat() {
   }, [balanceAlertKey]);
 
   useEffect(() => {
-    if (!threadId || thread.isThreadLoading || demoLocked) return;
+    if (!threadId || thread.isThreadLoading) return;
     if (pendingBootstrapRef.current) return;
     const pending = takePendingInitialMessage(threadId);
     if (!pending) return;
@@ -233,7 +225,6 @@ export function CreationCenterLanggraphChat() {
     thread.isThreadLoading,
     thread.messages.length,
     sendMessage,
-    demoLocked,
     setSettings,
     settings.context,
   ]);
@@ -286,7 +277,7 @@ export function CreationCenterLanggraphChat() {
                         : "ready"
                   }
                   context={settings.context}
-                  disabled={demoLocked || isUploading}
+                  disabled={isUploading}
                   onContextChange={(context) => setSettings("context", context)}
                   noPersonaLabel={tCreation("noPersona")}
                   personas={personaOptions}
@@ -300,11 +291,6 @@ export function CreationCenterLanggraphChat() {
                   onSubmit={handleSubmit}
                   onStop={handleStop}
                 />
-                {demoLocked && (
-                  <div className="text-muted-foreground/67 mt-3 w-full text-center text-xs">
-                    {t.common.notAvailableInDemoMode}
-                  </div>
-                )}
               </div>
             </div>
           </main>

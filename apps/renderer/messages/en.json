@@ -2,6 +2,7 @@
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong",
+    "groupNameRequired": "Please enter a group name",
     "errorRetry": "Retry",
     "notFound": "Page not found",
     "notFoundDesc": "Sorry, the page you are looking for does not exist.",
@@ -176,7 +177,6 @@
       "empty": "No groups yet",
       "emptyHint": "Enter a name above and click \"Create group\" to add",
       "rename": "Rename",
-      "renameNotSupported": "Group rename is not supported yet",
       "deleteConfirm": "Delete this group?",
       "confirm": "OK",
       "cancel": "Cancel",
@@ -347,8 +347,7 @@
       "cancel": "Cancel",
       "all": "All materials",
       "default": "Default",
-      "ungrouped": "Ungrouped",
-      "renameNotSupported": "Group rename is not supported yet"
+      "ungrouped": "Ungrouped"
     },
     "table": {
       "selectAll": "Select all",

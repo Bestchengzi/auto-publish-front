@@ -52,7 +52,7 @@ export async function listMedia(params?: {
   if (params?.group_id !== undefined && params?.group_id !== null)
     search.set("group_id", String(params.group_id));
   const qs = search.toString();
-  const path = `/api/media/${qs ? `?${qs}` : ""}`;
+  const path = `/api/media${qs ? `?${qs}` : ""}`;
   return request<MediaListResponse>(apiUrl(path));
 }
 
@@ -78,7 +78,7 @@ export async function editMedia(
 }
 
 export async function deleteMedia(mediaIds: string[]): Promise<unknown> {
-  return request(apiUrl("/api/media/"), {
+  return request(apiUrl("/api/media"), {
     method: "DELETE",
     body: JSON.stringify({ ids: mediaIds }),
   });
