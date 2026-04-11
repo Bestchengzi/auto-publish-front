@@ -1,14 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20-alpine AS deps
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-COPY .npmrc ./.npmrc
-COPY apps/renderer/package.json apps/renderer/package.json
-
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --prefer-offline --no-audit --progress=false
+ARG DEPS_IMAGE=swr.cn-east-3.myhuaweicloud.com/beeize-test/auto-publish-front:deps
+FROM ${DEPS_IMAGE} AS deps
 
 FROM node:20-alpine AS builder
 WORKDIR /app
