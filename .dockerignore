@@ -8,6 +8,8 @@ node_modules
 **/node_modules
 apps/desktop
 apps/renderer/.next
+docs_publish
+api.json
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
