@@ -24,10 +24,10 @@ export function TodoList({
   hidden?: boolean;
   onToggle?: () => void;
 }) {
-  if (!todos || todos.length === 0) return null;
   const [internalCollapsed, setInternalCollapsed] = useState(true);
   const isControlled = controlledCollapsed !== undefined;
   const collapsed = isControlled ? controlledCollapsed : internalCollapsed;
+  if (!todos || todos.length === 0) return null;
 
   const handleToggle = () => {
     if (isControlled) {

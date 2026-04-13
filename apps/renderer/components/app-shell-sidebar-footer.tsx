@@ -106,7 +106,7 @@ export function AppShellSidebarFooter() {
       window.removeEventListener("media-auth-changed", syncUserName);
       window.removeEventListener("storage", syncUserName);
     };
-  }, []);
+  }, [tSidebar]);
 
   useEffect(() => {
     const openLoginDialog = () => setLoginOpen(true);

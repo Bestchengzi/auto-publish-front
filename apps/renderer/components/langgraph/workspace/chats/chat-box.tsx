@@ -490,7 +490,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const publishDraftSessionKeyRef = useRef<string>("");
   const suppressPublishDraftSaveRef = useRef(false);
   const prevMarkdownArtifactsRef = useRef<Set<string>>(new Set());
-  const markdownArtifactsInitializedRef = useRef(false);
+  const historyHydratedRef = useRef(false);
   const markdownArtifacts = useMemo(
     () =>
       (thread.values.artifacts ?? []).filter((file) =>
@@ -583,7 +583,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       publishDraftsRef.current.clear();
       publishDraftSessionKeyRef.current = "";
       prevMarkdownArtifactsRef.current = new Set();
-      markdownArtifactsInitializedRef.current = false;
+      historyHydratedRef.current = false;
       deselect();
     }
 
@@ -600,13 +600,18 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   }, [threadId, deselect, setArtifacts, markdownArtifacts]);
 
   useEffect(() => {
-    const nextSet = new Set(markdownArtifacts);
-    if (!markdownArtifactsInitializedRef.current) {
-      prevMarkdownArtifactsRef.current = nextSet;
-      markdownArtifactsInitializedRef.current = true;
+    // On initial page refresh/load, history API may hydrate artifacts in batches.
+    // Do not auto-open the right panel during this hydration stage.
+    if (!historyHydratedRef.current) {
+      if (thread.isThreadLoading) {
+        return;
+      }
+      prevMarkdownArtifactsRef.current = new Set(markdownArtifacts);
+      historyHydratedRef.current = true;
       return;
     }
 
+    const nextSet = new Set(markdownArtifacts);
     const prevSet = prevMarkdownArtifactsRef.current;
     const newlyAdded = markdownArtifacts.filter((file) => !prevSet.has(file));
     if (newlyAdded.length > 0) {
@@ -616,7 +621,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     }
 
     prevMarkdownArtifactsRef.current = nextSet;
-  }, [markdownArtifacts, selectArtifact, setArtifactsOpen]);
+  }, [markdownArtifacts, selectArtifact, setArtifactsOpen, thread.isThreadLoading]);
 
   useEffect(() => {
     if (layoutRef.current) {

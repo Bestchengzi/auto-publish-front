@@ -9,12 +9,13 @@ import { SubtasksProvider } from "@/lib/langgraph/core/tasks/context";
 
 /** DeerFlow 聊天页所需 Provider（与 workspace/chats layout 一致） */
 export function LanggraphChatProviders({
-  appLocale: _appLocale,
+  appLocale,
   children,
 }: {
   appLocale: string;
   children: React.ReactNode;
 }) {
+  void appLocale;
   return (
     <SubtasksProvider>
       <ArtifactsProvider>
