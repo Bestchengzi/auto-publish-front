@@ -1,5 +1,5 @@
 appId: com.mediaautopublish.keduckAI
-productName: keduckAI
+productName: 可达AI
 
 directories:
   output: release
@@ -15,14 +15,14 @@ win:
   icon: assets/icons/icon.ico
   target:
     - target: nsis
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
 
 mac:
   icon: assets/icons/icon.icns
   target:
     - target: dmg
     - target: zip
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
   category: public.app-category.productivity
 
 linux:
@@ -30,7 +30,7 @@ linux:
   target:
     - target: AppImage
   category: Utility
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
 
 nsis:
   oneClick: false
