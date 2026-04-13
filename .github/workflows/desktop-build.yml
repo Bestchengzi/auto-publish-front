@@ -20,7 +20,7 @@ jobs:
         include:
           - name: windows-x64
             os: windows-latest
-            cmd: cd apps/desktop && npm run build && npx electron-builder --win nsis --publish always
+            cmd: cd apps/desktop && npm run build && npx electron-builder --win nsis --publish always -c.win.signAndEditExecutable=true
           - name: macos-intel-x64
             os: macos-latest
             cmd: cd apps/desktop && npm run build && npx electron-builder --mac dmg zip --x64 --publish always
