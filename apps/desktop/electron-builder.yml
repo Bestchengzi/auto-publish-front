@@ -11,6 +11,7 @@ files:
 asar: true
 
 win:
+  signAndEditExecutable: true
   icon: assets/icons/icon.ico
   target:
     - target: nsis
