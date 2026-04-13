@@ -15,6 +15,7 @@ export type MediaResponse = {
   id: string;
   name: string;
   file_path: string;
+  url: string;
   media_type: MediaType;
   tags: string[];
   file_size: number;

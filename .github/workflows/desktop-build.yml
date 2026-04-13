@@ -41,9 +41,7 @@ jobs:
           cache: npm
 
       - name: Install deps
-        run: |
-          npm ci
-          npm --prefix apps/desktop ci
+        run: npm ci
 
       - name: Build installers
         env:

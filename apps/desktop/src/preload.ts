@@ -103,8 +103,8 @@ function detectEmbeddedView(): boolean {
 function getAllowedRendererOrigins(): Set<string> {
   const allow = new Set<string>([
     "http://localhost:13200",
-    "http://127.0.0.1:13200",
     "http://192.168.88.30:13200",
+    "https://keduck.cn",
   ]);
   const envUrl = process.env.ELECTRON_RENDERER_URL;
   if (typeof envUrl === "string" && envUrl.trim()) {

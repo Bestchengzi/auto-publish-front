@@ -782,7 +782,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
         id: item.id,
         name: item.name,
         // url: mediaApi.getMediaDownloadUrl(item.id),
-        url: item.file_path,
+        url: item.url,
       }));
     },
     enabled: coverDrawerOpen,
