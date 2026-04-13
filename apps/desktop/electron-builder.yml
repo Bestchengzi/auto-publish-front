@@ -1,7 +1,5 @@
 appId: com.mediaautopublish.desktop
 productName: 可达AI
-productFilename: 可达AI
-icon: build/icon.png
 
 directories:
   output: release
@@ -14,11 +12,13 @@ asar: true
 
 win:
   signAndEditExecutable: false
+  icon: build/icon.ico
   target:
     - target: nsis
-  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 mac:
+  icon: build/icon.icns
   target:
     - target: dmg
     - target: zip
@@ -26,6 +26,7 @@ mac:
   category: public.app-category.productivity
 
 linux:
+  icon: build/icon.png
   target:
     - target: AppImage
   category: Utility
