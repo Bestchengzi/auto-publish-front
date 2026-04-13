@@ -25,3 +25,4 @@ apps/desktop/release-local-*/
 # analysis reports
 apps/renderer/ts-prune-report.txt
 
+api.json
