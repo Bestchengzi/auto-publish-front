@@ -11,10 +11,6 @@ export function cn(...inputs: ClassValue[]) {
  * - 开发：使用 NEXT_PUBLIC_GEN_IMAGE_PREFIX（如静态站或独立图床）。
  */
 function getGenImageUrlPrefix(): string {
-  if (process.env.NODE_ENV === "production") {
-    return "";
-  }
-  // return (process.env.NEXT_PUBLIC_GEN_IMAGE_PREFIX ?? "").replace(/\/$/, "");
   return "/media";
 }
 

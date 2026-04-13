@@ -1,7 +1,6 @@
 "use client";
 
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
-import type { Translations } from "@/lib/langgraph/core/i18n/locales/types";
 
 import { Tooltip } from "./tooltip";
 
@@ -9,10 +8,7 @@ export type AgentMode = "flash" | "thinking" | "pro" | "ultra";
 
 function getModeLabelKey(
   mode: AgentMode,
-): keyof Pick<
-  Translations["inputBox"],
-  "flashMode" | "reasoningMode" | "proMode" | "ultraMode"
-> {
+): "flashMode" | "reasoningMode" | "proMode" | "ultraMode" {
   switch (mode) {
     case "flash":
       return "flashMode";
@@ -27,10 +23,11 @@ function getModeLabelKey(
 
 function getModeDescriptionKey(
   mode: AgentMode,
-): keyof Pick<
-  Translations["inputBox"],
-  "flashModeDescription" | "reasoningModeDescription" | "proModeDescription" | "ultraModeDescription"
-> {
+):
+  | "flashModeDescription"
+  | "reasoningModeDescription"
+  | "proModeDescription"
+  | "ultraModeDescription" {
   switch (mode) {
     case "flash":
       return "flashModeDescription";

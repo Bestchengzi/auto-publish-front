@@ -569,7 +569,7 @@ export function ArtifactFileDetail({
             )}
             <ArtifactAction
               icon={CopyIcon}
-              textLabel="复制"
+              textLabel={t.common.copy}
               label={t.clipboard.copyToClipboard}
               disabled={!content}
               onClick={async () => {
@@ -610,7 +610,7 @@ export function ArtifactFileDetail({
                 )}
               >
                 <DownloadIcon className="size-4 shrink-0" />
-                <span className="text-sm font-normal">下载</span>
+                <span className="text-sm font-normal">{t.common.download}</span>
               </a>
             )}
             {!isWriteFile && (
@@ -686,7 +686,7 @@ export function ArtifactFileDetail({
         >
           <Loader2Icon className="size-10 shrink-0 animate-spin text-primary" />
           <span className="text-sm text-muted-foreground">
-            正在保存…
+            {t.common.saving}
           </span>
         </div>
       )}

@@ -114,6 +114,27 @@
       "login": "登录",
       "loginPromptTitle": "请先登录",
       "loginPromptSubtitle": "登录后可使用对话功能"
+    },
+    "footer": {
+      "unnamedUser": "未命名用户",
+      "freePlan": "免费版",
+      "billingHint": "{plan} · 剩余积分 {points}",
+      "profileSettings": "个人设置",
+      "visitWebsite": "访问官网",
+      "buyPlan": "购买套餐",
+      "logout": "退出登录",
+      "personal": "个人",
+      "account": "账户",
+      "settings": "设置",
+      "language": "语言",
+      "appearance": "外观",
+      "themeLight": "浅色",
+      "themeDark": "深色",
+      "themeSystem": "跟随系统",
+      "accent": "主色",
+      "accentNeutral": "黑色",
+      "accentBlue": "蓝色",
+      "accentViolet": "紫色"
     }
   },
   "account": {
@@ -609,6 +630,215 @@
       },
       "sendAria": "发送并开始对话",
       "createThreadFailed": "创建对话失败，请检查网络与 LangGraph 配置"
+    }
+  },
+  "billing": {
+    "dialog": {
+      "title": "套餐选择",
+      "monthly": "月付",
+      "yearly": "年付",
+      "savePercent": " · 节省 {percent}%",
+      "loading": "套餐加载中...",
+      "currentPlan": "当前套餐",
+      "recommended": "推荐",
+      "monthUnit": "月",
+      "yearUnit": "年",
+      "pointsPerMonth": "每月 {points} 积分",
+      "button": {
+        "noDowngrade": "不可降级购买",
+        "redirecting": "跳转支付中...",
+        "renew": "续购叠加",
+        "buyNow": "立即购买"
+      },
+      "toast": {
+        "paySuccess": "支付成功，套餐已更新",
+        "payIncomplete": "支付未完成，请重试",
+        "payTimeout": "支付结果确认超时，可稍后刷新查看",
+        "openPayFailed": "拉起支付失败，请稍后重试",
+        "payPageOpened": "已打开支付页面，请完成支付",
+        "createOrderFailed": "创建订单失败，请重试"
+      },
+      "features": {
+        "LITE": {
+          "f1": "专属积分补给",
+          "f2": "月度积分配额",
+          "f3": "基础深度创作",
+          "f4": "标准输出质量",
+          "f5": "多任务并发支持",
+          "f6": "定时任务执行"
+        },
+        "PRO": {
+          "f1": "专属积分补给",
+          "f2": "更高月度积分配额",
+          "f3": "进阶深度创作",
+          "f4": "更强任务稳定性",
+          "f5": "多任务并发支持",
+          "f6": "定时任务执行"
+        },
+        "MAX": {
+          "f1": "专属积分补给",
+          "f2": "超高月度积分配额",
+          "f3": "高强度深度创作",
+          "f4": "大批量任务处理",
+          "f5": "多任务并发支持",
+          "f6": "定时任务执行"
+        }
+      }
+    }
+  },
+  "langgraph": {
+    "common": {
+      "edit": "编辑",
+      "delete": "删除",
+      "cancel": "取消",
+      "create": "创建",
+      "copy": "复制",
+      "thinking": "思考",
+      "download": "下载",
+      "publish": "发布",
+      "savePersona": "保存人设",
+      "close": "关闭",
+      "undo": "撤销",
+      "redo": "重做",
+      "artifacts": "文件",
+      "saving": "正在保存…"
+    },
+    "clipboard": {
+      "copyToClipboard": "复制到剪贴板",
+      "copiedToClipboard": "复制成功",
+      "failedToCopyToClipboard": "复制到剪贴板失败",
+      "linkCopied": "链接已复制到剪贴板"
+    },
+    "inputBox": {
+      "placeholder": "今天我能为你做些什么？",
+      "createSkillPrompt": "我们一起用 skill-creator 技能来创建一个技能吧。先问问我希望这个技能能做什么。",
+      "addAttachments": "添加附件",
+      "mode": "模式",
+      "flashMode": "闪速",
+      "flashModeDescription": "快速且高效的完成任务，但可能不够精准",
+      "reasoningMode": "思考",
+      "reasoningModeDescription": "思考后再行动，在时间与准确性之间取得平衡",
+      "proMode": "Pro",
+      "proModeDescription": "思考、计划再执行，获得更精准的结果，可能需要更多时间",
+      "ultraMode": "Ultra",
+      "ultraModeDescription": "继承自 Pro 模式，可调用子代理分工协作，适合复杂多步骤任务，能力最强",
+      "reasoningEffort": "推理深度",
+      "reasoningEffortMinimal": "最低",
+      "reasoningEffortMinimalDescription": "检索 + 直接输出",
+      "reasoningEffortLow": "低",
+      "reasoningEffortLowDescription": "简单逻辑校验 + 浅层推演",
+      "reasoningEffortMedium": "中",
+      "reasoningEffortMediumDescription": "多层逻辑分析 + 基础验证",
+      "reasoningEffortHigh": "高",
+      "reasoningEffortHighDescription": "全维度逻辑推演 + 多路径验证 + 反推校验",
+      "surpriseMe": "小惊喜",
+      "surpriseMePrompt": "给我一个小惊喜吧",
+      "followupLoading": "正在生成可能的后续问题...",
+      "followupConfirmTitle": "发送建议问题？",
+      "followupConfirmDescription": "当前输入框已有内容，选择发送方式。",
+      "followupConfirmAppend": "追加并发送",
+      "followupConfirmReplace": "替换并发送",
+      "suggestions": [
+        {
+          "suggestion": "写作",
+          "prompt": "撰写一篇关于[主题]的博客文章"
+        },
+        {
+          "suggestion": "研究",
+          "prompt": "深入浅出的研究一下[主题]，并总结发现。"
+        },
+        {
+          "suggestion": "收集",
+          "prompt": "从[来源]收集数据并创建报告。"
+        },
+        {
+          "suggestion": "学习",
+          "prompt": "学习关于[主题]并创建教程。"
+        }
+      ],
+      "suggestionsCreate": [
+        {
+          "suggestion": "网页",
+          "prompt": "生成一个关于[主题]的网页"
+        },
+        {
+          "suggestion": "图片",
+          "prompt": "生成一个关于[主题]的图片"
+        },
+        {
+          "suggestion": "视频",
+          "prompt": "生成一个关于[主题]的视频"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "suggestion": "技能",
+          "prompt": "我们一起用 skill-creator 技能来创建一个技能吧。先问问我希望这个技能能做什么。"
+        }
+      ]
+    },
+    "toolCalls": {
+      "moreSteps": "查看其他 {count} 个步骤",
+      "lessSteps": "隐藏步骤",
+      "executeCommand": "执行命令",
+      "presentFiles": "展示文件",
+      "needYourHelp": "需要你的协助",
+      "useTool": "使用 “{toolName}” 工具",
+      "searchFor": "搜索 “{query}”",
+      "searchForRelatedInfo": "搜索相关信息",
+      "searchForRelatedImages": "搜索相关图片",
+      "searchForRelatedImagesFor": "搜索相关图片 “{query}”",
+      "searchOnWebFor": "在网络上搜索 “{query}”",
+      "viewWebPage": "查看网页",
+      "listFolder": "列出文件夹",
+      "readFile": "读取文件",
+      "writeFile": "写入文件",
+      "writeTodos": "更新 To-do 列表",
+      "continueIdeation": "继续发散",
+      "startCreation": "开始创作",
+      "createXiaohongshu": "创作小红书",
+      "createMediumLongArticle": "创建中长文",
+      "imageGenerationFailed": "生成失败"
+    },
+    "uploads": {
+      "uploading": "上传中...",
+      "uploadingFiles": "文件上传中，请稍候..."
+    },
+    "subtasks": {
+      "subtask": "子任务",
+      "executing": "执行 {count} 个子任务",
+      "in_progress": "子任务运行中",
+      "completed": "子任务已完成",
+      "failed": "子任务失败"
+    },
+    "editorToolbar": {
+      "blockType": "段落与标题",
+      "body": "正文",
+      "heading1": "一级标题",
+      "heading2": "二级标题",
+      "heading3": "三级标题",
+      "heading4": "四级标题",
+      "bulletList": "无序列表",
+      "orderedList": "有序列表",
+      "textAlign": "文本对齐",
+      "alignLeft": "左对齐",
+      "alignCenter": "居中对齐",
+      "alignRight": "右对齐",
+      "codeBlock": "代码块",
+      "increaseIndent": "增加缩进",
+      "decreaseIndent": "减少缩进",
+      "bold": "加粗",
+      "italic": "斜体",
+      "strike": "删除线",
+      "underline": "下划线",
+      "link": "链接",
+      "linkPlaceholder": "输入网址，如：www.example.com",
+      "confirm": "确认",
+      "textColor": "字体颜色",
+      "highlightColor": "背景颜色",
+      "clearHighlight": "清除背景色",
+      "highlightColorValue": "背景色 {color}"
     }
   },
   "marketing": {

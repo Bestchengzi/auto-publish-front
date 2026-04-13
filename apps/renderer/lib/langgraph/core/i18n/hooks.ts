@@ -1,55 +1,204 @@
 "use client";
 
-import { useEffect } from "react";
-
-import { useI18nContext } from "./context";
-import { getLocaleFromCookie, setLocaleInCookie } from "./cookies";
-import { enUS } from "./locales/en-US";
-import { zhCN } from "./locales/zh-CN";
-
+import { useMemo } from "react";
+import { useMessages } from "next-intl";
 import {
-  DEFAULT_LOCALE,
-  detectLocale,
-  normalizeLocale,
-  type Locale,
-  type Translations,
-} from "@/lib/langgraph/core/i18n/index";
+  CompassIcon,
+  GraduationCapIcon,
+  ImageIcon,
+  MicroscopeIcon,
+  PenLineIcon,
+  ShapesIcon,
+  SparklesIcon,
+  VideoIcon,
+  type LucideIcon,
+} from "lucide-react";
 
-const translations: Record<Locale, Translations> = {
-  "en-US": enUS,
-  "zh-CN": zhCN,
+type SuggestionItem = {
+  suggestion: string;
+  prompt: string;
+  icon: LucideIcon;
 };
 
-export function useI18n() {
-  const { locale, setLocale } = useI18nContext();
-
-  const t = translations[locale] ?? translations[DEFAULT_LOCALE];
-
-  const changeLocale = (newLocale: Locale) => {
-    setLocale(newLocale);
-    setLocaleInCookie(newLocale);
-  };
-
-  // Initialize locale on mount
-  useEffect(() => {
-    const saved = getLocaleFromCookie();
-    if (saved) {
-      const normalizedSaved = normalizeLocale(saved);
-      setLocale(normalizedSaved);
-      if (saved !== normalizedSaved) {
-        setLocaleInCookie(normalizedSaved);
-      }
-      return;
+type SuggestionCreateItem =
+  | {
+      suggestion: string;
+      prompt: string;
+      icon: LucideIcon;
     }
+  | {
+      type: "separator";
+    };
 
-    const detected = detectLocale();
-    setLocale(detected);
-    setLocaleInCookie(detected);
-  }, [setLocale]);
+type LanggraphMessages = {
+  common: {
+    edit: string;
+    delete: string;
+    cancel: string;
+    create: string;
+    copy: string;
+    thinking: string;
+    download: string;
+    publish: string;
+    savePersona: string;
+    close: string;
+    undo: string;
+    redo: string;
+    artifacts: string;
+    saving: string;
+  };
+  clipboard: {
+    copyToClipboard: string;
+    copiedToClipboard: string;
+    failedToCopyToClipboard: string;
+    linkCopied: string;
+  };
+  inputBox: {
+    placeholder: string;
+    createSkillPrompt: string;
+    addAttachments: string;
+    mode: string;
+    flashMode: string;
+    flashModeDescription: string;
+    reasoningMode: string;
+    reasoningModeDescription: string;
+    proMode: string;
+    proModeDescription: string;
+    ultraMode: string;
+    ultraModeDescription: string;
+    reasoningEffort: string;
+    reasoningEffortMinimal: string;
+    reasoningEffortMinimalDescription: string;
+    reasoningEffortLow: string;
+    reasoningEffortLowDescription: string;
+    reasoningEffortMedium: string;
+    reasoningEffortMediumDescription: string;
+    reasoningEffortHigh: string;
+    reasoningEffortHighDescription: string;
+    surpriseMe: string;
+    surpriseMePrompt: string;
+    followupLoading: string;
+    followupConfirmTitle: string;
+    followupConfirmDescription: string;
+    followupConfirmAppend: string;
+    followupConfirmReplace: string;
+    suggestions: Array<{
+      suggestion: string;
+      prompt: string;
+    }>;
+    suggestionsCreate: Array<
+      | {
+          suggestion: string;
+          prompt: string;
+        }
+      | {
+          type: "separator";
+        }
+    >;
+  };
+  toolCalls: {
+    moreSteps: string;
+    lessSteps: string;
+    executeCommand: string;
+    presentFiles: string;
+    needYourHelp: string;
+    useTool: string;
+    searchFor: string;
+    searchForRelatedInfo: string;
+    searchForRelatedImages: string;
+    searchForRelatedImagesFor: string;
+    searchOnWebFor: string;
+    viewWebPage: string;
+    listFolder: string;
+    readFile: string;
+    writeFile: string;
+    writeTodos: string;
+    continueIdeation: string;
+    startCreation: string;
+    createXiaohongshu: string;
+    createMediumLongArticle: string;
+    imageGenerationFailed: string;
+  };
+  uploads: {
+    uploading: string;
+    uploadingFiles: string;
+  };
+  subtasks: {
+    subtask: string;
+    executing: string;
+    in_progress: string;
+    completed: string;
+    failed: string;
+  };
+};
+
+const replaceTemplate = (
+  template: string,
+  values: Record<string, string | number>,
+) =>
+  Object.entries(values).reduce(
+    (acc, [key, value]) => acc.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
+
+export function useI18n() {
+  const messages = useMessages() as Record<string, unknown>;
+  const langgraph = messages.langgraph as LanggraphMessages;
+
+  const t = useMemo(
+    () => ({
+      common: langgraph.common,
+      clipboard: langgraph.clipboard,
+      inputBox: {
+        ...langgraph.inputBox,
+        suggestions: langgraph.inputBox.suggestions.map((item, index) => {
+          const icons: LucideIcon[] = [
+            PenLineIcon,
+            MicroscopeIcon,
+            ShapesIcon,
+            GraduationCapIcon,
+          ];
+          const icon = icons[index] ?? SparklesIcon;
+          return { ...item, icon } as SuggestionItem;
+        }),
+        suggestionsCreate: langgraph.inputBox.suggestionsCreate.map((item, index) => {
+          if ("type" in item && item.type === "separator") {
+            return { type: "separator" } as SuggestionCreateItem;
+          }
+          const icons: LucideIcon[] = [
+            CompassIcon,
+            ImageIcon,
+            VideoIcon,
+            SparklesIcon,
+          ];
+          const icon = icons[index] ?? SparklesIcon;
+          return { ...item, icon } as SuggestionCreateItem;
+        }),
+      },
+      toolCalls: {
+        ...langgraph.toolCalls,
+        moreSteps: (count: number) =>
+          replaceTemplate(langgraph.toolCalls.moreSteps, { count }),
+        useTool: (toolName: string) =>
+          replaceTemplate(langgraph.toolCalls.useTool, { toolName }),
+        searchFor: (query: string) =>
+          replaceTemplate(langgraph.toolCalls.searchFor, { query }),
+        searchForRelatedImagesFor: (query: string) =>
+          replaceTemplate(langgraph.toolCalls.searchForRelatedImagesFor, { query }),
+        searchOnWebFor: (query: string) =>
+          replaceTemplate(langgraph.toolCalls.searchOnWebFor, { query }),
+      },
+      uploads: langgraph.uploads,
+      subtasks: {
+        ...langgraph.subtasks,
+        executing: (count: number) =>
+          replaceTemplate(langgraph.subtasks.executing, { count }),
+      },
+    }),
+    [langgraph],
+  );
 
   return {
-    locale,
     t,
-    changeLocale,
   };
 }

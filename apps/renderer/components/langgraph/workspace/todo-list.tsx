@@ -24,6 +24,7 @@ export function TodoList({
   hidden?: boolean;
   onToggle?: () => void;
 }) {
+  if (!todos || todos.length === 0) return null;
   const [internalCollapsed, setInternalCollapsed] = useState(true);
   const isControlled = controlledCollapsed !== undefined;
   const collapsed = isControlled ? controlledCollapsed : internalCollapsed;
@@ -39,14 +40,14 @@ export function TodoList({
   return (
     <div
       className={cn(
-        "flex h-fit w-full origin-bottom translate-y-4 flex-col overflow-hidden rounded-t-xl border border-b-0 bg-white backdrop-blur-sm transition-all duration-200 ease-out",
+        "flex h-fit w-full origin-bottom flex-col overflow-hidden rounded-xl border bg-white/95 backdrop-blur-sm transition-all duration-200 ease-out",
         hidden ? "pointer-events-none translate-y-8 opacity-0" : "",
         className,
       )}
     >
       <header
         className={cn(
-          "bg-accent flex min-h-8 shrink-0 cursor-pointer items-center justify-between px-4 text-sm transition-all duration-300 ease-out",
+          "bg-background flex min-h-8 shrink-0 cursor-pointer items-center justify-between px-4 text-sm transition-all duration-300 ease-out",
         )}
         onClick={handleToggle}
       >
@@ -67,11 +68,11 @@ export function TodoList({
       </header>
       <main
         className={cn(
-          "bg-accent flex grow px-2 transition-all duration-300 ease-out",
-          collapsed ? "h-0 pb-3" : "h-28 pb-4",
+          "bg-background flex grow px-2 transition-all duration-300 ease-out",
+          collapsed ? "h-0 overflow-hidden pb-0" : "h-28 pb-4",
         )}
       >
-        <QueueList className="bg-background mt-0 w-full rounded-t-xl">
+        <QueueList className="bg-background mt-0 w-full rounded-lg">
           {todos.map((todo, i) => (
             <QueueItem key={i + (todo.content ?? "")}>
               <div className="flex items-center gap-2">

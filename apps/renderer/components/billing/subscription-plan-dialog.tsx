@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,15 +15,14 @@ import {
 } from "@/lib/api/billing";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getSubscriptionPlanFeatures } from "@/lib/marketing/plan-features";
 import { getApiErrorMessage } from "@/lib/request";
 
 function toDisplayAmount(raw: number): string {
   return (raw / 100).toFixed(2).replace(/\.00$/, "");
 }
 
-function toDisplayPoints(raw: number): string {
-  return (raw / 100).toLocaleString("zh-CN");
+function toDisplayPoints(raw: number, locale: string): string {
+  return (raw / 100).toLocaleString(locale === "en" ? "en-US" : "zh-CN");
 }
 
 function openPaymentPage(codeUrl: string): boolean {
@@ -74,6 +74,8 @@ export function SubscriptionPlanDialog({
   onOpenChange,
   account,
 }: SubscriptionPlanDialogProps) {
+  const locale = useLocale();
+  const t = useTranslations("billing.dialog");
   const queryClient = useQueryClient();
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
   const [purchasingCode, setPurchasingCode] = useState<string | null>(null);
@@ -135,20 +137,20 @@ export function SubscriptionPlanDialog({
           setPurchasingCode(null);
           await queryClient.invalidateQueries({ queryKey: ["billing", "account"] });
           await queryClient.invalidateQueries({ queryKey: ["billing", "subscription-plans"] });
-          toast.success("支付成功，套餐已更新");
+          toast.success(t("toast.paySuccess"));
           onOpenChange(false);
           return;
         }
         if (isOrderFailed(order.status)) {
           stopPolling();
           setPurchasingCode(null);
-          toast.error("支付未完成，请重试");
+          toast.error(t("toast.payIncomplete"));
           return;
         }
         if (attempts >= 90) {
           stopPolling();
           setPurchasingCode(null);
-          toast.warning("支付结果确认超时，可稍后刷新查看");
+          toast.warning(t("toast.payTimeout"));
         }
       } catch {
         if (attempts >= 90) {
@@ -172,15 +174,15 @@ export function SubscriptionPlanDialog({
       const codeUrl = res.order.code_url ?? "";
       const opened = codeUrl ? openPaymentPage(codeUrl) : false;
       if (!opened) {
-        toast.error("拉起支付失败，请稍后重试");
+        toast.error(t("toast.openPayFailed"));
         setPurchasingCode(null);
         return;
       }
       startOrderPolling(res.order.id);
-      toast.info("已打开支付页面，请完成支付");
+      toast.info(t("toast.payPageOpened"));
     } catch (error) {
       setPurchasingCode(null);
-      toast.error(getApiErrorMessage(error, "创建订单失败，请重试"));
+      toast.error(getApiErrorMessage(error, t("toast.createOrderFailed")));
     }
   };
 
@@ -189,7 +191,7 @@ export function SubscriptionPlanDialog({
       <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl max-h-[90vh] overflow-hidden px-6 pt-7 pb-5">
         <DialogHeader className="items-center text-center pb-1">
           <DialogTitle className="text-[34px] leading-none font-medium tracking-tight">
-            套餐选择
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -204,7 +206,7 @@ export function SubscriptionPlanDialog({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              月付
+              {t("monthly")}
             </button>
             <button
               type="button"
@@ -215,7 +217,10 @@ export function SubscriptionPlanDialog({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              年付{annualDiscountPercent > 0 ? ` · 节省 ${annualDiscountPercent}%` : ""}
+              {t("yearly")}
+              {annualDiscountPercent > 0
+                ? t("savePercent", { percent: annualDiscountPercent })
+                : ""}
             </button>
           </div>
         </div>
@@ -223,7 +228,7 @@ export function SubscriptionPlanDialog({
         <div className="mt-3 grid max-h-[65vh] grid-cols-1 gap-3.5 overflow-y-auto pb-1 md:grid-cols-3">
           {isLoading ? (
             <div className="col-span-full py-8 text-center text-sm text-muted-foreground">
-              套餐加载中...
+              {t("loading")}
             </div>
           ) : (
             plans.map((plan, index) => {
@@ -248,25 +253,29 @@ export function SubscriptionPlanDialog({
                 >
                   {isCurrent ? (
                     <div className="absolute top-3 right-3 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-400">
-                      当前套餐
+                      {t("currentPlan")}
                     </div>
                   ) : isMiddleCard ? (
                     <div className="absolute top-3 right-3 rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">
-                      推荐
+                      {t("recommended")}
                     </div>
                   ) : null}
                   <div className="text-[22px] leading-tight font-semibold">{plan.display_name}</div>
                   <div className="mt-2 text-3xl font-bold">
                     ¥{toDisplayAmount(amountRaw)}
                     <span className="ml-1 text-sm font-normal text-muted-foreground">
-                      /{cycle === "MONTHLY" ? "月" : "年"}
+                      /{cycle === "MONTHLY" ? t("monthUnit") : t("yearUnit")}
                     </span>
                   </div>
                   <div className="mt-2 text-sm text-muted-foreground">
-                    每月 {toDisplayPoints(plan.monthly_points)} 积分
+                    {t("pointsPerMonth", {
+                      points: toDisplayPoints(plan.monthly_points, locale),
+                    })}
                   </div>
                   <div className="mt-5 space-y-2">
-                    {getSubscriptionPlanFeatures(plan.code).map((feature) => (
+                    {Array.from({ length: 6 }, (_, i) =>
+                      t(`features.${plan.code.toUpperCase()}.f${i + 1}`),
+                    ).map((feature) => (
                       <div
                         key={`${plan.code}-${feature}`}
                         className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -291,14 +300,14 @@ export function SubscriptionPlanDialog({
                     onClick={() => void handlePurchase(plan)}
                   >
                     {isDowngrade
-                      ? "不可降级购买"
+                      ? t("button.noDowngrade")
                       : isCurrent
                         ? isPurchasing
-                          ? "跳转支付中..."
-                          : "续购叠加"
+                          ? t("button.redirecting")
+                          : t("button.renew")
                         : isPurchasing
-                          ? "跳转支付中..."
-                          : "立即购买"}
+                          ? t("button.redirecting")
+                          : t("button.buyNow")}
                   </Button>
                 </div>
               );

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Editor } from "@tiptap/core";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +109,17 @@ export function ArtifactEditorBubbleToolbar({
   currentTextAlign,
   indentBounds,
 }: ArtifactEditorBubbleToolbarProps) {
+  const tLanggraph = useTranslations("langgraph");
+  const tt = (
+    key: string,
+    fallback: string,
+    values?: Record<string, string | number>,
+  ) => {
+    const scopedKey = `editorToolbar.${key}`;
+    return tLanggraph.has(scopedKey)
+      ? tLanggraph(scopedKey, values)
+      : fallback;
+  };
   return (
     <BubbleMenu
       editor={editor}
@@ -143,7 +155,7 @@ export function ArtifactEditorBubbleToolbar({
                         "h-8 gap-1.5 rounded-sm px-2",
                         openBlockTypePanel && "bg-accent",
                       )}
-                      aria-label="段落与标题"
+                      aria-label={tt("blockType", "Paragraph & Headings")}
                       onMouseDown={(event) => event.preventDefault()}
                     >
                       <TypeIcon className="size-4 shrink-0" />
@@ -158,7 +170,7 @@ export function ArtifactEditorBubbleToolbar({
               }
             />
             <TooltipContent side="top">
-              <p>段落与标题</p>
+              <p>{tt("blockType", "Paragraph & Headings")}</p>
             </TooltipContent>
           </Tooltip>
           <PopoverContent
@@ -188,7 +200,7 @@ export function ArtifactEditorBubbleToolbar({
                     isBodyTextActive(editor) && "text-primary",
                   )}
                 />
-                正文
+                {tt("body", "Body")}
               </span>
               {isBodyTextActive(editor) ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -217,12 +229,12 @@ export function ArtifactEditorBubbleToolbar({
                   <span className="flex items-center gap-2">
                     {headingLevelBadge(level)}
                     {level === 1
-                      ? "一级标题"
+                      ? tt("heading1", "Heading 1")
                       : level === 2
-                        ? "二级标题"
+                        ? tt("heading2", "Heading 2")
                         : level === 3
-                          ? "三级标题"
-                          : "四级标题"}
+                          ? tt("heading3", "Heading 3")
+                          : tt("heading4", "Heading 4")}
                   </span>
                   {active ? (
                     <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -253,7 +265,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <ListIcon className="size-4 shrink-0" />
-                无序列表
+                {tt("bulletList", "Bullet List")}
               </span>
               {editor.isActive("bulletList") ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -277,7 +289,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <ListOrderedIcon className="size-4 shrink-0" />
-                有序列表
+                {tt("orderedList", "Ordered List")}
               </span>
               {editor.isActive("orderedList") ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -317,7 +329,7 @@ export function ArtifactEditorBubbleToolbar({
                         "h-8 gap-1.5 rounded-sm px-2",
                         openAlignPanel && "bg-accent",
                       )}
-                      aria-label="文本对齐"
+                      aria-label={tt("textAlign", "Text Align")}
                       onMouseDown={(event) => event.preventDefault()}
                     >
                       <TextAlignJustifyIcon className="size-4" />
@@ -332,7 +344,7 @@ export function ArtifactEditorBubbleToolbar({
               }
             />
             <TooltipContent side="top">
-              <p>文本对齐</p>
+              <p>{tt("textAlign", "Text Align")}</p>
             </TooltipContent>
           </Tooltip>
           <PopoverContent
@@ -362,7 +374,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <AlignLeftIcon className="size-4 shrink-0" />
-                左对齐
+                {tt("alignLeft", "Align Left")}
               </span>
               {currentTextAlign === "left" ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -390,7 +402,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <AlignCenterIcon className="size-4 shrink-0" />
-                居中对齐
+                {tt("alignCenter", "Align Center")}
               </span>
               {currentTextAlign === "center" ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -418,7 +430,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <AlignRightIcon className="size-4 shrink-0" />
-                右对齐
+                {tt("alignRight", "Align Right")}
               </span>
               {currentTextAlign === "right" ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -442,7 +454,7 @@ export function ArtifactEditorBubbleToolbar({
             >
               <span className="flex items-center gap-2">
                 <SquareCodeIcon className="size-4 shrink-0" />
-                代码块
+                {tt("codeBlock", "Code Block")}
               </span>
               {editor.isActive("codeBlock") ? (
                 <CheckIcon className="size-4 shrink-0 text-primary" />
@@ -472,7 +484,7 @@ export function ArtifactEditorBubbleToolbar({
               }}
             >
               <IndentIncreaseIcon className="mr-2 size-4 shrink-0" />
-              增加缩进
+              {tt("increaseIndent", "Increase Indent")}
             </Button>
             <Button
               variant="ghost"
@@ -491,7 +503,7 @@ export function ArtifactEditorBubbleToolbar({
               }}
             >
               <IndentDecreaseIcon className="mr-2 size-4 shrink-0" />
-              减少缩进
+              {tt("decreaseIndent", "Decrease Indent")}
             </Button>
           </PopoverContent>
         </Popover>
@@ -511,14 +523,14 @@ export function ArtifactEditorBubbleToolbar({
                 )}
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 type="button"
-                aria-label="加粗"
+                aria-label={tt("bold", "Bold")}
               >
                 <BoldIcon className="size-4" />
               </Button>
             }
           />
           <TooltipContent side="top">
-            <p>加粗</p>
+            <p>{tt("bold", "Bold")}</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -533,14 +545,14 @@ export function ArtifactEditorBubbleToolbar({
                 )}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 type="button"
-                aria-label="斜体"
+                aria-label={tt("italic", "Italic")}
               >
                 <ItalicIcon className="size-4" />
               </Button>
             }
           />
           <TooltipContent side="top">
-            <p>斜体</p>
+            <p>{tt("italic", "Italic")}</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -555,14 +567,14 @@ export function ArtifactEditorBubbleToolbar({
                 )}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 type="button"
-                aria-label="删除线"
+                aria-label={tt("strike", "Strikethrough")}
               >
                 <StrikethroughIcon className="size-4" />
               </Button>
             }
           />
           <TooltipContent side="top">
-            <p>删除线</p>
+            <p>{tt("strike", "Strikethrough")}</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -577,14 +589,14 @@ export function ArtifactEditorBubbleToolbar({
                 )}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 type="button"
-                aria-label="下划线"
+                aria-label={tt("underline", "Underline")}
               >
                 <UnderlineIcon className="size-4" />
               </Button>
             }
           />
           <TooltipContent side="top">
-            <p>下划线</p>
+            <p>{tt("underline", "Underline")}</p>
           </TooltipContent>
         </Tooltip>
         <Popover
@@ -617,7 +629,7 @@ export function ArtifactEditorBubbleToolbar({
                       )}
                       onMouseDown={(event) => event.preventDefault()}
                       type="button"
-                      aria-label="链接"
+                      aria-label={tt("link", "Link")}
                     >
                       <LinkIcon className="size-4" />
                     </Button>
@@ -626,7 +638,7 @@ export function ArtifactEditorBubbleToolbar({
               }
             />
             <TooltipContent side="top">
-              <p>链接</p>
+              <p>{tt("link", "Link")}</p>
             </TooltipContent>
           </Tooltip>
           <PopoverContent
@@ -645,7 +657,7 @@ export function ArtifactEditorBubbleToolbar({
                     applyLink();
                   }
                 }}
-                placeholder="输入网址，如：www.example.com"
+                placeholder={tt("linkPlaceholder", "Enter URL, e.g. www.example.com")}
                 className="h-8"
               />
               <Button
@@ -655,7 +667,7 @@ export function ArtifactEditorBubbleToolbar({
                 disabled={!linkInputValue.trim()}
                 className="h-8 shrink-0 px-4"
               >
-                确认
+                {tt("confirm", "Confirm")}
               </Button>
             </div>
           </PopoverContent>
@@ -684,7 +696,7 @@ export function ArtifactEditorBubbleToolbar({
                         "relative rounded-sm",
                         openColorPanel === "text" && "bg-accent",
                       )}
-                      aria-label="字体颜色"
+                      aria-label={tt("textColor", "Text Color")}
                       onMouseDown={(event) => event.preventDefault()}
                     >
                       <span className="mt-[-1px] inline-block origin-center scale-x-110 scale-y-90 text-[22px] font-normal text-red-500">
@@ -696,7 +708,7 @@ export function ArtifactEditorBubbleToolbar({
               }
             />
             <TooltipContent side="top">
-              <p>字体颜色</p>
+              <p>{tt("textColor", "Text Color")}</p>
             </TooltipContent>
           </Tooltip>
           <PopoverContent
@@ -765,7 +777,7 @@ export function ArtifactEditorBubbleToolbar({
                         "relative rounded-sm",
                         openColorPanel === "highlight" && "bg-accent",
                       )}
-                      aria-label="背景颜色"
+                      aria-label={tt("highlightColor", "Highlight Color")}
                       onMouseDown={(event) => event.preventDefault()}
                     >
                       <span
@@ -780,7 +792,7 @@ export function ArtifactEditorBubbleToolbar({
               }
             />
             <TooltipContent side="top">
-              <p>背景颜色</p>
+              <p>{tt("highlightColor", "Highlight Color")}</p>
             </TooltipContent>
           </Tooltip>
           <PopoverContent
@@ -798,7 +810,7 @@ export function ArtifactEditorBubbleToolbar({
                   "relative h-6 w-6 rounded bg-white p-0 shadow-[inset_0_0_0_1px_#d1d5db]",
                   !editor.isActive("highlight") && "ring-1 ring-ring",
                 )}
-                aria-label="清除背景色"
+                aria-label={tt("clearHighlight", "Clear Highlight")}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   editor.chain().focus().unsetHighlight().run();
@@ -827,7 +839,7 @@ export function ArtifactEditorBubbleToolbar({
                       "ring-2 ring-ring",
                   )}
                   style={{ backgroundColor: color }}
-                  aria-label={`背景色 ${color}`}
+                  aria-label={tt("highlightColorValue", `Highlight ${color}`, { color })}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     editor.chain().focus().setHighlight({ color }).run();

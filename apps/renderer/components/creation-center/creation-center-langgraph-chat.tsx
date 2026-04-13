@@ -6,7 +6,10 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import { type PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
-import { ChatBox, useSpecificChatMode } from "@/components/langgraph/workspace/chats";
+import {
+  ChatBox,
+  useSpecificChatMode,
+} from "@/components/langgraph/workspace/chats";
 import { InputBox } from "@/components/langgraph/workspace/input-box";
 import { MessageList } from "@/components/langgraph/workspace/messages";
 import { ThreadContext } from "@/components/langgraph/workspace/messages/context";
@@ -19,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-// import { TodoList } from "@/components/langgraph/workspace/todo-list";
+import { TodoList } from "@/components/langgraph/workspace/todo-list";
 import { useNotification } from "@/lib/langgraph/core/notification/hooks";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import { useThreadStream } from "@/lib/langgraph/core/threads/hooks";
@@ -36,10 +39,14 @@ type InsufficientBalanceInfo = {
 };
 
 function readNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
-function extractInsufficientBalanceInfo(root: unknown): InsufficientBalanceInfo | null {
+function extractInsufficientBalanceInfo(
+  root: unknown,
+): InsufficientBalanceInfo | null {
   const visited = new WeakSet<object>();
   const queue: unknown[] = [root];
 
@@ -66,7 +73,10 @@ function extractInsufficientBalanceInfo(root: unknown): InsufficientBalanceInfo 
     }
 
     for (const value of Object.values(candidate)) {
-      if (typeof value === "string" && value.includes("BILLING_INSUFFICIENT_BALANCE")) {
+      if (
+        typeof value === "string" &&
+        value.includes("BILLING_INSUFFICIENT_BALANCE")
+      ) {
         return {
           message: "账户余额不足，请先充值后再试。",
         };
@@ -142,12 +152,19 @@ export function CreationCenterLanggraphChat() {
   useEffect(() => {
     if (!personasFetched) return;
     if (!selectedPersonaId) return;
-    if (personaOptions.some((persona) => persona.id === selectedPersonaId)) return;
+    if (personaOptions.some((persona) => persona.id === selectedPersonaId))
+      return;
     setSettings("context", {
       ...settings.context,
       persona_id: undefined,
     });
-  }, [personaOptions, personasFetched, selectedPersonaId, setSettings, settings.context]);
+  }, [
+    personaOptions,
+    personasFetched,
+    selectedPersonaId,
+    setSettings,
+    settings.context,
+  ]);
 
   const [thread, sendMessage, isUploading] = useThreadStream({
     threadId: threadId || undefined,
@@ -240,6 +257,8 @@ export function CreationCenterLanggraphChat() {
   const handleStop = useCallback(async () => {
     await thread.stop();
   }, [thread]);
+  const todos = thread.values.todos ?? [];
+  const showTodoList = todos.length > 0;
 
   if (!threadId) {
     return null;
@@ -259,6 +278,15 @@ export function CreationCenterLanggraphChat() {
             </div>
             <div className="z-30 flex shrink-0 justify-center px-4 pb-4 pt-4">
               <div className="relative w-full max-w-(--container-width-md)">
+                {showTodoList && (
+                  <div className="mb-2">
+                    <TodoList
+                      className="bg-background/5"
+                      todos={todos}
+                    />
+                  </div>
+                )}
+
                 <InputBox
                   className={cn(
                     "w-full overflow-hidden rounded-2xl border border-primary bg-card shadow-[0_0_20px_rgba(124,58,237,0.25)]",
@@ -303,7 +331,8 @@ export function CreationCenterLanggraphChat() {
             <DialogHeader>
               <DialogTitle>余额不足提醒</DialogTitle>
               <DialogDescription className="pt-1 text-sm text-foreground/80">
-                {insufficientBalanceInfo?.message ?? "账户余额不足，请先充值后再试。"}
+                {insufficientBalanceInfo?.message ??
+                  "账户余额不足，请先充值后再试。"}
                 {typeof insufficientBalanceInfo?.availablePoints === "number" &&
                 typeof insufficientBalanceInfo?.requiredPoints === "number"
                   ? `（当前余额：${insufficientBalanceInfo.availablePoints}，所需：${insufficientBalanceInfo.requiredPoints}）`

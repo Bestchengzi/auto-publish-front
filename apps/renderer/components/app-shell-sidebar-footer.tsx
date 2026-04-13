@@ -67,6 +67,7 @@ export function AppShellSidebarFooter() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const t = useTranslations("sidebar.items");
+  const tSidebar = useTranslations("sidebar");
   const { ready, isLoggedIn } = useAuthLoggedIn();
   const [loginOpen, setLoginOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -92,9 +93,9 @@ export function AppShellSidebarFooter() {
       setUserName(
         name && name.length > 0
           ? name
-          : fallbackId && fallbackId.length > 0
+            : fallbackId && fallbackId.length > 0
             ? fallbackId
-            : "未命名用户",
+            : tSidebar("footer.unnamedUser"),
       );
       setUserPhone(phone && phone.length > 0 ? phone : "");
     };
@@ -150,10 +151,14 @@ export function AppShellSidebarFooter() {
         ? { "zh-CN": "Chinese", en: "English" }
         : { "zh-CN": "中文", en: "英文" };
     const planDisplayName =
-      billingAccount?.account.subscription?.plan_display_name?.trim() || "免费版";
+      billingAccount?.account.subscription?.plan_display_name?.trim() ||
+      tSidebar("footer.freePlan");
     const balancePoints = billingAccount?.account.balance_points ?? 0;
     const displayBalancePoints = Math.round(balancePoints / 100);
-    const billingHint = `${planDisplayName} · 剩余积分 ${displayBalancePoints.toLocaleString("zh-CN")}`;
+    const billingHint = tSidebar("footer.billingHint", {
+      plan: planDisplayName,
+      points: displayBalancePoints.toLocaleString(locale === "en" ? "en-US" : "zh-CN"),
+    });
     return (
       <>
         <DropdownMenu>
@@ -170,7 +175,7 @@ export function AppShellSidebarFooter() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-foreground">
-                {userName || "未命名用户"}
+                {userName || tSidebar("footer.unnamedUser")}
               </div>
               <div className="mt-0.5 truncate text-xs text-muted-foreground">
                 {billingHint}
@@ -191,7 +196,7 @@ export function AppShellSidebarFooter() {
               </div>
               <div className="min-w-0 flex-1 self-center">
                 <div className="truncate text-base font-semibold text-foreground">
-                  {userName || "未命名用户"}
+                  {userName || tSidebar("footer.unnamedUser")}
                 </div>
                 {userPhone ? (
                   <div className="mt-0.5 text-sm text-muted-foreground">{userPhone}</div>
@@ -209,7 +214,7 @@ export function AppShellSidebarFooter() {
               }}
             >
               <SettingsIcon className="size-4" />
-              个人设置
+              {tSidebar("footer.profileSettings")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="py-2"
@@ -222,14 +227,14 @@ export function AppShellSidebarFooter() {
               }
             >
               <HouseIcon className="size-4" />
-              访问官网
+              {tSidebar("footer.visitWebsite")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="py-2"
               onClick={() => setPlanDialogOpen(true)}
             >
               <CreditCardIcon className="size-4" />
-              购买套餐
+              {tSidebar("footer.buyPlan")}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator className="mx-2 my-1.5" />
@@ -243,7 +248,7 @@ export function AppShellSidebarFooter() {
               }}
             >
               <LogOutIcon className="size-4" />
-              退出登录
+              {tSidebar("footer.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -258,10 +263,10 @@ export function AppShellSidebarFooter() {
                   </div>
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-foreground">
-                      {userName || "未命名用户"}
+                      {userName || tSidebar("footer.unnamedUser")}
                     </div>
                     <div className="truncate text-xs text-muted-foreground">
-                      个人
+                      {tSidebar("footer.personal")}
                     </div>
                   </div>
                 </div>
@@ -276,7 +281,7 @@ export function AppShellSidebarFooter() {
                   }`}
                 >
                   <UserIcon className="size-4" />
-                  账户
+                  {tSidebar("footer.account")}
                 </button>
                 <button
                   type="button"
@@ -288,14 +293,16 @@ export function AppShellSidebarFooter() {
                   }`}
                 >
                   <SettingsIcon className="size-4" />
-                  设置
+                  {tSidebar("footer.settings")}
                 </button>
               </aside>
 
               <section className="flex-1 px-20 py-7">
                 {settingsTab === "account" ? (
                   <div>
-                    <h2 className="mb-5 text-2xl font-medium">账户</h2>
+                    <h2 className="mb-5 text-2xl font-medium">
+                      {tSidebar("footer.account")}
+                    </h2>
                     <DropdownMenuSeparator className="mb-6" />
                     <div>
                       <div className="flex items-center gap-4">
@@ -313,11 +320,15 @@ export function AppShellSidebarFooter() {
                   </div>
                 ) : (
                   <div>
-                    <h2 className="mb-5 text-2xl font-medium">设置</h2>
+                    <h2 className="mb-5 text-2xl font-medium">
+                      {tSidebar("footer.settings")}
+                    </h2>
                     <DropdownMenuSeparator className="mb-6" />
                     <div className="space-y-8">
                       <div>
-                        <div className="mb-2 text-sm font-normal">语言</div>
+                        <div className="mb-2 text-sm font-normal">
+                          {tSidebar("footer.language")}
+                        </div>
                         <Select
                           value={locale}
                           onValueChange={(value) => {
@@ -340,12 +351,14 @@ export function AppShellSidebarFooter() {
                       </div>
 
                       <div>
-                        <div className="mb-2 text-sm font-normal">外观</div>
+                        <div className="mb-2 text-sm font-normal">
+                          {tSidebar("footer.appearance")}
+                        </div>
                         <div className="flex gap-5">
                           {[
                             {
                               key: "light",
-                              label: "浅色",
+                              label: tSidebar("footer.themeLight"),
                               previewClass:
                                 "bg-white border border-border/70",
                               leftPaneClass: "bg-muted/40",
@@ -354,7 +367,7 @@ export function AppShellSidebarFooter() {
                             },
                             {
                               key: "dark",
-                              label: "深色",
+                              label: tSidebar("footer.themeDark"),
                               previewClass:
                                 "bg-zinc-900 border border-zinc-700/80",
                               leftPaneClass: "bg-zinc-800",
@@ -363,7 +376,7 @@ export function AppShellSidebarFooter() {
                             },
                             {
                               key: "system",
-                              label: "跟随系统",
+                              label: tSidebar("footer.themeSystem"),
                               previewClass:
                                 "border border-border/70 bg-gradient-to-r from-white via-white to-zinc-900",
                               leftPaneClass:
@@ -408,12 +421,23 @@ export function AppShellSidebarFooter() {
                       </div>
 
                       <div>
-                        <div className="mb-2 text-sm font-normal">主色</div>
+                        <div className="mb-2 text-sm font-normal">
+                          {tSidebar("footer.accent")}
+                        </div>
                         <div className="flex gap-3">
                           {[
-                            { key: "neutral" as AccentPreset, label: "黑色" },
-                            { key: "blue" as AccentPreset, label: "蓝色" },
-                            { key: "violet" as AccentPreset, label: "紫色" },
+                            {
+                              key: "neutral" as AccentPreset,
+                              label: tSidebar("footer.accentNeutral"),
+                            },
+                            {
+                              key: "blue" as AccentPreset,
+                              label: tSidebar("footer.accentBlue"),
+                            },
+                            {
+                              key: "violet" as AccentPreset,
+                              label: tSidebar("footer.accentViolet"),
+                            },
                           ].map((item) => (
                             <Button
                               key={item.key}

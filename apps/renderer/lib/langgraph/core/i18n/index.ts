@@ -1,8 +1,5 @@
-import type { Translations as LocaleTranslations } from "./locales/types";
-
 export const SUPPORTED_LOCALES = ["zh-CN", "en-US"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export type Translations = LocaleTranslations;
 
 export const DEFAULT_LOCALE: Locale = "zh-CN";
 
@@ -29,24 +26,4 @@ export function normalizeLocale(value?: string | null): Locale {
   return DEFAULT_LOCALE;
 }
 
-export function detectLocale(): Locale {
-  if (typeof navigator === "undefined") {
-    return DEFAULT_LOCALE;
-  }
-
-  const candidates = [
-    navigator.language,
-    ...(navigator.languages ?? []),
-  ];
-
-  for (const candidate of candidates) {
-    const normalized = normalizeLocale(candidate);
-    if (normalized) return normalized;
-  }
-
-  return DEFAULT_LOCALE;
-}
-
-export { I18nProvider, useI18nContext } from "./context";
 export { useI18n } from "./hooks";
-export { getLocaleFromCookie, setLocaleInCookie, getLocaleFromCookieServer } from "./cookies";
