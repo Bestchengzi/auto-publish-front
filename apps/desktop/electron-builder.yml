@@ -1,5 +1,5 @@
-appId: com.mediaautopublish.desktop
-productName: 可达AI
+appId: com.mediaautopublish.keduckAI
+productName: keduckAI
 
 directories:
   output: release
