@@ -14,7 +14,8 @@ function getGenImageUrlPrefix(): string {
   if (process.env.NODE_ENV === "production") {
     return "";
   }
-  return (process.env.NEXT_PUBLIC_GEN_IMAGE_PREFIX ?? "").replace(/\/$/, "");
+  // return (process.env.NEXT_PUBLIC_GEN_IMAGE_PREFIX ?? "").replace(/\/$/, "");
+  return "/media";
 }
 
 export function getGenImageUrl(

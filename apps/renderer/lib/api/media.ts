@@ -94,6 +94,6 @@ export async function moveMediaToGroup(
   });
 }
 
-export function getMediaDownloadUrl(mediaId: string): string {
-  return apiUrl(`/api/media/${mediaId}/download`);
-}
+// export function getMediaDownloadUrl(mediaId: string): string {
+//   return apiUrl(`/api/media/${mediaId}/download`);
+// }

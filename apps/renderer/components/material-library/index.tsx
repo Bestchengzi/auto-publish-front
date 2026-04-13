@@ -96,7 +96,8 @@ function mapMediaResponseToMaterial(m: mediaApi.MediaResponse): Material {
     description: m.remark ?? undefined,
     previewUrl:
       m.media_type === "image" || m.media_type === "video"
-        ? mediaApi.getMediaDownloadUrl(m.id)
+        // ? mediaApi.getMediaDownloadUrl(m.id)
+        ? m.file_path
         : undefined,
   };
 }

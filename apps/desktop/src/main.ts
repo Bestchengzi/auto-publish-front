@@ -145,7 +145,7 @@ async function createMainWindow() {
   const envRendererUrl = process.env.ELECTRON_RENDERER_URL?.trim();
   const rendererUrl = (typeof envRendererUrl === "string" && /^https?:\/\//i.test(envRendererUrl))
     ? envRendererUrl
-    : (app.isPackaged ? "http://192.168.88.30:13200" : "http://localhost:13200");
+    : (app.isPackaged ? "https://keduck.cn" : "http://localhost:13200");
   try {
     await win.loadURL(rendererUrl);
   } catch (error) {
