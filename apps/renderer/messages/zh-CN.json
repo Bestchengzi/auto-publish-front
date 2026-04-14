@@ -839,6 +839,23 @@
       "highlightColor": "背景颜色",
       "clearHighlight": "清除背景色",
       "highlightColorValue": "背景色 {color}"
+    },
+    "coverDrawer": {
+      "tabUpload": "上传图片",
+      "tabLibrary": "我的素材",
+      "uploading": "上传中...",
+      "uploadLocal": "本地上传",
+      "uploadContinue": "继续上传",
+      "uploadedCoverAlt": "上传封面{index}",
+      "reupload": "重新上传",
+      "libraryLoading": "素材加载中...",
+      "emptyTitle": "暂无图片素材",
+      "emptyDescription": "请先上传图片素材，或切换到“上传图片”添加。",
+      "maxSelect": "最多可选 {count} 张",
+      "replaceModeSingleHint": "（替换模式仅支持单选）",
+      "cancel": "取消",
+      "confirm": "确认",
+      "replaceCover": "替换封面"
     }
   },
   "marketing": {

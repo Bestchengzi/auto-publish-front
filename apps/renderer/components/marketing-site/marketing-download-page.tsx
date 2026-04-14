@@ -3,13 +3,12 @@
 import { AppleIcon, CpuIcon, DownloadIcon, MonitorIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const RELEASES_URL = "https://gitee.com/beeize_enterprise/auto-publish-front/releases";
-
 type DownloadCard = {
   key: "windows" | "intel" | "apple";
   title: string;
   desc: string;
   format: string;
+  url: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
@@ -22,6 +21,7 @@ export function MarketingDownloadPage() {
       title: t("downloadWindows"),
       desc: t("downloadWindowsDesc"),
       format: ".exe",
+      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-win-x64.exe",
       icon: MonitorIcon,
     },
     {
@@ -29,6 +29,7 @@ export function MarketingDownloadPage() {
       title: t("downloadMacIntel"),
       desc: t("downloadMacIntelDesc"),
       format: ".dmg / .zip (x64)",
+      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-mac-x64.dmg",
       icon: CpuIcon,
     },
     {
@@ -36,6 +37,7 @@ export function MarketingDownloadPage() {
       title: t("downloadMacApple"),
       desc: t("downloadMacAppleDesc"),
       format: ".dmg / .zip (arm64)",
+      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-mac-arm64.dmg",
       icon: AppleIcon,
     },
   ];
@@ -68,7 +70,7 @@ export function MarketingDownloadPage() {
             return (
               <a
                 key={card.key}
-                href={RELEASES_URL}
+                  href={card.url}
                 target="_blank"
                 rel="noreferrer"
                 className="group rounded-2xl border border-slate-200/90 bg-white/92 p-5 shadow-sm transition hover:border-blue-400/70 hover:bg-white dark:border-zinc-700/80 dark:bg-zinc-900/70 dark:hover:border-blue-400/80 dark:hover:bg-zinc-900"

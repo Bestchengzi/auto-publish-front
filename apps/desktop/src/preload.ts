@@ -62,6 +62,8 @@ export type DesktopUpdateState = {
 };
 
 export type DesktopApi = {
+  /** 主进程 `process.platform`，供渲染端布局（如 macOS 交通灯避让） */
+  platform: NodeJS.Platform;
   ping: () => Promise<{ ok: true; ts: number }>;
   startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
   openPlatformAuthInTab: (platformId: string) => void;
@@ -120,6 +122,7 @@ function getAllowedRendererOrigins(): Set<string> {
 const allowedRendererOrigins = getAllowedRendererOrigins();
 
 const api: DesktopApi = {
+  platform: process.platform,
   ping: () => ipcRenderer.invoke("app:ping"),
   startPlatformAuth: (platformId: string) =>
     ipcRenderer.invoke("platform-auth:start", platformId),

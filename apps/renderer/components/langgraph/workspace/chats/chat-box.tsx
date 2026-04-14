@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import type { GroupImperativeHandle } from "react-resizable-panels";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import {
   PlatformPickerDialog,
   type PickerPlatformItem,
 } from "@/components/common/platform-picker-dialog";
+import { PageEmptyState } from "@/components/common/page-empty-state";
 import {
   Dialog,
   DialogContent,
@@ -414,6 +416,16 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   children,
   threadId,
 }) => {
+  const tLanggraph = useTranslations("langgraph");
+  const td = (
+    key: string,
+    fallback: string,
+    values?: Record<string, string | number>,
+  ) => {
+    const fullKey = `coverDrawer.${key}`;
+    if (!tLanggraph.has(fullKey)) return fallback;
+    return values ? tLanggraph(fullKey, values) : tLanggraph(fullKey);
+  };
   const { thread } = useThread();
   const threadIdRef = useRef(threadId);
   const layoutRef = useRef<GroupImperativeHandle>(null);
@@ -1954,10 +1966,10 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                 >
                   <TabsList variant="line" className="h-auto w-full justify-start p-0">
                     <TabsTrigger value={COVER_PICKER_TAB_UPLOAD} className="h-9 px-1.5 text-base">
-                      上传图片
+                      {td("tabUpload", "上传图片")}
                     </TabsTrigger>
                     <TabsTrigger value={COVER_PICKER_TAB_LIBRARY} className="h-9 px-1.5 text-base">
-                      我的素材
+                      {td("tabLibrary", "我的素材")}
                     </TabsTrigger>
                   </TabsList>
 
@@ -1995,7 +2007,9 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                             disabled={coverUploading || coverSelectableCount <= 0}
                           >
                             <PlusIcon className="size-5" />
-                            {coverUploading ? "上传中..." : "本地上传"}
+                            {coverUploading
+                              ? td("uploading", "上传中...")
+                              : td("uploadLocal", "本地上传")}
                           </Button>
                         </div>
                       ) : (
@@ -2011,7 +2025,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                             >
                               <Image
                                 src={url}
-                                alt={`上传封面${idx + 1}`}
+                                alt={td("uploadedCoverAlt", `上传封面${idx + 1}`, { index: idx + 1 })}
                                 width={300}
                                 height={230}
                                 unoptimized
@@ -2020,7 +2034,9 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
                                 <div className="flex flex-col items-center gap-1.5 text-white">
                                   <PlusIcon className="size-7" />
-                                  <span className="text-base font-medium">重新上传</span>
+                                  <span className="text-base font-medium">
+                                    {td("reupload", "重新上传")}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -2036,7 +2052,9 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                                 <div className="flex flex-col items-center gap-1.5">
                                   <PlusIcon className="size-5" />
                                   <span className="text-sm">
-                                    {coverUploading ? "上传中..." : "继续上传"}
+                                    {coverUploading
+                                      ? td("uploading", "上传中...")
+                                      : td("uploadContinue", "继续上传")}
                                   </span>
                                 </div>
                               </button>
@@ -2047,9 +2065,19 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                   ) : (
                     <div className="mt-6 min-h-0 flex-1 overflow-auto pr-8 -mr-8">
                       {isFetchingCoverLibrary ? (
-                        <p className="py-8 text-sm text-muted-foreground">素材加载中...</p>
+                        <p className="py-8 text-sm text-muted-foreground">
+                          {td("libraryLoading", "素材加载中...")}
+                        </p>
                       ) : coverLibraryItems.length === 0 ? (
-                        <p className="py-8 text-sm text-muted-foreground">暂无图片素材</p>
+                        <div className="flex min-h-full items-center justify-center pr-8">
+                          <PageEmptyState
+                            title={td("emptyTitle", "暂无图片素材")}
+                            description={td(
+                              "emptyDescription",
+                              "请先上传图片素材，或切换到“上传图片”添加。",
+                            )}
+                          />
+                        </div>
                       ) : (
                         <div className="columns-2 gap-3 md:columns-3">
                           {coverLibraryItems.map((item) => {
@@ -2106,8 +2134,12 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
 
                 <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
                   <p className="text-sm text-muted-foreground">
-                    最多可选 {coverSelectableCount} 张
-                    {coverReplaceIndex != null ? "（替换模式仅支持单选）" : ""}
+                    {td("maxSelect", `最多可选 ${coverSelectableCount} 张`, {
+                      count: coverSelectableCount,
+                    })}
+                    {coverReplaceIndex != null
+                      ? td("replaceModeSingleHint", "（替换模式仅支持单选）")
+                      : ""}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -2117,7 +2149,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                       className="h-10 px-5 text-base"
                       onClick={() => setCoverDrawerOpen(false)}
                     >
-                      取消
+                      {td("cancel", "取消")}
                     </Button>
                     <Button
                       type="button"
@@ -2136,7 +2168,9 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                         )
                       }
                     >
-                      {coverReplaceIndex != null ? "替换封面" : "确认"}
+                      {coverReplaceIndex != null
+                        ? td("replaceCover", "替换封面")
+                        : td("confirm", "确认")}
                     </Button>
                   </div>
                 </div>

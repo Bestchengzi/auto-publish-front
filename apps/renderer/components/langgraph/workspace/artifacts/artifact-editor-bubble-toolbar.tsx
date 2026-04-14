@@ -124,7 +124,10 @@ export function ArtifactEditorBubbleToolbar({
     <BubbleMenu
       editor={editor}
       shouldShow={() =>
-        !disabled && editor.isEditable && !editor.state.selection.empty
+        !disabled &&
+        editor.isEditable &&
+        !editor.state.selection.empty &&
+        !editor.isActive("image")
       }
     >
       <TooltipProvider delay={0}>

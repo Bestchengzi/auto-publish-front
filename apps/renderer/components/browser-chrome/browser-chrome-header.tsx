@@ -16,6 +16,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { Input } from "@/components/ui/input";
+import { getDesktop } from "@/lib/desktop-api";
 import { cn } from "@/lib/utils";
 
 import type { TabItem } from "./types";
@@ -72,6 +73,11 @@ export function BrowserChromeHeader({
 }: BrowserChromeHeaderProps) {
   const t = useTranslations();
   const addressEditable = activeId !== initialTabId;
+  /** macOS `titleBarStyle: hidden` 下系统交通灯叠在内容区左上角，首帧后用 layout 写入避免与 SSR 不一致 */
+  const [darwinTabLeading, setDarwinTabLeading] = React.useState(false);
+  React.useLayoutEffect(() => {
+    if (getDesktop()?.platform === "darwin") setDarwinTabLeading(true);
+  }, []);
 
   return (
     <header className="flex shrink-0 flex-col border-b border-border bg-muted/30 dark:bg-muted/20">
@@ -81,7 +87,11 @@ export function BrowserChromeHeader({
         onDoubleClick={onHeaderDoubleClick}
       >
         <div
-          className="flex min-w-0 max-w-[70%] shrink-0 items-center gap-0.5 overflow-x-auto"
+          className={cn(
+            "flex min-w-0 max-w-[70%] shrink-0 items-center gap-0.5 overflow-x-auto",
+            // 约三颗交通灯宽度 + 与内容的间距，与常见 Electron 壳一致
+            darwinTabLeading && "pl-[78px]",
+          )}
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           {tabs.map((tab) => {

@@ -34,6 +34,8 @@ declare global {
   interface Window {
     __desktopEmbeddedView?: boolean;
     desktop?: {
+      /** 与 Node/Electron 主进程一致，如 `darwin` / `win32` */
+      platform: string;
       ping: () => Promise<{ ok: true; ts: number }>;
       startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
       fetchPageMeta: (url: string) => Promise<{ title?: string; favicon?: string }>;

@@ -309,7 +309,10 @@ function createExternalView(win: BrowserWindow, tabId: string) {
     }
   };
   const onWillDownload: WillDownloadListener = (_event, _item, wc) => {
-    if (!wc || wc.id !== bv.webContents.id) return;
+    const hostWc = bv.webContents;
+    // 共享 persist session 上挂了多个监听；视图销毁后仍可能收到 will-download，避免读已释放的 webContents.id
+    if (!hostWc || hostWc.isDestroyed()) return;
+    if (!wc || typeof wc.id !== "number" || wc.id !== hostWc.id) return;
     send("external-tab:download-started", tabId);
   };
   bv.webContents.session.on("will-download", onWillDownload);

@@ -839,6 +839,23 @@
       "highlightColor": "Highlight Color",
       "clearHighlight": "Clear Highlight",
       "highlightColorValue": "Highlight {color}"
+    },
+    "coverDrawer": {
+      "tabUpload": "Upload Images",
+      "tabLibrary": "My Assets",
+      "uploading": "Uploading...",
+      "uploadLocal": "Upload from device",
+      "uploadContinue": "Upload more",
+      "uploadedCoverAlt": "Uploaded cover {index}",
+      "reupload": "Re-upload",
+      "libraryLoading": "Loading assets...",
+      "emptyTitle": "No image assets",
+      "emptyDescription": "Upload image assets first, or switch to \"Upload Images\" to add.",
+      "maxSelect": "Up to {count} image(s) can be selected",
+      "replaceModeSingleHint": " (replace mode supports single selection only)",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "replaceCover": "Replace cover"
     }
   },
   "marketing": {
