@@ -6,7 +6,7 @@ import {
   PlusIcon,
   XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { GroupImperativeHandle } from "react-resizable-panels";
@@ -20,17 +20,15 @@ import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ImagePickerSheet,
+} from "@/components/common/image-picker-sheet";
 import {
   PlatformPickerDialog,
   type PickerPlatformItem,
 } from "@/components/common/platform-picker-dialog";
-import { PageEmptyState } from "@/components/common/page-empty-state";
 import {
   Dialog,
   DialogContent,
@@ -49,9 +47,9 @@ import {
 import * as accountsApi from "@/lib/api/accounts";
 import * as mediaApi from "@/lib/api/media";
 import { getPlatformsWithNames } from "@/lib/platforms";
-import { getApiErrorMessage } from "@/lib/request";
+import { getApiErrorMessage, request } from "@/lib/request";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
-import { uploadFiles } from "@/lib/langgraph/core/uploads/api";
+import { getUploadPreviewUrl, uploadFiles } from "@/lib/langgraph/core/uploads/api";
 import { cn } from "@/lib/utils";
 
 import {
@@ -243,6 +241,27 @@ const WECHAT_ALLOWED_FIELD_IDS = new Set([
 ]);
 const COVER_PICKER_TAB_UPLOAD = "upload";
 const COVER_PICKER_TAB_LIBRARY = "library";
+const COVER_PICKER_TAB_PROJECT = "project";
+const COVER_PICKER_TAB_SEARCH = "search";
+
+type ArtifactListItem = {
+  filename: string;
+  artifact_url: string;
+  file_type: "document" | "image" | "video" | "other";
+};
+
+type ArtifactListResponse = {
+  files: ArtifactListItem[];
+};
+
+type ImageSearchResponse = {
+  results?: Array<{
+    title?: string;
+    image_url?: string;
+    thumbnail_url?: string;
+    source_url?: string;
+  }>;
+};
 
 const WECHAT_CLAIM_SOURCE_OPTIONS = [
   "无需声明",
@@ -263,25 +282,6 @@ const PLATFORM_PICKER_LABELS: Record<string, string> = {
   csdn: "CSDN",
   baijiahao: "百家号",
 };
-
-function getUploadPreviewUrl(file: { artifact_url?: string; virtual_path?: string; path?: string }): string | null {
-  const artifactUrl = typeof file.artifact_url === "string" ? file.artifact_url : "";
-  if (artifactUrl) {
-    if (artifactUrl.startsWith("http://") || artifactUrl.startsWith("https://")) {
-      return artifactUrl;
-    }
-    return `${getBackendBaseURL()}${artifactUrl.startsWith("/") ? "" : "/"}${artifactUrl}`;
-  }
-  const virtualPath = typeof file.virtual_path === "string" ? file.virtual_path : "";
-  if (virtualPath) {
-    return `${getBackendBaseURL()}/api/threads${virtualPath.startsWith("/") ? "" : "/"}${virtualPath}`;
-  }
-  const path = typeof file.path === "string" ? file.path : "";
-  if (path && (path.startsWith("http://") || path.startsWith("https://"))) {
-    return path;
-  }
-  return null;
-}
 
 function toAccountPlatform(platform: string): string {
   if (platform === "xiaohongshu") return "rednote";
@@ -458,12 +458,24 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     Record<string, string[]>
   >({});
   const [coverDrawerOpen, setCoverDrawerOpen] = useState(false);
+  const [coverDrawerSession, setCoverDrawerSession] = useState(0);
   const [coverDrawerTab, setCoverDrawerTab] = useState<
-    typeof COVER_PICKER_TAB_UPLOAD | typeof COVER_PICKER_TAB_LIBRARY
+    | typeof COVER_PICKER_TAB_UPLOAD
+    | typeof COVER_PICKER_TAB_LIBRARY
+    | typeof COVER_PICKER_TAB_PROJECT
+    | typeof COVER_PICKER_TAB_SEARCH
   >(COVER_PICKER_TAB_UPLOAD);
   const [coverReplaceIndex, setCoverReplaceIndex] = useState<number | null>(null);
   const [coverUploadCandidates, setCoverUploadCandidates] = useState<string[]>([]);
   const [coverLibraryCandidates, setCoverLibraryCandidates] = useState<string[]>([]);
+  const [coverProjectCandidates, setCoverProjectCandidates] = useState<string[]>(
+    [],
+  );
+  const [coverSearchCandidates, setCoverSearchCandidates] = useState<string[]>(
+    [],
+  );
+  const [coverSearchInputValue, setCoverSearchInputValue] = useState("");
+  const [coverSearchCommittedQuery, setCoverSearchCommittedQuery] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverReuploadTargetIndex, setCoverReuploadTargetIndex] = useState<number | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -484,6 +496,11 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const [addedPlatformDataById, setAddedPlatformDataById] = useState<
     Record<string, PublishEditPlatform>
   >({});
+  useEffect(() => {
+    if (coverDrawerOpen) {
+      setCoverDrawerSession((v) => v + 1);
+    }
+  }, [coverDrawerOpen]);
   const coverUploadInputRef = useRef<HTMLInputElement>(null);
   const coverReuploadInputRef = useRef<HTMLInputElement>(null);
   const publishPanelStateRef = useRef<PublishPanelDraftSnapshot>({
@@ -792,7 +809,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   const coverSelectableCount = coverReplaceIndex != null ? 1 : remainingCoverSlots;
 
   const { data: coverLibraryItems = [], isFetching: isFetchingCoverLibrary } = useQuery({
-    queryKey: ["publish-panel", "cover-library-images"],
+    queryKey: ["publish-panel", "cover-library-images", coverDrawerSession],
     queryFn: async () => {
       const res = await mediaApi.listMedia({ media_type: "image" });
       return res.items.map((item) => ({
@@ -804,6 +821,63 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     },
     enabled: coverDrawerOpen,
   });
+  const { data: coverProjectItems = [], isFetching: isFetchingCoverProject } =
+    useQuery({
+      queryKey: [
+        "publish-panel",
+        "cover-project-images",
+        threadId,
+        coverDrawerSession,
+      ],
+      queryFn: async () => {
+        const response = await request<ArtifactListResponse>(
+          `${getBackendBaseURL()}/api/threads/${threadId}/artifacts/list?file_type=image`,
+        );
+        return (response.files ?? [])
+          .filter((item) => item.file_type === "image")
+          .map((item) => ({
+            id: `${item.filename}-${item.artifact_url}`,
+            name: item.filename,
+            url:
+              getUploadPreviewUrl({ artifact_url: item.artifact_url }) ??
+              item.artifact_url,
+          }));
+      },
+      enabled: coverDrawerOpen && !!threadId,
+    });
+  const { data: coverSearchItems = [], isFetching: isFetchingCoverSearch } =
+    useQuery({
+      queryKey: [
+        "publish-panel",
+        "cover-image-search",
+        coverSearchCommittedQuery,
+        coverDrawerSession,
+      ],
+      queryFn: async () => {
+        const response = await request<ImageSearchResponse>(
+          `${getBackendBaseURL()}/api/tools/image_search?query=${encodeURIComponent(
+            coverSearchCommittedQuery,
+          )}&max_results=40`,
+        );
+        return (response.results ?? [])
+          .map((item, index) => {
+            const thumbnail = (item.thumbnail_url ?? "").trim();
+            const fallback = (item.image_url ?? "").trim();
+            const url = thumbnail || fallback;
+            if (!url) return null;
+            return {
+              id: `${index}-${url}`,
+              name:
+                item.title?.trim() || item.source_url?.trim() || `image-${index + 1}`,
+              url,
+            };
+          })
+          .filter((item): item is { id: string; name: string; url: string } =>
+            Boolean(item),
+          );
+      },
+      enabled: coverDrawerOpen && coverSearchCommittedQuery.trim().length > 0,
+    });
 
   useEffect(() => {
     if (!activePublishPlatform || !activePlatformData) return;
@@ -938,6 +1012,10 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     setCoverDrawerTab(COVER_PICKER_TAB_UPLOAD);
     setCoverUploadCandidates([]);
     setCoverLibraryCandidates([]);
+    setCoverProjectCandidates([]);
+    setCoverSearchCandidates([]);
+    setCoverSearchInputValue("");
+    setCoverSearchCommittedQuery("");
     setCoverReuploadTargetIndex(null);
   };
 
@@ -948,12 +1026,14 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
     }
     setCoverReplaceIndex(null);
     resetCoverDrawerSelection();
+    setCoverSearchInputValue("");
     setCoverDrawerOpen(true);
   };
 
   const openCoverDrawerForReplace = (index: number) => {
     setCoverReplaceIndex(index);
     resetCoverDrawerSelection();
+    setCoverSearchInputValue("");
     setCoverDrawerOpen(true);
   };
 
@@ -1056,6 +1136,33 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       return [...prev, url];
     });
   };
+  const toggleCoverProjectCandidate = (url: string) => {
+    setCoverProjectCandidates((prev) => {
+      const exists = prev.includes(url);
+      if (exists) return prev.filter((item) => item !== url);
+      if (coverReplaceIndex != null) return [url];
+      if (prev.length >= coverSelectableCount) return prev;
+      return [...prev, url];
+    });
+  };
+  const toggleCoverSearchCandidate = (url: string) => {
+    setCoverSearchCandidates((prev) => {
+      const exists = prev.includes(url);
+      if (exists) return prev.filter((item) => item !== url);
+      if (coverReplaceIndex != null) return [url];
+      if (prev.length >= coverSelectableCount) return prev;
+      return [...prev, url];
+    });
+  };
+  const triggerCoverImageSearch = useCallback(() => {
+    const next = coverSearchInputValue.trim();
+    if (!next) {
+      toast.error(td("searchKeywordRequired", "请输入图片搜索关键词"));
+      return;
+    }
+    setCoverSearchCandidates([]);
+    setCoverSearchCommittedQuery(next);
+  }, [coverSearchInputValue, td]);
 
   const handlePublish = async () => {
     const publishEdit = publishPreview?.publishEdit;
@@ -1945,7 +2052,7 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
               />
             </div>
           </aside>
-          <Sheet
+          <ImagePickerSheet
             open={coverDrawerOpen}
             onOpenChange={(open) => {
               setCoverDrawerOpen(open);
@@ -1954,229 +2061,171 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
                 resetCoverDrawerSelection();
               }
             }}
-          >
-            <SheetContent side="right" maxWidth="860px" className="p-0">
-              <div className="flex h-full min-h-0 flex-col px-8 pt-6 pb-5">
-                <Tabs
-                  value={coverDrawerTab}
-                  onValueChange={(v) =>
-                    setCoverDrawerTab(v as typeof COVER_PICKER_TAB_UPLOAD | typeof COVER_PICKER_TAB_LIBRARY)
-                  }
-                  className="min-h-0 flex-1"
-                >
-                  <TabsList variant="line" className="h-auto w-full justify-start p-0">
-                    <TabsTrigger value={COVER_PICKER_TAB_UPLOAD} className="h-9 px-1.5 text-base">
-                      {td("tabUpload", "上传图片")}
-                    </TabsTrigger>
-                    <TabsTrigger value={COVER_PICKER_TAB_LIBRARY} className="h-9 px-1.5 text-base">
-                      {td("tabLibrary", "我的素材")}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  {coverDrawerTab === COVER_PICKER_TAB_UPLOAD ? (
-                    <div className="mt-6 min-h-0 flex-1 overflow-auto pr-8 -mr-8">
-                      <input
-                        ref={coverUploadInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple={coverReplaceIndex == null}
-                        className="hidden"
-                        onChange={(e) => {
-                          void onPickLocalUploadFiles(e.target.files);
-                          e.target.value = "";
-                        }}
-                      />
-                      <input
-                        ref={coverReuploadInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple={false}
-                        className="hidden"
-                        onChange={(e) => {
-                          void onPickLocalUploadFiles(e.target.files);
-                          e.target.value = "";
-                        }}
-                      />
-
-                      {coverUploadCandidates.length === 0 ? (
-                        <div className="flex h-full min-h-[420px] items-center justify-center">
-                          <Button
-                            type="button"
-                            className="h-10 px-10 text-base"
-                            onClick={() => coverUploadInputRef.current?.click()}
-                            disabled={coverUploading || coverSelectableCount <= 0}
-                          >
-                            <PlusIcon className="size-5" />
-                            {coverUploading
-                              ? td("uploading", "上传中...")
-                              : td("uploadLocal", "本地上传")}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {coverUploadCandidates.map((url, idx) => (
-                            <div
-                              key={`${url}-${idx}`}
-                              className="group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-muted"
-                              onClick={() => {
-                                setCoverReuploadTargetIndex(idx);
-                                coverReuploadInputRef.current?.click();
-                              }}
-                            >
-                              <Image
-                                src={url}
-                                alt={td("uploadedCoverAlt", `上传封面${idx + 1}`, { index: idx + 1 })}
-                                width={300}
-                                height={230}
-                                unoptimized
-                                className="aspect-[150/115] w-full object-cover"
-                              />
-                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
-                                <div className="flex flex-col items-center gap-1.5 text-white">
-                                  <PlusIcon className="size-7" />
-                                  <span className="text-base font-medium">
-                                    {td("reupload", "重新上传")}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          {coverReplaceIndex == null &&
-                            coverUploadCandidates.length < coverSelectableCount && (
-                              <button
-                                type="button"
-                                className="flex aspect-[150/115] w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 text-muted-foreground transition-colors hover:bg-muted/40"
-                                onClick={() => coverUploadInputRef.current?.click()}
-                                disabled={coverUploading}
-                              >
-                                <div className="flex flex-col items-center gap-1.5">
-                                  <PlusIcon className="size-5" />
-                                  <span className="text-sm">
-                                    {coverUploading
-                                      ? td("uploading", "上传中...")
-                                      : td("uploadContinue", "继续上传")}
-                                  </span>
-                                </div>
-                              </button>
-                            )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="mt-6 min-h-0 flex-1 overflow-auto pr-8 -mr-8">
-                      {isFetchingCoverLibrary ? (
-                        <p className="py-8 text-sm text-muted-foreground">
-                          {td("libraryLoading", "素材加载中...")}
-                        </p>
-                      ) : coverLibraryItems.length === 0 ? (
-                        <div className="flex min-h-full items-center justify-center pr-8">
-                          <PageEmptyState
-                            title={td("emptyTitle", "暂无图片素材")}
-                            description={td(
-                              "emptyDescription",
-                              "请先上传图片素材，或切换到“上传图片”添加。",
-                            )}
-                          />
-                        </div>
-                      ) : (
-                        <div className="columns-2 gap-3 md:columns-3">
-                          {coverLibraryItems.map((item) => {
-                            const selected = coverLibraryCandidates.includes(item.url);
-                            const disabled =
-                              !selected &&
-                              coverReplaceIndex == null &&
-                              coverLibraryCandidates.length >= coverSelectableCount;
-                            return (
-                              <div
-                                key={item.id}
-                                className={cn(
-                                  "group relative mb-3 break-inside-avoid cursor-pointer overflow-hidden rounded-lg border bg-muted",
-                                  selected ? "border-primary ring-2 ring-primary/40" : "border-border",
-                                  disabled && "cursor-not-allowed opacity-60",
-                                )}
-                                onClick={() => {
-                                  if (disabled) return;
-                                  toggleCoverLibraryCandidate(item.url);
-                                }}
-                              >
-                                <Image
-                                  src={item.url}
-                                  alt={item.name}
-                                  width={800}
-                                  height={600}
-                                  unoptimized
-                                  className="h-auto w-full object-cover"
-                                />
-                                <div
-                                  className={cn(
-                                    "pointer-events-none absolute inset-0 transition-colors",
-                                    selected ? "bg-black/20" : "bg-black/0 group-hover:bg-black/15",
-                                  )}
-                                />
-                                <div
-                                  className={cn(
-                                    "pointer-events-none absolute top-3 left-3 flex size-7 items-center justify-center rounded-full border transition-all",
-                                    selected
-                                      ? "border-primary bg-primary text-primary-foreground opacity-100"
-                                      : "border-white/85 bg-black/30 text-transparent opacity-0 backdrop-blur-[1px] group-hover:opacity-100",
-                                  )}
-                                >
-                                  <CheckIcon className="size-4" />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Tabs>
-
-                <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    {td("maxSelect", `最多可选 ${coverSelectableCount} 张`, {
-                      count: coverSelectableCount,
-                    })}
-                    {coverReplaceIndex != null
-                      ? td("replaceModeSingleHint", "（替换模式仅支持单选）")
-                      : ""}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-10 px-5 text-base"
-                      onClick={() => setCoverDrawerOpen(false)}
-                    >
-                      {td("cancel", "取消")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-10 px-5 text-base"
-                      disabled={
-                        coverDrawerTab === COVER_PICKER_TAB_UPLOAD
-                          ? coverUploadCandidates.length === 0
-                          : coverLibraryCandidates.length === 0
+            tab={coverDrawerTab}
+            onTabChange={(tab) =>
+              setCoverDrawerTab(
+                tab as
+                  | typeof COVER_PICKER_TAB_UPLOAD
+                  | typeof COVER_PICKER_TAB_LIBRARY
+                  | typeof COVER_PICKER_TAB_PROJECT
+                  | typeof COVER_PICKER_TAB_SEARCH,
+              )
+            }
+            uploadSlot={
+              <>
+                <input
+                  ref={coverUploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple={coverReplaceIndex == null}
+                  className="hidden"
+                  onChange={(e) => {
+                    void onPickLocalUploadFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={coverReuploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple={false}
+                  className="hidden"
+                  onChange={(e) => {
+                    void onPickLocalUploadFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </>
+            }
+            uploadCandidates={coverUploadCandidates}
+            isUploading={coverUploading}
+            onClickUpload={() => coverUploadInputRef.current?.click()}
+            onClickUploadCandidate={(idx) => {
+              setCoverReuploadTargetIndex(idx);
+              coverReuploadInputRef.current?.click();
+            }}
+            showUploadContinue={
+              coverReplaceIndex == null &&
+              coverUploadCandidates.length < coverSelectableCount
+            }
+            onClickUploadContinue={() => coverUploadInputRef.current?.click()}
+            uploadTabLabel={td("tabUpload", "上传图片")}
+            libraryTabLabel={td("tabLibrary", "我的素材")}
+            uploadLocalLabel={td("uploadLocal", "本地上传")}
+            uploadingLabel={td("uploading", "上传中...")}
+            reuploadLabel={td("reupload", "重新上传")}
+            uploadContinueLabel={td("uploadContinue", "继续上传")}
+            libraryLoadingLabel={td("libraryLoading", "素材加载中...")}
+            emptyTitle={td("emptyTitle", "暂无图片素材")}
+            emptyDescription={td(
+              "emptyDescription",
+              "请先上传图片素材，或切换到“上传图片”添加。",
+            )}
+            libraryItems={coverLibraryItems}
+            selectedLibraryUrls={coverLibraryCandidates}
+            isFetchingLibrary={isFetchingCoverLibrary}
+            isLibraryItemDisabled={(url) =>
+              !coverLibraryCandidates.includes(url) &&
+              coverReplaceIndex == null &&
+              coverLibraryCandidates.length >= coverSelectableCount
+            }
+            onToggleLibraryItem={toggleCoverLibraryCandidate}
+            extraLibraryTabs={[
+              {
+                key: COVER_PICKER_TAB_PROJECT,
+                label: td("tabProject", "项目图片"),
+                items: coverProjectItems,
+                selectedUrls: coverProjectCandidates,
+                onToggleItem: toggleCoverProjectCandidate,
+                isFetching: isFetchingCoverProject,
+                isItemDisabled: (url) =>
+                  !coverProjectCandidates.includes(url) &&
+                  coverReplaceIndex == null &&
+                  coverProjectCandidates.length >= coverSelectableCount,
+                loadingLabel: td("libraryLoading", "素材加载中..."),
+                emptyTitle: td("emptyTitle", "暂无图片素材"),
+                emptyDescription: td(
+                  "emptyDescription",
+                  "请先上传图片素材，或切换到“上传图片”添加。",
+                ),
+              },
+              {
+                key: COVER_PICKER_TAB_SEARCH,
+                label: td("tabSearch", "图片搜索"),
+                items: coverSearchItems,
+                selectedUrls: coverSearchCandidates,
+                onToggleItem: toggleCoverSearchCandidate,
+                isFetching: isFetchingCoverSearch,
+                isItemDisabled: (url) =>
+                  !coverSearchCandidates.includes(url) &&
+                  coverReplaceIndex == null &&
+                  coverSearchCandidates.length >= coverSelectableCount,
+                loadingLabel: td("libraryLoading", "素材加载中..."),
+                emptyTitle: td("emptyTitle", "暂无图片素材"),
+                emptyDescription:
+                  coverSearchCommittedQuery.trim().length > 0
+                    ? td(
+                        "emptyDescription",
+                        "请先上传图片素材，或切换到“上传图片”添加。",
+                      )
+                    : td("searchEmptyDescription", "请输入可用于图片搜索的标题关键词。"),
+              },
+            ]}
+            libraryToolbar={(tabKey) =>
+              tabKey === COVER_PICKER_TAB_SEARCH ? (
+                <div className="mb-4 pt-1 pl-1 flex items-center gap-3 pr-8">
+                  <Input
+                    value={coverSearchInputValue}
+                    onChange={(event) => setCoverSearchInputValue(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        triggerCoverImageSearch();
                       }
-                      onClick={() =>
-                        applyCoverSelection(
-                          coverDrawerTab === COVER_PICKER_TAB_UPLOAD
-                            ? coverUploadCandidates
-                            : coverLibraryCandidates,
-                        )
-                      }
-                    >
-                      {coverReplaceIndex != null
-                        ? td("replaceCover", "替换封面")
-                        : td("confirm", "确认")}
-                    </Button>
-                  </div>
+                    }}
+                    placeholder={td("searchInputPlaceholder", "输入关键词搜索图片")}
+                    className="h-10 w-[380px] max-w-full focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-0"
+                  />
+                  <Button
+                    type="button"
+                    className="h-10 min-w-[84px] shrink-0 px-5"
+                    onClick={triggerCoverImageSearch}
+                  >
+                    {td("searchButton", "搜索")}
+                  </Button>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              ) : null
+            }
+            maxSelectHint={`${td("maxSelect", `最多可选 ${coverSelectableCount} 张`, {
+              count: coverSelectableCount,
+            })}${coverReplaceIndex != null ? td("replaceModeSingleHint", "（替换模式仅支持单选）") : ""}`}
+            cancelLabel={td("cancel", "取消")}
+            confirmLabel={
+              coverReplaceIndex != null
+                ? td("replaceCover", "替换封面")
+                : td("confirm", "确认")
+            }
+            confirmDisabled={
+              coverDrawerTab === COVER_PICKER_TAB_UPLOAD
+                ? coverUploadCandidates.length === 0
+                : coverDrawerTab === COVER_PICKER_TAB_LIBRARY
+                  ? coverLibraryCandidates.length === 0
+                  : coverDrawerTab === COVER_PICKER_TAB_PROJECT
+                    ? coverProjectCandidates.length === 0
+                    : coverSearchCandidates.length === 0
+            }
+            onConfirm={() =>
+              applyCoverSelection(
+                coverDrawerTab === COVER_PICKER_TAB_UPLOAD
+                  ? coverUploadCandidates
+                  : coverDrawerTab === COVER_PICKER_TAB_LIBRARY
+                    ? coverLibraryCandidates
+                    : coverDrawerTab === COVER_PICKER_TAB_PROJECT
+                      ? coverProjectCandidates
+                      : coverSearchCandidates,
+              )
+            }
+          />
         </div>
       )}
 

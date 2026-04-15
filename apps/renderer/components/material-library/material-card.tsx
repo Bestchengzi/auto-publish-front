@@ -1,6 +1,11 @@
 "use client";
 
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  FileTextIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -40,9 +45,10 @@ export function MaterialCard({
   const isDocument = material.type === "document";
   const isVideo = material.type === "video";
   const previewContent = isDocument ? (
-    <span className="text-sm text-muted-foreground">
-      {documentPreviewNotSupported}
-    </span>
+    <div className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+      <FileTextIcon className="size-9" />
+      <span className="text-sm">{documentPreviewNotSupported}</span>
+    </div>
   ) : material.previewUrl && material.type === "image" ? (
     /* eslint-disable-next-line @next/next/no-img-element -- blob URL from user upload */
     <img

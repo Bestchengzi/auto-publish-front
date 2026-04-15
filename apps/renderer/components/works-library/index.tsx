@@ -8,7 +8,7 @@ import {
   useQueryClient,
   type QueryKey,
 } from "@tanstack/react-query";
-import { MoreHorizontalIcon, Trash2Icon } from "lucide-react";
+import { CircleAlertIcon, MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -38,6 +38,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -53,7 +60,12 @@ import type { PlatformId } from "@/components/account-management/types";
 import { BulkBar } from "@/components/account-management/bulk-bar";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { PlatformLogo } from "@/components/account-management/platform-logo";
-import type { Work, PublishStatus } from "./types";
+import type {
+  PublishFailureLog,
+  PublishStatus,
+  PublishTriggerType,
+  Work,
+} from "./types";
 import { PublishStatusBadge } from "./publish-status-badge";
 import { WorkEmptyState } from "./work-empty-state";
 import { WorksLibrarySkeleton } from "./works-library-skeleton";
@@ -108,6 +120,29 @@ function extractTitleFromGroup(group: PublishRecordGroupResponse): string {
   return group.thread_id;
 }
 
+function mapTriggerSourceToPublishType(triggerSource?: string): PublishTriggerType {
+  if (triggerSource === "manual_api" || triggerSource === "scheduled_task") {
+    return "manual";
+  }
+  if (triggerSource === "auto_tool") {
+    return "dialog";
+  }
+  return "unknown";
+}
+
+function mapFailureLogs(group: PublishRecordGroupResponse): PublishFailureLog[] {
+  return group.records
+    .filter((item) => !item.success)
+    .map((item) => ({
+      accountId: item.account_id,
+      platform: item.platform,
+      reason:
+        typeof item.error_message === "string" && item.error_message.trim().length > 0
+          ? item.error_message.trim()
+          : "",
+    }));
+}
+
 function mapGroupToWork(group: PublishRecordGroupResponse): Work {
   const status: PublishStatus = group.failed_account_count > 0 ? "failed" : "success";
   const platformIds = Array.from(
@@ -122,9 +157,11 @@ function mapGroupToWork(group: PublishRecordGroupResponse): Work {
     title: extractTitleFromGroup(group),
     platformIds,
     createdAt: formatDateTime(group.last_published_at || group.created_at),
+    publishType: mapTriggerSourceToPublishType(group.records[0]?.trigger_source),
     status,
     successCount: group.success_account_count,
     failedCount: group.failed_account_count,
+    failedLogs: mapFailureLogs(group),
   };
 }
 
@@ -228,6 +265,7 @@ export function WorksLibrary() {
   const isInitialLoading = !hasLoadedOnce && publishRecordsQuery.isLoading;
   const [hiddenWorkIds, setHiddenWorkIds] = React.useState<Set<string>>(() => new Set());
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
+  const [pendingFailureLogWork, setPendingFailureLogWork] = React.useState<Work | null>(null);
   const [pendingBatchDeleteOpen, setPendingBatchDeleteOpen] = React.useState(false);
   const deletePublishRecordsMutation = useMutation({
     mutationFn: async (threadIds: string[]) => {
@@ -339,7 +377,7 @@ export function WorksLibrary() {
 
   return (
     <div className="w-full h-full">
-      <div className="h-full w-full max-w-6xl mx-auto rounded-xl p-8 px-10 flex flex-col">
+      <div className="h-full w-full max-w-[92rem] mx-auto rounded-xl p-8 px-10 flex flex-col">
         <div className="flex flex-1 min-h-0 flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -456,7 +494,7 @@ export function WorksLibrary() {
               <div className="flex min-h-0 flex-1 flex-col">
               {filteredWorks.length > 0 ? (
                 <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-                  <Table bodyScroll className="min-w-[880px] table-fixed">
+                  <Table bodyScroll className="min-w-[1020px] table-fixed">
                     <TableHeader
                       className={cn(
                         "[&_tr]:border-border [&_th]:h-[47px] [&_th]:py-0 [&_tr]:py-0",
@@ -484,6 +522,9 @@ export function WorksLibrary() {
                         </TableHead>
                         <TableHead className="w-[8.5rem] max-w-[8.5rem]">
                           {t("table.createdAt")}
+                        </TableHead>
+                        <TableHead className="w-[7rem] max-w-[7rem]">
+                          {t("table.publishType")}
                         </TableHead>
                         <TableHead className="w-[6.75rem] max-w-[6.75rem]">
                           {t("table.status")}
@@ -534,6 +575,13 @@ export function WorksLibrary() {
                             <TableCell className="w-[8.5rem] max-w-[8.5rem] text-sm tabular-nums text-foreground">
                               {w.createdAt}
                             </TableCell>
+                            <TableCell className="w-[7rem] max-w-[7rem] text-sm text-foreground">
+                              {w.publishType === "manual"
+                                ? t("publishType.manual")
+                                : w.publishType === "dialog"
+                                  ? t("publishType.dialog")
+                                  : t("publishType.unknown")}
+                            </TableCell>
                             <TableCell className="w-[6.75rem] max-w-[6.75rem] min-w-0">
                               <PublishStatusBadge
                                 className="w-full"
@@ -562,6 +610,14 @@ export function WorksLibrary() {
                                     }
                                   />
                                   <DropdownMenuContent align="end" className="w-36">
+                                    {w.status === "failed" ? (
+                                      <DropdownMenuItem
+                                        onClick={() => setPendingFailureLogWork(w)}
+                                      >
+                                        <CircleAlertIcon className="size-4" />
+                                        {t("actions.failureLog")}
+                                      </DropdownMenuItem>
+                                    ) : null}
                                     <DropdownMenuItem
                                       variant="destructive"
                                       onClick={() => setPendingDeleteId(w.id)}
@@ -662,6 +718,72 @@ export function WorksLibrary() {
           confirmLabel={t("dialog.confirm")}
           isPending={deletePublishRecordsMutation.isPending}
         />
+
+        <Dialog
+          open={pendingFailureLogWork !== null}
+          onOpenChange={(open) => {
+            if (!open) setPendingFailureLogWork(null);
+          }}
+        >
+          <DialogContent
+            className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden sm:max-w-lg"
+            closeLabel={t("dialog.close")}
+          >
+            {pendingFailureLogWork ? (
+              <>
+                <DialogHeader className="shrink-0">
+                  <DialogTitle>{t("failureLogDialog.title")}</DialogTitle>
+                </DialogHeader>
+                <p className="shrink-0 text-sm text-muted-foreground">
+                  {t("failureLogDialog.summary", {
+                    failed: pendingFailureLogWork.failedCount,
+                    total: pendingFailureLogWork.successCount + pendingFailureLogWork.failedCount,
+                  })}
+                </p>
+                <div className="mt-4 min-h-0 max-h-[min(52vh,28rem)] flex-1 overflow-y-auto overscroll-y-contain pr-1">
+                  <ul className="space-y-2">
+                    {pendingFailureLogWork.failedLogs.map((log, index) => {
+                      const platformLabel = isPlatformId(log.platform)
+                        ? (platformMap.get(log.platform)?.name ?? log.platform)
+                        : log.platform;
+                      return (
+                        <li
+                          key={`${log.accountId}-${index}`}
+                          className="rounded-lg border border-destructive/35 bg-destructive/5 px-3 py-2.5 text-sm"
+                        >
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <span className="font-medium text-foreground">
+                              {log.accountId}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {platformLabel}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-destructive">
+                            {t("failureLogDialog.failedTag")}
+                          </div>
+                          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                            {log.reason || t("failureLogDialog.emptyReason")}
+                          </p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {pendingFailureLogWork.failedLogs.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">
+                      {t("failureLogDialog.empty")}
+                    </p>
+                  ) : null}
+                </div>
+                <DialogFooter className="mt-4 shrink-0 border-t border-border pt-4 sm:justify-end">
+                  <Button type="button" onClick={() => setPendingFailureLogWork(null)}>
+                    {t("failureLogDialog.confirm")}
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         <DeleteConfirmDialog
           open={pendingBatchDeleteOpen}

@@ -130,6 +130,40 @@ type LanggraphMessages = {
     completed: string;
     failed: string;
   };
+  coverDrawer: {
+    tabUpload: string;
+    tabLibrary: string;
+    tabProject: string;
+    tabSearch: string;
+    uploading: string;
+    uploadLocal: string;
+    uploadContinue: string;
+    uploadedCoverAlt: string;
+    reupload: string;
+    libraryLoading: string;
+    emptyTitle: string;
+    emptyDescription: string;
+    searchEmptyDescription: string;
+    searchInputPlaceholder: string;
+    searchButton: string;
+    searchKeywordRequired: string;
+    maxSelect: string;
+    replaceModeSingleHint: string;
+    cancel: string;
+    confirm: string;
+    replaceCover: string;
+  };
+  slashMenu: {
+    placeholder: string;
+    sectionCommon: string;
+    sectionBasic: string;
+    image: string;
+    paragraph: string;
+    heading1: string;
+    heading2: string;
+    heading3: string;
+    heading4: string;
+  };
 };
 
 const replaceTemplate = (
@@ -194,6 +228,12 @@ export function useI18n() {
         executing: (count: number) =>
           replaceTemplate(langgraph.subtasks.executing, { count }),
       },
+      coverDrawer: {
+        ...langgraph.coverDrawer,
+        maxSelect: (count: number) =>
+          replaceTemplate(langgraph.coverDrawer.maxSelect, { count }),
+      },
+      slashMenu: langgraph.slashMenu,
     }),
     [langgraph],
   );

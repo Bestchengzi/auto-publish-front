@@ -29,6 +29,10 @@ function DialogTrigger(props: DialogTriggerProps) {
 interface DialogContentProps extends React.ComponentProps<typeof DialogPopup> {
   showCloseButton?: boolean;
   closeLabel?: string;
+  /** 关闭按钮容器（扩大点按区域、位移等） */
+  closeButtonClassName?: string;
+  /** 关闭图标尺寸，默认 h-4 w-4 */
+  closeIconClassName?: string;
 }
 
 function DialogContent({
@@ -36,6 +40,8 @@ function DialogContent({
   children,
   showCloseButton = true,
   closeLabel = "关闭",
+  closeButtonClassName,
+  closeIconClassName,
   ...props
 }: DialogContentProps) {
   return (
@@ -62,10 +68,13 @@ function DialogContent({
         >
           {showCloseButton && (
             <DialogClose
-              className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none disabled:pointer-events-none cursor-pointer"
+              className={cn(
+                "absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none disabled:pointer-events-none cursor-pointer",
+                closeButtonClassName,
+              )}
               aria-label={closeLabel}
             >
-              <XIcon className="h-4 w-4" />
+              <XIcon className={cn("h-4 w-4", closeIconClassName)} />
               <span className="sr-only">{closeLabel}</span>
             </DialogClose>
           )}

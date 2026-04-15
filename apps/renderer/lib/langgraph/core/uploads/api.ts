@@ -30,6 +30,31 @@ export interface ListFilesResponse {
   count: number;
 }
 
+export function getUploadPreviewUrl(file: {
+  artifact_url?: string;
+  virtual_path?: string;
+  path?: string;
+}): string | null {
+  const artifactUrl =
+    typeof file.artifact_url === "string" ? file.artifact_url : "";
+  if (artifactUrl) {
+    if (artifactUrl.startsWith("http://") || artifactUrl.startsWith("https://")) {
+      return artifactUrl;
+    }
+    return `${getBackendBaseURL()}${artifactUrl.startsWith("/") ? "" : "/"}${artifactUrl}`;
+  }
+  const virtualPath =
+    typeof file.virtual_path === "string" ? file.virtual_path : "";
+  if (virtualPath) {
+    return `${getBackendBaseURL()}/api/threads${virtualPath.startsWith("/") ? "" : "/"}${virtualPath}`;
+  }
+  const path = typeof file.path === "string" ? file.path : "";
+  if (path && (path.startsWith("http://") || path.startsWith("https://"))) {
+    return path;
+  }
+  return null;
+}
+
 /**
  * Upload files to a thread
  */

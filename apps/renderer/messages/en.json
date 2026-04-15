@@ -10,7 +10,7 @@
   },
   "app": {
     "name": "Keduck AI",
-    "metaDescription": "A cross-platform publisher built with Next.js + Electron + shadcn/ui, with SEO, theming and i18n scaffolded."
+    "metaDescription": "Keduck AI is a chat-first AI content creation and multi-platform publishing tool with persona-driven writing, smart visuals, manual publishing, and scheduled auto-publishing."
   },
   "auth": {
     "loginDialog": {
@@ -266,6 +266,11 @@
       "failed": "Publish failed",
       "publishing": "Publishing"
     },
+    "publishType": {
+      "manual": "Manual",
+      "dialog": "Dialog",
+      "unknown": "Unknown"
+    },
     "platforms": {
       "toutiao": "Toutiao",
       "xhs": "Xiaohongshu",
@@ -284,6 +289,7 @@
       "title": "Title",
       "platform": "Platform",
       "createdAt": "Created",
+      "publishType": "Publish Type",
       "status": "Status",
       "successFail": "Success / Failed",
       "actions": "Actions",
@@ -296,10 +302,19 @@
     "actions": {
       "edit": "Edit",
       "viewDetails": "View details",
+      "failureLog": "Failure log",
       "delete": "Delete",
       "batchDelete": "Bulk delete",
       "deleteWorkConfirm": "Delete this work?",
       "batchDeleteConfirm": "Delete the selected {count} work(s)?"
+    },
+    "failureLogDialog": {
+      "title": "Publish Failure Logs",
+      "summary": "{failed} failed ({total} accounts in total)",
+      "failedTag": "Publish failed",
+      "emptyReason": "No failure reason provided",
+      "empty": "No failure details",
+      "confirm": "Got it"
     },
     "dialog": {
       "close": "Close",
@@ -843,6 +858,8 @@
     "coverDrawer": {
       "tabUpload": "Upload Images",
       "tabLibrary": "My Assets",
+      "tabProject": "Project Images",
+      "tabSearch": "Image Search",
       "uploading": "Uploading...",
       "uploadLocal": "Upload from device",
       "uploadContinue": "Upload more",
@@ -850,12 +867,27 @@
       "reupload": "Re-upload",
       "libraryLoading": "Loading assets...",
       "emptyTitle": "No image assets",
-      "emptyDescription": "Upload image assets first, or switch to \"Upload Images\" to add.",
+      "emptyDescription": "Please upload image assets in the Media Library first.",
+      "searchEmptyDescription": "Enter title keywords to search for images.",
+      "searchInputPlaceholder": "Enter keywords to search images",
+      "searchButton": "Search",
+      "searchKeywordRequired": "Please enter keywords to search images",
       "maxSelect": "Up to {count} image(s) can be selected",
       "replaceModeSingleHint": " (replace mode supports single selection only)",
       "cancel": "Cancel",
       "confirm": "Confirm",
       "replaceCover": "Replace cover"
+    },
+    "slashMenu": {
+      "placeholder": "Type \"/\" to insert images or content",
+      "sectionCommon": "Common",
+      "sectionBasic": "Basic",
+      "image": "Image",
+      "paragraph": "Body Text",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "heading4": "Heading 4"
     }
   },
   "marketing": {
@@ -1027,6 +1059,7 @@
     "contactCardFeedbackLine2": "Submit issue details and we will handle it promptly",
     "contactHint": "",
     "footerCopyright": "© {year} Fengmi Technology Co., Ltd. All rights reserved.",
+    "footerIcp": "Su ICP No. 2024079861-4",
     "footerLegal": "Features may evolve with product updates."
   }
 }

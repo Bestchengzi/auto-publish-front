@@ -432,6 +432,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
 
           <div className="mt-10 border-t border-slate-200/60 pt-6 text-center text-sm text-slate-500 dark:border-zinc-800/80 dark:text-zinc-500">
             <p>{t("footerCopyright", { year: new Date().getFullYear() })}</p>
+            <p className="mt-1">{t("footerIcp")}</p>
           </div>
         </div>
       </footer>

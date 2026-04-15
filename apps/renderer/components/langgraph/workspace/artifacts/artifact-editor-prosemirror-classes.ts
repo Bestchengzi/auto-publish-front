@@ -18,9 +18,15 @@ export const artifactEditorContentClassName = cn(
   "[&_.ProseMirror_pre]:my-4 [&_.ProseMirror_pre]:overflow-x-auto [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_pre]:border [&_.ProseMirror_pre]:bg-muted/40 [&_.ProseMirror_pre]:px-4 [&_.ProseMirror_pre]:py-3",
   "[&_.ProseMirror_pre_code]:bg-transparent [&_.ProseMirror_pre_code]:p-0 [&_.ProseMirror_pre_code]:font-mono [&_.ProseMirror_pre_code]:text-[14px] [&_.ProseMirror_pre_code]:leading-6",
   "[&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:bg-muted [&_.ProseMirror_code]:px-1.5 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:font-mono [&_.ProseMirror_code]:text-[0.9em]",
-  "[&_.ProseMirror_img]:mt-6 [&_.ProseMirror_img]:mb-6 [&_.ProseMirror_img]:block [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-xl [&_.ProseMirror_img]:cursor-pointer [&_.ProseMirror_img]:transition-shadow",
+  "[&_.ProseMirror_img]:mt-6 [&_.ProseMirror_img]:mb-6 [&_.ProseMirror_img]:mx-auto [&_.ProseMirror_img]:block [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-xl [&_.ProseMirror_img]:cursor-pointer [&_.ProseMirror_img]:transition-shadow",
   "[&_.ProseMirror_img.ProseMirror-selectednode]:ring-2 [&_.ProseMirror_img.ProseMirror-selectednode]:ring-primary/60 [&_.ProseMirror_img.ProseMirror-selectednode]:ring-offset-2 [&_.ProseMirror_img.ProseMirror-selectednode]:ring-offset-background",
   "[&_.ProseMirror_p:has(>br.ProseMirror-trailingBreak):has(+img)]:hidden",
   "[&_.ProseMirror_img+p:has(>br.ProseMirror-trailingBreak)]:hidden",
+  // Placeholder: visible text but does not occupy layout space.
+  "[&_.ProseMirror_p.is-empty::before]:pointer-events-none [&_.ProseMirror_p.is-empty::before]:float-left [&_.ProseMirror_p.is-empty::before]:h-0 [&_.ProseMirror_p.is-empty::before]:text-muted-foreground/70 [&_.ProseMirror_p.is-empty::before]:content-[attr(data-placeholder)]",
+  "[&_.ProseMirror_h1.is-empty::before]:pointer-events-none [&_.ProseMirror_h1.is-empty::before]:float-left [&_.ProseMirror_h1.is-empty::before]:h-0 [&_.ProseMirror_h1.is-empty::before]:text-muted-foreground/70 [&_.ProseMirror_h1.is-empty::before]:content-[attr(data-placeholder)]",
+  "[&_.ProseMirror_h2.is-empty::before]:pointer-events-none [&_.ProseMirror_h2.is-empty::before]:float-left [&_.ProseMirror_h2.is-empty::before]:h-0 [&_.ProseMirror_h2.is-empty::before]:text-muted-foreground/70 [&_.ProseMirror_h2.is-empty::before]:content-[attr(data-placeholder)]",
+  "[&_.ProseMirror_h3.is-empty::before]:pointer-events-none [&_.ProseMirror_h3.is-empty::before]:float-left [&_.ProseMirror_h3.is-empty::before]:h-0 [&_.ProseMirror_h3.is-empty::before]:text-muted-foreground/70 [&_.ProseMirror_h3.is-empty::before]:content-[attr(data-placeholder)]",
+  "[&_.ProseMirror_h4.is-empty::before]:pointer-events-none [&_.ProseMirror_h4.is-empty::before]:float-left [&_.ProseMirror_h4.is-empty::before]:h-0 [&_.ProseMirror_h4.is-empty::before]:text-muted-foreground/70 [&_.ProseMirror_h4.is-empty::before]:content-[attr(data-placeholder)]",
   "[&_.ProseMirror_a]:cursor-pointer [&_.ProseMirror_a]:text-primary [&_.ProseMirror_a]:underline [&_.ProseMirror_a]:decoration-primary/30 [&_.ProseMirror_a]:underline-offset-2",
 );

@@ -22,7 +22,7 @@ export async function generateMetadata({
     : defaultLocale;
   const messages = (await getMessages(safeLocale)) as { marketing?: MarketingMessages };
   const m = messages.marketing;
-  const title = m?.metaTitle ?? "MediaBee";
+  const title = m?.metaTitle ?? (safeLocale === "en" ? "Keduck AI" : "可达AI");
   const description = m?.metaDescription ?? "";
 
   const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
@@ -45,7 +45,7 @@ export async function generateMetadata({
       type: "website",
       locale: safeLocale === "en" ? "en_US" : "zh_CN",
       url: base ? `${base}/${safeLocale}/site` : undefined,
-      siteName: safeLocale === "en" ? "MediaBee" : "可达AI",
+      siteName: safeLocale === "en" ? "Keduck AI" : "可达AI",
     },
     twitter: {
       card: "summary_large_image",
@@ -68,7 +68,7 @@ export default async function MarketingSitePage({
 
   const messages = (await getMessages(safeLocale)) as { marketing?: MarketingMessages; app?: { name?: string } };
   const m = messages.marketing;
-  const appName = messages.app?.name ?? (safeLocale === "en" ? "MediaBee" : "可达AI");
+  const appName = messages.app?.name ?? (safeLocale === "en" ? "Keduck AI" : "可达AI");
   const description = m?.jsonLdDescription ?? m?.metaDescription ?? "";
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";

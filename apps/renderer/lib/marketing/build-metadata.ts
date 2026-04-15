@@ -36,7 +36,7 @@ export async function marketingSubpageMetadata(
       type: "website",
       locale: safeLocale === "en" ? "en_US" : "zh_CN",
       url: base ? `${base}${path}` : undefined,
-      siteName: safeLocale === "en" ? "MediaBee" : "可达AI",
+      siteName: safeLocale === "en" ? "Keduck AI" : "可达AI",
     },
     twitter: {
       card: "summary_large_image",

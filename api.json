@@ -379,6 +379,119 @@
                 }
             }
         },
+        "/api/tools/image_search": {
+            "get": {
+                "tags": [
+                    "tools"
+                ],
+                "summary": "Image Search",
+                "operationId": "image_search_api_tools_image_search_get",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Query"
+                        }
+                    },
+                    {
+                        "name": "max_results",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Max Results"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImageSearchResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/artifacts/list": {
+            "get": {
+                "tags": [
+                    "artifacts"
+                ],
+                "summary": "List Thread Artifact Files",
+                "description": "List all files under one thread's outputs, uploads, and workspace directories.",
+                "operationId": "list_artifacts_api_threads__thread_id__artifacts_list_get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "file_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "pattern": "^(document|image|video|other)$"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "File Type"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArtifactListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/threads/{thread_id}/artifacts/{path}": {
             "get": {
                 "tags": [
@@ -2882,6 +2995,46 @@
                 }
             }
         },
+        "/api/media/user-upload/{file_path}": {
+            "get": {
+                "tags": [
+                    "media"
+                ],
+                "summary": "Download User Upload",
+                "operationId": "download_user_upload_api_media_user_upload__file_path__get",
+                "parameters": [
+                    {
+                        "name": "file_path",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "File Path"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/media/{media_id}/download": {
             "get": {
                 "tags": [
@@ -3553,6 +3706,165 @@
                 }
             }
         },
+        "/api/feedback": {
+            "post": {
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Create Issue Feedback",
+                "operationId": "create_feedback_api_feedback_post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeedbackResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "List My Issue Feedback",
+                "operationId": "list_feedback_api_feedback_get",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 20,
+                            "title": "Page Size"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "submitted",
+                                        "processing",
+                                        "resolved",
+                                        "closed"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeedbackListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/feedback/{feedback_id}": {
+            "get": {
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Get My Issue Feedback",
+                "operationId": "get_feedback_api_feedback__feedback_id__get",
+                "parameters": [
+                    {
+                        "name": "feedback_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Feedback Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeedbackResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/wechat/param_qrcode": {
             "get": {
                 "tags": [
@@ -3985,11 +4297,94 @@
                 ],
                 "title": "AccountCreateResponse"
             },
+            "AccountListItemResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "avatar": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar"
+                    },
+                    "nickname": {
+                        "type": "string",
+                        "title": "Nickname"
+                    },
+                    "account": {
+                        "type": "string",
+                        "title": "Account"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "title": "Platform"
+                    },
+                    "follower_count": {
+                        "type": "integer",
+                        "title": "Follower Count"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "last_refreshed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Refreshed At"
+                    },
+                    "groups": {
+                        "items": {
+                            "$ref": "#/components/schemas/GroupBrief"
+                        },
+                        "type": "array",
+                        "title": "Groups"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "avatar",
+                    "nickname",
+                    "account",
+                    "platform",
+                    "follower_count",
+                    "status",
+                    "created_at",
+                    "updated_at",
+                    "last_refreshed_at",
+                    "groups"
+                ],
+                "title": "AccountListItemResponse"
+            },
             "AccountListResponse": {
                 "properties": {
                     "items": {
                         "items": {
-                            "$ref": "#/components/schemas/AccountResponse"
+                            "$ref": "#/components/schemas/AccountListItemResponse"
                         },
                         "type": "array",
                         "title": "Items"
@@ -4394,6 +4789,114 @@
                 ],
                 "title": "AgentsListResponse",
                 "description": "Response model for listing all custom agents."
+            },
+            "ArtifactListItem": {
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename",
+                        "description": "Base filename."
+                    },
+                    "relative_path": {
+                        "type": "string",
+                        "title": "Relative Path",
+                        "description": "Path relative to the source directory root."
+                    },
+                    "source_dir": {
+                        "type": "string",
+                        "enum": [
+                            "outputs",
+                            "uploads",
+                            "workspace"
+                        ],
+                        "title": "Source Dir",
+                        "description": "Top-level thread user-data directory containing the file."
+                    },
+                    "virtual_path": {
+                        "type": "string",
+                        "title": "Virtual Path",
+                        "description": "Sandbox-visible virtual path under /mnt/user-data."
+                    },
+                    "artifact_url": {
+                        "type": "string",
+                        "title": "Artifact Url",
+                        "description": "HTTP URL for retrieving the artifact."
+                    },
+                    "file_type": {
+                        "type": "string",
+                        "enum": [
+                            "document",
+                            "image",
+                            "video",
+                            "other"
+                        ],
+                        "title": "File Type",
+                        "description": "Normalized file category used for UI filtering."
+                    },
+                    "mime_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mime Type",
+                        "description": "Best-effort MIME type inferred from filename."
+                    },
+                    "extension": {
+                        "type": "string",
+                        "title": "Extension",
+                        "description": "Lowercased filename suffix, including leading dot when present."
+                    },
+                    "size": {
+                        "type": "integer",
+                        "title": "Size",
+                        "description": "File size in bytes."
+                    },
+                    "modified": {
+                        "type": "number",
+                        "title": "Modified",
+                        "description": "Last-modified timestamp from the filesystem (epoch seconds)."
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "filename",
+                    "relative_path",
+                    "source_dir",
+                    "virtual_path",
+                    "artifact_url",
+                    "file_type",
+                    "extension",
+                    "size",
+                    "modified"
+                ],
+                "title": "ArtifactListItem",
+                "description": "One file discovered under a thread's sandbox user-data directories."
+            },
+            "ArtifactListResponse": {
+                "properties": {
+                    "files": {
+                        "items": {
+                            "$ref": "#/components/schemas/ArtifactListItem"
+                        },
+                        "type": "array",
+                        "title": "Files"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "title": "Count"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "files",
+                    "count"
+                ],
+                "title": "ArtifactListResponse",
+                "description": "Response returned when listing files under one thread."
             },
             "ArtifactUpdateRequest": {
                 "properties": {
@@ -5860,6 +6363,165 @@
                 "title": "Fact",
                 "description": "Model for a memory fact."
             },
+            "FeedbackCreate": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1,
+                        "title": "Title"
+                    },
+                    "content": {
+                        "type": "string",
+                        "maxLength": 5000,
+                        "minLength": 1,
+                        "title": "Content"
+                    },
+                    "contact": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 128
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact"
+                    },
+                    "thread_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 128
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Thread Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "title",
+                    "content"
+                ],
+                "title": "FeedbackCreate"
+            },
+            "FeedbackListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/FeedbackResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "title": "Page"
+                    },
+                    "page_size": {
+                        "type": "integer",
+                        "title": "Page Size"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "page_size"
+                ],
+                "title": "FeedbackListResponse"
+            },
+            "FeedbackResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Title"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content"
+                    },
+                    "contact": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact"
+                    },
+                    "thread_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Thread Id"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "submitted",
+                            "processing",
+                            "resolved",
+                            "closed"
+                        ],
+                        "title": "Status"
+                    },
+                    "admin_note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Admin Note"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "content",
+                    "contact",
+                    "thread_id",
+                    "status",
+                    "admin_note",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "FeedbackResponse"
+            },
             "GroupAggregateItem": {
                 "properties": {
                     "group_id": {
@@ -6110,6 +6772,82 @@
                 },
                 "type": "object",
                 "title": "HotRankResponse"
+            },
+            "ImageSearchResponse": {
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "title": "Query",
+                        "description": "Original search query."
+                    },
+                    "total_results": {
+                        "type": "integer",
+                        "title": "Total Results",
+                        "description": "Number of results returned."
+                    },
+                    "results": {
+                        "items": {
+                            "$ref": "#/components/schemas/ImageSearchResultItem"
+                        },
+                        "type": "array",
+                        "title": "Results",
+                        "description": "Normalized search results."
+                    },
+                    "usage_hint": {
+                        "type": "string",
+                        "title": "Usage Hint",
+                        "description": "Hint for downstream image-generation flows."
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "query",
+                    "total_results",
+                    "usage_hint"
+                ],
+                "title": "ImageSearchResponse"
+            },
+            "ImageSearchResultItem": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "Title",
+                        "description": "Result title extracted from the source page.",
+                        "default": ""
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "title": "Image Url",
+                        "description": "Full-resolution image URL.",
+                        "default": ""
+                    },
+                    "thumbnail_url": {
+                        "type": "string",
+                        "title": "Thumbnail Url",
+                        "description": "Thumbnail image URL.",
+                        "default": ""
+                    },
+                    "source_url": {
+                        "type": "string",
+                        "title": "Source Url",
+                        "description": "Source page URL.",
+                        "default": ""
+                    },
+                    "width": {
+                        "type": "integer",
+                        "title": "Width",
+                        "description": "Image width in pixels.",
+                        "default": 0
+                    },
+                    "height": {
+                        "type": "integer",
+                        "title": "Height",
+                        "description": "Image height in pixels.",
+                        "default": 0
+                    }
+                },
+                "type": "object",
+                "title": "ImageSearchResultItem"
             },
             "McpConfigResponse": {
                 "properties": {
@@ -6386,9 +7124,9 @@
                         "type": "string",
                         "title": "Name"
                     },
-                    "file_path": {
+                    "url": {
                         "type": "string",
-                        "title": "File Path"
+                        "title": "Url"
                     },
                     "media_type": {
                         "type": "string",
@@ -6438,7 +7176,7 @@
                 "required": [
                     "id",
                     "name",
-                    "file_path",
+                    "url",
                     "media_type",
                     "tags",
                     "file_size",
@@ -8739,6 +9477,10 @@
             "description": "Manage skills and their configurations"
         },
         {
+            "name": "tools",
+            "description": "Gateway-hosted utility APIs that expose internal tool capabilities"
+        },
+        {
             "name": "artifacts",
             "description": "Access, download, and update thread artifacts and generated Markdown files"
         },
@@ -8789,6 +9531,10 @@
         {
             "name": "personas",
             "description": "Manage saved creator personas for writing and prompt injection"
+        },
+        {
+            "name": "feedback",
+            "description": "Collect owner-scoped issue feedback and expose feedback status history"
         },
         {
             "name": "hot_rank",

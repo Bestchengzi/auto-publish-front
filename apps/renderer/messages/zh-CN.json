@@ -10,7 +10,7 @@
   },
   "app": {
     "name": "可达AI",
-    "metaDescription": "基于 Next.js + Electron + shadcn/ui 的跨端发布工具，内置 SEO、主题与多语言骨架。"
+    "metaDescription": "可达AI是对话式 AI 内容创作与多平台发布工具，支持人设驱动写作、智能配图、手动发布与定时自动发布。"
   },
   "auth": {
     "loginDialog": {
@@ -266,6 +266,11 @@
       "failed": "发布失败",
       "publishing": "正在发布中"
     },
+    "publishType": {
+      "manual": "手动发布",
+      "dialog": "对话发布",
+      "unknown": "未知"
+    },
     "platforms": {
       "toutiao": "今日头条",
       "xhs": "小红书",
@@ -284,6 +289,7 @@
       "title": "标题",
       "platform": "平台",
       "createdAt": "创建时间",
+      "publishType": "发布类型",
       "status": "发布状态",
       "successFail": "成功 / 失败",
       "actions": "操作",
@@ -296,10 +302,19 @@
     "actions": {
       "edit": "编辑",
       "viewDetails": "查看详情",
+      "failureLog": "失败日志",
       "delete": "删除",
       "batchDelete": "批量删除",
       "deleteWorkConfirm": "确定删除该作品吗？",
       "batchDeleteConfirm": "确定删除选中的 {count} 个作品吗？"
+    },
+    "failureLogDialog": {
+      "title": "发布失败日志",
+      "summary": "失败 {failed}（共 {total} 个账号）",
+      "failedTag": "发布失败",
+      "emptyReason": "暂无失败原因",
+      "empty": "暂无失败明细",
+      "confirm": "知道了"
     },
     "dialog": {
       "close": "关闭",
@@ -843,6 +858,8 @@
     "coverDrawer": {
       "tabUpload": "上传图片",
       "tabLibrary": "我的素材",
+      "tabProject": "项目图片",
+      "tabSearch": "图片搜索",
       "uploading": "上传中...",
       "uploadLocal": "本地上传",
       "uploadContinue": "继续上传",
@@ -850,12 +867,27 @@
       "reupload": "重新上传",
       "libraryLoading": "素材加载中...",
       "emptyTitle": "暂无图片素材",
-      "emptyDescription": "请先上传图片素材，或切换到“上传图片”添加。",
+      "emptyDescription": "请先在素材库中上传图片素材。",
+      "searchEmptyDescription": "请输入可用于图片搜索的标题关键词。",
+      "searchInputPlaceholder": "输入关键词搜索图片",
+      "searchButton": "搜索",
+      "searchKeywordRequired": "请输入图片搜索关键词",
       "maxSelect": "最多可选 {count} 张",
       "replaceModeSingleHint": "（替换模式仅支持单选）",
       "cancel": "取消",
       "confirm": "确认",
       "replaceCover": "替换封面"
+    },
+    "slashMenu": {
+      "placeholder": "按“/”插入图片或内容",
+      "sectionCommon": "常用",
+      "sectionBasic": "基础",
+      "image": "图片",
+      "paragraph": "正文",
+      "heading1": "一级标题",
+      "heading2": "二级标题",
+      "heading3": "三级标题",
+      "heading4": "四级标题"
     }
   },
   "marketing": {
@@ -1027,6 +1059,7 @@
     "contactCardFeedbackLine2": "提交问题描述，我们会及时处理",
     "contactHint": "",
     "footerCopyright": "© {year} 蜂觅科技有限公司 版权所有",
+    "footerIcp": "苏ICP备2024079861号-4",
     "footerLegal": "使用产品即表示您理解功能可能随版本迭代而变化。"
   }
 }

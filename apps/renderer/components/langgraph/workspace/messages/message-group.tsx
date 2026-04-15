@@ -26,6 +26,7 @@ import {
 } from "@/components/langgraph/ai-elements/chain-of-thought";
 import { CodeBlock } from "@/components/langgraph/ai-elements/code-block";
 import { Button } from "@/components/ui/button";
+import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import {
   extractContentFromMessage,
@@ -52,14 +53,6 @@ type GenerateImageArtifact = {
   error?: string;
 };
 
-const IMAGE_GEN_ERROR_PREVIEW_MAX = 480;
-
-function truncateForPreview(text: string, max = IMAGE_GEN_ERROR_PREVIEW_MAX): string {
-  const t = text.trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max)}…`;
-}
-
 function isGenerateImageArtifactFailed(
   item: GenerateImageArtifact | undefined,
 ): boolean {
@@ -70,22 +63,12 @@ function isGenerateImageArtifactFailed(
   return false;
 }
 
-function getGenerateImageArtifactErrorMessage(
-  item: GenerateImageArtifact | undefined,
-): string | null {
-  if (!item) return null;
-  if (typeof item.error === "string") {
-    const msg = item.error.trim();
-    if (msg) return msg;
-  }
-  return null;
-}
-
 type ToolMessageWithArtifact = Message & {
   type: "tool";
   name?: string;
   tool_call_id?: string;
   artifact?: unknown;
+  status?: string;
 };
 
 export function MessageGroup({
@@ -100,6 +83,10 @@ export function MessageGroup({
   const { t } = useI18n();
   const [showAbove, setShowAbove] = useState(false);
   const [showLastThinking, setShowLastThinking] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const steps = useMemo(() => convertToSteps(messages), [messages]);
   const lastToolCallStep = useMemo(() => {
     const filteredSteps = steps.filter((step) => step.type === "toolCall");
@@ -130,6 +117,7 @@ export function MessageGroup({
       count: number;
       content: string;
       artifact: unknown;
+      toolStatus?: string;
     }> = [];
 
     for (const m of messages) {
@@ -160,6 +148,10 @@ export function MessageGroup({
           count,
           content: firstGenerateImagesInMessage ? msgContent : "",
           artifact: toolMsg?.artifact,
+          toolStatus:
+            typeof toolMsg?.status === "string"
+              ? toolMsg.status.toLowerCase()
+              : undefined,
         });
         firstGenerateImagesInMessage = false;
       }
@@ -294,8 +286,9 @@ export function MessageGroup({
                   const item = artifacts.find((a) => a?.index === idx);
                   const src = item?.artifact_url ? getGenImageUrl(item.artifact_url) : "";
                   const completed = item?.status === "completed" && !!src;
-                  const failed = isGenerateImageArtifactFailed(item);
-                  const errMsg = getGenerateImageArtifactErrorMessage(item);
+                  // 整个 generate_images tool 调用报错（artifact 为空）时，所有占位都应立即转为失败态
+                  const batchFailed = batch.toolStatus === "error";
+                  const failed = batchFailed || isGenerateImageArtifactFailed(item);
                   const failedBody = (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-destructive/5 px-2 text-center">
                       <ImageOffIcon
@@ -314,28 +307,26 @@ export function MessageGroup({
                     >
                       <div className="aspect-square w-full">
                         {completed ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={src}
-                            alt={item?.filename ?? `image-${idx}`}
-                            className="h-full w-full object-cover"
-                          />
+                          <button
+                            type="button"
+                            className="h-full w-full cursor-zoom-in"
+                            onClick={() =>
+                              setPreviewImage({
+                                src,
+                                alt: item?.filename ?? `image-${idx}`,
+                              })
+                            }
+                            aria-label="预览图片"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={src}
+                              alt={item?.filename ?? `image-${idx}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
                         ) : failed ? (
-                          errMsg ? (
-                            <Tooltip
-                              content={
-                                <p className="max-w-sm whitespace-pre-wrap break-words text-left text-xs">
-                                  {truncateForPreview(errMsg)}
-                                </p>
-                              }
-                            >
-                              <div className="h-full w-full cursor-default outline-none">
-                                {failedBody}
-                              </div>
-                            </Tooltip>
-                          ) : (
-                            failedBody
-                          )
+                          failedBody
                         ) : (
                           <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted/85 via-muted/50 to-muted/75">
                             <motion.div
@@ -403,6 +394,14 @@ export function MessageGroup({
           ))}
         </div>
       )}
+      <ImagePreviewDialog
+        open={Boolean(previewImage?.src?.trim())}
+        onOpenChange={(open) => {
+          if (!open) setPreviewImage(null);
+        }}
+        src={previewImage?.src?.trim() ?? ""}
+        alt={previewImage?.alt ?? "preview-image"}
+      />
     </div>
   );
 }

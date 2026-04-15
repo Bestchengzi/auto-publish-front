@@ -42,15 +42,19 @@ export async function generateMetadata({
   const title =
     typeof (messages as { app?: { name?: unknown } }).app?.name === "string"
       ? ((messages as { app?: { name?: string } }).app?.name ??
-        "Media Auto Publish")
-      : "Media Auto Publish";
+        (safeLocale === "en" ? "Keduck AI" : "可达AI"))
+      : safeLocale === "en"
+        ? "Keduck AI"
+        : "可达AI";
 
   const description =
     typeof (messages as { app?: { metaDescription?: unknown } }).app
       ?.metaDescription === "string"
       ? ((messages as { app?: { metaDescription?: string } }).app
           ?.metaDescription ?? "")
-      : "A cross-platform publisher built with Next.js + Electron + shadcn/ui.";
+      : safeLocale === "en"
+        ? "Keduck AI is a chat-first AI content creation and multi-platform publishing tool."
+        : "可达AI是对话式 AI 内容创作与多平台发布工具。";
 
   return {
     title,
