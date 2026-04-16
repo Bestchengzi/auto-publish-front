@@ -36,6 +36,18 @@ import { CopyButton } from "../copy-button";
 
 import { MarkdownContent } from "./markdown-content";
 
+type SelectedNewsItem = {
+  title: string;
+  content_text: string;
+  source_name: string;
+  published_at: string;
+  source_url: string;
+  author: string;
+  image_urls: string;
+  summary?: string;
+  cover_image_url?: string;
+};
+
 export function MessageListItem({
   className,
   message,
@@ -156,6 +168,28 @@ function MessageContent_({
     return rawContent ?? "";
   }, [rawContent, isHuman]);
 
+  const selectedNews = useMemo<SelectedNewsItem | null>(() => {
+    const raw = message.additional_kwargs?.news_item;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const title = typeof obj.title === "string" ? obj.title.trim() : "";
+    const contentText =
+      typeof obj.content_text === "string" ? obj.content_text.trim() : "";
+    if (!title && !contentText) return null;
+    return {
+      title,
+      content_text: contentText,
+      source_name: typeof obj.source_name === "string" ? obj.source_name : "",
+      published_at: typeof obj.published_at === "string" ? obj.published_at : "",
+      source_url: typeof obj.source_url === "string" ? obj.source_url : "",
+      author: typeof obj.author === "string" ? obj.author : "",
+      image_urls: typeof obj.image_urls === "string" ? obj.image_urls : "",
+      summary: typeof obj.summary === "string" ? obj.summary : undefined,
+      cover_image_url:
+        typeof obj.cover_image_url === "string" ? obj.cover_image_url : undefined,
+    };
+  }, [message.additional_kwargs?.news_item]);
+
   const filesList =
     files && files.length > 0 && thread_id ? (
       <RichFilesList files={files} threadId={thread_id} />
@@ -207,6 +241,7 @@ function MessageContent_({
             {messageResponse}
           </AIElementMessageContent>
         )}
+        {selectedNews ? <SelectedNewsCard item={selectedNews} /> : null}
       </div>
     );
   }
@@ -393,3 +428,70 @@ function RichFileCard({
 }
 
 const MessageContent = memo(MessageContent_);
+
+function pickNewsImageUrl(item: SelectedNewsItem): string | null {
+  const first = (value: string): string | null => {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+  if (item.cover_image_url) return first(item.cover_image_url) ?? null;
+  if (!item.image_urls) return null;
+  const parsed = first(item.image_urls);
+  if (!parsed) return null;
+  if (parsed.startsWith("[")) {
+    try {
+      const arr = JSON.parse(parsed) as unknown;
+      if (Array.isArray(arr)) {
+        const candidate = arr.find((v) => typeof v === "string" && v.trim().length > 0);
+        return typeof candidate === "string" ? candidate.trim() : null;
+      }
+    } catch {
+      // ignore JSON parse failure and fallback to split
+    }
+  }
+  return first(parsed.split(",")[0] ?? "");
+}
+
+function SelectedNewsCard({ item }: { item: SelectedNewsItem }) {
+  const summary = item.summary?.trim() || item.content_text.trim();
+  const imageUrl = pickNewsImageUrl(item);
+  const sourceUrl = item.source_url.trim();
+  return (
+    <div className="ml-auto w-[min(560px,100%)] rounded-xl border border-border bg-card p-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          {item.title ? (
+            sourceUrl ? (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="line-clamp-2 text-base leading-6 font-semibold text-foreground hover:text-primary hover:underline underline-offset-2"
+              >
+                {item.title}
+              </a>
+            ) : (
+              <div className="line-clamp-2 text-base leading-6 font-semibold text-foreground">
+                {item.title}
+              </div>
+            )
+          ) : null}
+          {summary ? (
+            <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+              {summary}
+            </p>
+          ) : null}
+        </div>
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote cover image url
+          <img
+            src={imageUrl}
+            alt=""
+            className="h-20 w-32 shrink-0 rounded-lg object-cover"
+            aria-hidden
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}

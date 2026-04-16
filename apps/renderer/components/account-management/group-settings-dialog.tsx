@@ -58,6 +58,7 @@ export function GroupSettingsDialog({
   deleteActionKey = "account.actions.delete",
 }: GroupSettingsDialogProps) {
   const gt = (suffix: string) => t(`${groupsKeyPrefix}.groups.${suffix}`);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

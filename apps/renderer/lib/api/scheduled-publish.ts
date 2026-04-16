@@ -28,6 +28,11 @@ export type ScheduledPublishTarget = {
 
 export type PublishTargetsMap = Record<string, ScheduledPublishTarget>;
 
+export type ScheduledPublishTopicSourceBinding = {
+  board_id: string;
+  item_limit: number;
+};
+
 export type ScheduledPublishTaskCreateBody = {
   name: string;
   prompt: string;
@@ -40,6 +45,7 @@ export type ScheduledPublishTaskCreateBody = {
   /** 自然语言描述定时规则，由服务端解析并生成 schedule */
   schedule_text: string;
   publish_targets: PublishTargetsMap;
+  topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
 };
 
 export type ScheduledPublishTaskUpdateBody = {
@@ -53,6 +59,7 @@ export type ScheduledPublishTaskUpdateBody = {
   timezone: string;
   schedule_text: string;
   publish_targets: PublishTargetsMap;
+  topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
 };
 
 export type ScheduledPublishLastRunStatus =
@@ -77,6 +84,7 @@ export type ScheduledPublishTaskResponse = {
   /** 服务端根据 schedule_text 解析后的 Cron 等调度信息 */
   schedule: ScheduledPublishCronSchedule;
   publish_targets: PublishTargetsMap;
+  topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
   next_run_at: string;
   last_run_at: string | null;
   last_run_status: ScheduledPublishLastRunStatus | null;
@@ -99,6 +107,25 @@ export type ScheduledPublishTaskRunRecordResponse = {
   task_id: string;
   status: ScheduledPublishLastRunStatus;
 };
+
+export type ScheduledPublishOptimizePromptBody = {
+  prompt: string;
+  name: string;
+  persona_id: string | null;
+};
+
+export type ScheduledPublishOptimizePromptResponse =
+  | string
+  | {
+      prompt?: string | null;
+      optimized_prompt?: string | null;
+      content?: string | null;
+      data?: {
+        prompt?: string | null;
+        optimized_prompt?: string | null;
+        content?: string | null;
+      } | null;
+    };
 
 export const SCHEDULED_PUBLISH_PLATFORM_IDS: ScheduledPublishPlatform[] = [
   "toutiao",
@@ -150,5 +177,14 @@ export async function runScheduledPublishTaskNow(
   return request<ScheduledPublishTaskRunRecordResponse>(
     apiUrl(`/api/scheduled-publish-tasks/${taskId}/run-now`),
     { method: "POST" },
+  );
+}
+
+export async function optimizeScheduledPublishPrompt(
+  body: ScheduledPublishOptimizePromptBody,
+): Promise<ScheduledPublishOptimizePromptResponse> {
+  return request<ScheduledPublishOptimizePromptResponse>(
+    apiUrl("/api/scheduled-publish-tasks/optimize-prompt"),
+    { method: "POST", body: JSON.stringify(body) },
   );
 }

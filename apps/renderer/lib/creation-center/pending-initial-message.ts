@@ -4,6 +4,7 @@ export type PendingInitialMessage = {
   threadId: string;
   text: string;
   personaId?: string | null;
+  additionalKwargs?: Record<string, unknown>;
 };
 
 export function stashPendingInitialMessage(payload: PendingInitialMessage): void {
@@ -32,10 +33,17 @@ export function takePendingInitialMessage(threadId: string): PendingInitialMessa
     if (trimmed.length === 0) return null;
     const personaId =
       typeof data.personaId === "string" ? data.personaId : null;
+    const additionalKwargs =
+      data.additionalKwargs &&
+      typeof data.additionalKwargs === "object" &&
+      !Array.isArray(data.additionalKwargs)
+        ? (data.additionalKwargs as Record<string, unknown>)
+        : undefined;
     return {
       threadId: data.threadId,
       text: trimmed,
       personaId,
+      additionalKwargs,
     };
   } catch {
     return null;

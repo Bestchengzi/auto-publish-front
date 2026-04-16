@@ -20,6 +20,7 @@ export interface ArtifactsContextType {
   setArtifacts: (artifacts: string[]) => void;
 
   selectedArtifact: string | null;
+  selectionVersion: number;
   autoSelect: boolean;
   select: (artifact: string, autoSelect?: boolean) => void;
   deselect: () => void;
@@ -50,6 +51,7 @@ export interface PublishPreviewPayload {
 export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
   const [artifacts, setArtifacts] = useState<string[]>([]);
   const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
+  const [selectionVersion, setSelectionVersion] = useState(0);
   const [autoSelect, setAutoSelect] = useState(true);
   const [open, setOpen] = useState(false);
   const [autoOpen, setAutoOpen] = useState(true);
@@ -60,6 +62,7 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
   const select = useCallback(
     (artifact: string, autoSelect = false) => {
       setSelectedArtifact(artifact);
+      setSelectionVersion((current) => current + 1);
       setSidebarOpen(false);
       if (!autoSelect) {
         setAutoSelect(false);
@@ -90,6 +93,7 @@ export function ArtifactsProvider({ children }: ArtifactsProviderProps) {
     },
 
     selectedArtifact,
+    selectionVersion,
     select,
     deselect,
     publishPreview,

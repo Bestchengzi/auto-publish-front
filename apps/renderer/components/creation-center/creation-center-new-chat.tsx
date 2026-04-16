@@ -464,6 +464,7 @@ export function CreationCenterNewChat() {
                 setEditPersonaMarkdown(fullPersona.content);
                 setEditPersonaDialogOpen(true);
               }}
+              showPersonaManagementActions
               onSubmit={handleSubmit}
               onStop={undefined}
             />
@@ -518,7 +519,14 @@ export function CreationCenterNewChat() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+          initialFocus={() =>
+            document.querySelector(
+              '[data-edit-persona-platform-trigger="true"]',
+            ) as HTMLElement | null
+          }
+        >
           <DialogHeader>
             <DialogTitle>{t("editPersonaDialog.title")}</DialogTitle>
             <DialogDescription>{t("editPersonaDialog.description")}</DialogDescription>
@@ -532,7 +540,10 @@ export function CreationCenterNewChat() {
                 value={editPersonaPlatform}
                 onValueChange={(value) => setEditPersonaPlatform(value as PersonaPlatform)}
               >
-                <SelectTrigger className="w-56">
+                <SelectTrigger
+                  className="w-56"
+                  data-edit-persona-platform-trigger="true"
+                >
                   <SelectValue className="sr-only" />
                   <span className="flex min-w-0 items-center gap-2">
                     {selectedPlatformOption ? (

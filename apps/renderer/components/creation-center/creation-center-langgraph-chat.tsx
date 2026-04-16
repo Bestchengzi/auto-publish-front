@@ -260,6 +260,7 @@ export function CreationCenterLanggraphChat() {
       threadId,
       { text: pending.text, files: [] },
       pending.personaId ? { persona_id: pending.personaId } : {},
+      pending.additionalKwargs,
     );
   }, [
     threadId,
@@ -327,7 +328,7 @@ export function CreationCenterLanggraphChat() {
                         <div className="text-muted-foreground">
                           <div className="flex items-center justify-center gap-2">
                             <FolderOpenIcon className="size-4" />
-                            <div>任务生成文件展示</div>
+                            <div>{tCreation("generatedFilesPanelTitle")}</div>
                           </div>
                         </div>
                         <div>

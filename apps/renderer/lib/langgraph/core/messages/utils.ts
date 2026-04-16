@@ -523,6 +523,7 @@ export function stripNeedHelpSelectionMarker(content: string): string {
     .trim();
 }
 
+
 export function parseUploadedFiles(content: string): FileInMessage[] {
   // Match <uploaded_files>...</uploaded_files> tag
   const uploadedFilesRegex = /<uploaded_files>([\s\S]*?)<\/uploaded_files>/;

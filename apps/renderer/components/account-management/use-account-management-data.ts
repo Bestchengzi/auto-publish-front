@@ -40,12 +40,13 @@ export function useAccountManagementData({
   platformFilter,
   statusFilter,
 }: UseAccountManagementDataArgs) {
+  const allGroupsLabel = t("account.groups.allGroups");
   const groupsQuery = useQuery({
-    queryKey: ["account-management", "groups", t("account.groups.all")] as QueryKey,
+    queryKey: ["account-management", "groups", allGroupsLabel] as QueryKey,
     queryFn: async () => {
       const res = await accountGroupsApi.listAccountGroupsWithCounts();
       const list: Group[] = [
-        { id: "all", name: t("account.groups.all") },
+        { id: "all", name: allGroupsLabel },
         { id: "ungrouped", name: t("account.groups.ungrouped") },
       ];
       const counts: Record<string, number> = { all: 0, ungrouped: 0 };

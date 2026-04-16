@@ -36,14 +36,16 @@ export function formatDateShort(
 }
 
 /**
- * 热榜「多久前」（基于 `update_time`）：最小单位为 1 分钟（不足 1 分钟也显示 1 分钟前），
- * 最大单位为小时（不展示天/周等，长时间仍用「N 小时前」）。
+ * 相对时间格式化：分钟/小时/天/月/年。
+ * - 小于 1 分钟按 1 分钟前显示
+ * - 支持 Unix 秒、毫秒时间戳，以及 ISO 字符串 / Date
  */
-export function formatUpdateAgoMinutesToHours(
-  epochSecondsOrMs: number,
+export function formatRelativeTimeFromNow(
+  value: string | Date | number,
   appLocale: string,
 ): string {
-  const ms = toEpochMs(epochSecondsOrMs);
+  const ms =
+    typeof value === "number" ? toEpochMs(value) : dayjs(value).valueOf();
   const d = dayjs(ms);
   if (!d.isValid()) return "--";
   const diffSec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
@@ -62,8 +64,35 @@ export function formatUpdateAgoMinutesToHours(
   }
 
   const totalHours = Math.floor(diffSec / 3600);
-  if (isZh) {
-    return totalHours === 1 ? "1 小时前" : `${totalHours} 小时前`;
+  if (totalHours < 24) {
+    if (isZh) {
+      return totalHours === 1 ? "1 小时前" : `${totalHours} 小时前`;
+    }
+    return totalHours === 1 ? "1 hour ago" : `${totalHours} hours ago`;
   }
-  return totalHours === 1 ? "1 hour ago" : `${totalHours} hours ago`;
+
+  const totalDays = Math.floor(diffSec / 86_400);
+  if (totalDays < 30) {
+    if (isZh) {
+      return totalDays === 1 ? "1 天前" : `${totalDays} 天前`;
+    }
+    return totalDays === 1 ? "1 day ago" : `${totalDays} days ago`;
+  }
+
+  const totalMonths = Math.floor(totalDays / 30);
+  if (totalMonths < 12) {
+    if (isZh) {
+      return totalMonths === 1 ? "1 个月前" : `${totalMonths} 个月前`;
+    }
+    return totalMonths === 1 ? "1 month ago" : `${totalMonths} months ago`;
+  }
+
+  const totalYears = Math.floor(totalDays / 365);
+  if (isZh) {
+    return totalYears <= 1 ? "1 年前" : `${totalYears} 年前`;
+  }
+  return totalYears <= 1 ? "1 year ago" : `${totalYears} years ago`;
 }
+
+/** @deprecated 请使用 `formatRelativeTimeFromNow` */
+export const formatUpdateAgoMinutesToHours = formatRelativeTimeFromNow;

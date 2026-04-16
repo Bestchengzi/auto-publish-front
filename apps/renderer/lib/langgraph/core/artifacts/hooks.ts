@@ -8,10 +8,12 @@ import { loadArtifactContent, loadArtifactContentFromToolCall } from "./loader";
 export function useArtifactContent({
   filepath,
   threadId,
+  refreshKey = 0,
   enabled,
 }: {
   filepath: string;
   threadId: string;
+  refreshKey?: number;
   enabled?: boolean;
 }) {
   const isWriteFile = useMemo(() => {
@@ -26,12 +28,12 @@ export function useArtifactContent({
   }, [filepath, isWriteFile, thread]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["artifact", filepath, threadId],
+    queryKey: ["artifact", filepath, threadId, refreshKey],
     queryFn: () => {
       return loadArtifactContent({ filepath, threadId });
     },
     enabled,
-    // Cache artifact content for 5 minutes to avoid repeated fetches (especially for .skill ZIP extraction)
+    // Keep each selection snapshot cached briefly; manual reselection changes refreshKey and refetches.
     staleTime: 5 * 60 * 1000,
   });
   return { content: isWriteFile ? content : data, isLoading, error };

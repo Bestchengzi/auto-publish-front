@@ -13,7 +13,12 @@ import {
   type BillingCycle,
   type BillingSubscriptionPlan,
 } from "@/lib/api/billing";
-import { getSubscriptionPlanFeatures } from "@/lib/marketing/plan-features";
+import {
+  getSubscriptionPlanCode,
+  getSubscriptionPlanFeatureKeys,
+  type SubscriptionPlanCode,
+  type SubscriptionPlanFeatureKey,
+} from "@/lib/marketing/plan-features";
 import type { AppLocale } from "@/i18n/config";
 import {
   sectionContainer,
@@ -30,6 +35,7 @@ export function MarketingPricingPage() {
   const params = useParams();
   const locale = (params?.locale as AppLocale) ?? "zh-CN";
   const t = useTranslations("marketing");
+  const tPlanFeatures = useTranslations("billing.dialog.features");
   const reduceMotion = useReducedMotion();
   const sm = sectionMotion(Boolean(reduceMotion));
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
@@ -82,6 +88,20 @@ export function MarketingPricingPage() {
     })) as BillingSubscriptionPlan[];
   }, [plans, staticTiers]);
 
+  const getPlanFeatureLabel = (
+    planCode: SubscriptionPlanCode,
+    featureKey: SubscriptionPlanFeatureKey,
+  ) => {
+    switch (planCode) {
+      case "LITE":
+        return tPlanFeatures(`LITE.${featureKey}`);
+      case "MAX":
+        return tPlanFeatures(`MAX.${featureKey}`);
+      default:
+        return tPlanFeatures(`PRO.${featureKey}`);
+    }
+  };
+
   return (
     <section className="border-b border-slate-200/50 py-16 dark:border-zinc-800/80 sm:py-20" aria-labelledby="pricing-page-heading">
       <div className={sectionContainer}>
@@ -130,7 +150,8 @@ export function MarketingPricingPage() {
               cycle === "MONTHLY" ? plan.monthly_price_amount : plan.annual_price_amount;
             const hasPrice = plans.length >= 3 && amountRaw > 0 && !plansLoading;
             const isMiddle = index === 1;
-            const feats = getSubscriptionPlanFeatures(plan.code);
+            const normalizedPlanCode = getSubscriptionPlanCode(plan.code);
+            const featureKeys = getSubscriptionPlanFeatureKeys(plan.code);
 
             return (
               <motion.article
@@ -182,13 +203,16 @@ export function MarketingPricingPage() {
                       : "月度积分请见应用内"}
                 </p>
                 <ul className="mt-5 flex-1 space-y-2.5">
-                  {feats.map((f) => (
-                    <li key={f} className="flex gap-2 text-sm text-slate-600 dark:text-zinc-400">
+                  {featureKeys.map((featureKey) => (
+                    <li
+                      key={`${normalizedPlanCode}-${featureKey}`}
+                      className="flex gap-2 text-sm text-slate-600 dark:text-zinc-400"
+                    >
                       <CheckIcon
                         className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-cyan-400"
                         aria-hidden
                       />
-                      <span>{f}</span>
+                      <span>{getPlanFeatureLabel(normalizedPlanCode, featureKey)}</span>
                     </li>
                   ))}
                 </ul>

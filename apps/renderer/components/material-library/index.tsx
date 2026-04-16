@@ -882,6 +882,7 @@ export function MaterialLibrary() {
           ungroupedLabel={t("material.groups.ungrouped")}
           typeLabel={t("material.edit.type")}
           tagsLabel={t("material.table.tags")}
+          tagsPlaceholder={t("material.edit.tagsPlaceholder")}
           uploadedAtLabel={t("material.edit.uploadedAt")}
           fileSizeLabel={t("material.edit.fileSize")}
           saveLabel={t("material.edit.save")}

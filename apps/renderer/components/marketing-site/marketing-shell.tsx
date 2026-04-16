@@ -87,7 +87,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     };
   }, [mobileNavOpen]);
 
-  const appName = locale === "en" ? "MediaBee" : "可达AI";
+  const appName = locale === "en" ? "Keduck AI" : "可达AI";
   const localeOptions: AppLocale[] = ["zh-CN", "en"];
   const localeLabels: Record<AppLocale, string> = {
     "zh-CN": t("langZh"),
@@ -385,7 +385,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               </p>
               <p className="mt-3 leading-relaxed">
                 {locale === "en"
-                  ? "MediaBee helps teams and creators complete chat-based creation and publishing in one place."
+                  ? "Keduck AI helps teams and creators complete chat-based creation and publishing in one place."
                   : "可达AI 是面向团队与创作者的一体化对话创作与发布平台。"}
               </p>
             </div>

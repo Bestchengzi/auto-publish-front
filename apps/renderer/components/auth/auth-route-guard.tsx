@@ -18,7 +18,7 @@ function isAllowedWhenLoggedOut(pathname: string, locale: string): boolean {
   if (normalized === `/${locale}`) {
     return true;
   }
-  if (normalized === `/${locale}/creation-center/new` || normalized === `/${locale}/topic-center`) {
+  if (normalized === `/${locale}/creation-center/new`) {
     return true;
   }
   if (normalized === `/${locale}/site` || normalized.startsWith(`/${locale}/site/`)) {

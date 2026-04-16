@@ -172,7 +172,7 @@ export function ArtifactFileDetail({
   const { t } = useI18n();
   const { thread } = useThread();
   const { context: localContext } = useLocalSettings()[0];
-  const { setOpen, openPublishPreview } = useArtifacts();
+  const { setOpen, openPublishPreview, selectionVersion } = useArtifacts();
   const isWriteFile = useMemo(() => {
     return filepathFromProps.startsWith("write-file:");
   }, [filepathFromProps]);
@@ -186,6 +186,7 @@ export function ArtifactFileDetail({
   const { content } = useArtifactContent({
     threadId,
     filepath: filepathFromProps,
+    refreshKey: selectionVersion,
     enabled: !isWriteFile,
   });
 
@@ -369,7 +370,7 @@ export function ArtifactFileDetail({
         allowBase64: true,
       }),
     ],
-    [],
+    [t.slashMenu.placeholder],
   );
 
   const editor = useEditor(
@@ -809,7 +810,7 @@ export function ArtifactFileDetail({
       }
       if (editorMarkdownRef.current === contentToSave) {
         queryClient.setQueryData(
-          ["artifact", filepathFromProps, threadId],
+          ["artifact", filepathFromProps, threadId, selectionVersion],
           contentToSave,
         );
       }
@@ -819,7 +820,14 @@ export function ArtifactFileDetail({
     } finally {
       isSavingRef.current = false;
     }
-  }, [canPersist, filepathFromProps, filepath, queryClient, threadId]);
+  }, [
+    canPersist,
+    filepathFromProps,
+    filepath,
+    queryClient,
+    selectionVersion,
+    threadId,
+  ]);
 
   useEffect(() => {
     if (!canPersist) return;
@@ -1306,4 +1314,3 @@ export function ArtifactFileDetail({
     </>
   );
 }
-

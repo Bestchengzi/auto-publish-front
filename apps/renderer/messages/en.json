@@ -1,12 +1,7 @@
 {
   "common": {
-    "loading": "Loading…",
     "error": "Something went wrong",
-    "groupNameRequired": "Please enter a group name",
-    "errorRetry": "Retry",
-    "notFound": "Page not found",
-    "notFoundDesc": "Sorry, the page you are looking for does not exist.",
-    "backToHome": "Back to home"
+    "groupNameRequired": "Please enter a group name"
   },
   "app": {
     "name": "Keduck AI",
@@ -24,23 +19,11 @@
       "agreePrefix": "By scanning, you agree to the ",
       "agreeMiddle": " and ",
       "userAgreement": "User Agreement",
-      "privacyPolicy": "Privacy Policy",
-      "legalUserHref": "/home/legal/user",
-      "legalPrivacyHref": "/home/legal/privacy"
+      "privacyPolicy": "Privacy Policy"
     }
-  },
-  "home": {
-    "title": "Build once, run on Web & Desktop",
-    "subtitle": "Next.js + Electron + shadcn/ui, with SEO and theming baked in.",
-    "cta": {
-      "primary": "Get started",
-      "secondary": "Documentation"
-    },
-    "placeholder": "Home placeholder: Go to Account management from the sidebar ({path})."
   },
   "browserChrome": {
     "newTab": "New tab",
-    "newVersion": "New version",
     "updater": {
       "checking": "Checking updates",
       "available": "Update available",
@@ -51,48 +34,16 @@
     "back": "Back",
     "forward": "Forward",
     "refresh": "Refresh",
-    "favorite": "Favorite",
+    "favorite": "Bookmark",
     "urlPlaceholder": "Enter URL to start browsing",
-    "emptyStatePrompt": "Enter URL to start browsing",
-    "externalError": {
-      "title": "This site can't be reached",
-      "hintTypo": "Check if there is a typo in {host}.",
-      "hintNetwork": "If spelling is correct, try checking your network connection.",
-      "reload": "Reload",
-      "codeLabel": "Error code"
-    }
-  },
-  "nav": {
-    "locale": {
-      "label": "Language",
-      "zh": "Chinese",
-      "en": "English"
-    },
-    "style": {
-      "label": "UI Style",
-      "neutral": "Neutral (default)",
-      "blue": "Blue",
-      "violet": "Violet"
-    },
-    "theme": {
-      "label": "Theme",
-      "light": "Light",
-      "dark": "Dark",
-      "system": "System"
-    }
+    "emptyStatePrompt": "Enter URL to start browsing"
   },
   "sidebar": {
-    "brand": {
-      "subtitle": "Automated publishing & growth"
-    },
     "groups": {
-      "workspace": "Workspace",
       "assets": "My assets"
     },
     "items": {
-      "overview": "Overview",
       "recentCreations": "Recent conversations",
-      "more": "More",
       "emptyRecentCreations": "No recent conversations",
       "threadActions": "Thread actions",
       "renameThread": "Rename",
@@ -107,7 +58,6 @@
       "creationCenter": "Creation Center",
       "topicCenter": "Topic Center",
       "autoPublish": "Auto-Publish",
-      "workList": "Work List",
       "worksLibrary": "Publishing Records",
       "account": "Account",
       "assetLibrary": "Asset Library",
@@ -122,6 +72,7 @@
       "profileSettings": "Profile settings",
       "visitWebsite": "Visit website",
       "buyPlan": "Buy plan",
+      "feedback": "User Feedback",
       "logout": "Log out",
       "personal": "Personal",
       "account": "Account",
@@ -135,6 +86,36 @@
       "accentNeutral": "Black",
       "accentBlue": "Blue",
       "accentViolet": "Violet"
+    }
+  },
+  "feedback": {
+    "dialog": {
+      "title": "User Feedback",
+      "fields": {
+        "title": {
+          "label": "Feedback title",
+          "placeholder": "Summarize the issue or suggestion briefly"
+        },
+        "content": {
+          "label": "Feedback details",
+          "placeholder": "Describe the scenario, reproduction steps, error messages, and the result you expected"
+        },
+        "contact": {
+          "label": "Contact info (optional)",
+          "placeholder": "Phone, WeChat, or email so we can follow up"
+        }
+      },
+      "cancel": "Cancel",
+      "submit": "Submit feedback",
+      "submitting": "Submitting...",
+      "validation": {
+        "titleRequired": "Please enter a feedback title",
+        "contentRequired": "Please enter feedback details"
+      },
+      "toast": {
+        "submitSuccess": "Feedback submitted. Thanks for helping us improve.",
+        "submitFailed": "Failed to submit feedback. Please try again later."
+      }
     }
   },
   "account": {
@@ -158,15 +139,10 @@
     "addAccount": {
       "dialogTitle": "Select platform",
       "dialogDescription": "Choose a platform to add an account",
-      "authBusy": "A login window is already open. Close it first.",
-      "authUnsupported": "Web sign-in is not configured for this platform yet.",
-      "authFailed": "Failed to open or load the login page: {message}",
-      "authNeedDesktop": "Add account (cookie capture) is only available in the desktop app.",
       "authNeedDesktopTitle": "Use desktop app to add accounts",
       "authNeedDesktopWithDownload": "Adding accounts is not available in the browser. If you have not installed the desktop app yet, do you want to go to the download page?",
       "authNeedDesktopCancel": "Not now",
-      "authNeedDesktopGoDownload": "Go to desktop download",
-      "authSuccess": "Account authorized successfully"
+      "authNeedDesktopGoDownload": "Go to desktop download"
     },
     "editDrawer": {
       "title": "Edit account",
@@ -177,7 +153,6 @@
     "actions": {
       "add": "Add account",
       "edit": "Edit",
-      "settings": "Settings",
       "delete": "Delete",
       "batchDelete": "Bulk delete",
       "deleteAccountConfirm": "Delete this account?",
@@ -191,21 +166,17 @@
       "title": "Groups",
       "settingsTooltip": "Group settings",
       "dialogTitle": "Group settings",
-      "dialogDescription": "Create new groups or rename and delete existing groups.",
-      "close": "Close",
-      "newGroupPlaceholder": "Enter new group name",
+      "dialogDescription": "Create, rename, and delete account groups.",
+      "newGroupPlaceholder": "Enter a new group name",
       "createNew": "Create group",
       "empty": "No groups yet",
-      "emptyHint": "Enter a name above and click \"Create group\" to add",
+      "emptyHint": "Create your first group to organize accounts.",
       "rename": "Rename",
       "deleteConfirm": "Delete this group?",
+      "close": "Close",
       "confirm": "OK",
       "cancel": "Cancel",
-      "all": "All accounts",
       "allGroups": "All groups",
-      "ops": "Operations",
-      "creator": "Creators",
-      "brand": "Brand",
       "ungrouped": "Ungrouped"
     },
     "status": {
@@ -226,8 +197,7 @@
     "card": {
       "followers": "Followers",
       "platform": "Platform",
-      "group": "Group",
-      "updatedAt": "Updated"
+      "group": "Group"
     },
     "platforms": {
       "toutiao": "Toutiao",
@@ -240,10 +210,8 @@
       "csdn": "CSDN",
       "baijiahao": "Baijiahao"
     },
-    "empty": "No accounts found. Try adjusting filters.",
     "emptyTitle": "No accounts",
     "emptyDescription": "Try adjusting filters, or click \"Add account\" above to add one.",
-    "publishEmptyDescription": "Please go to Account Management and complete account authorization first.",
     "publishEmptyPrefix": "Please go to ",
     "publishEmptySuffix": " and complete account authorization first.",
     "publishEmptyActionLabel": "Account Management"
@@ -268,7 +236,7 @@
     },
     "publishType": {
       "manual": "Manual",
-      "dialog": "Dialog",
+      "dialog": "Chat",
       "unknown": "Unknown"
     },
     "platforms": {
@@ -300,8 +268,6 @@
       "selectedCount": "{count} selected"
     },
     "actions": {
-      "edit": "Edit",
-      "viewDetails": "View details",
       "failureLog": "Failure log",
       "delete": "Delete",
       "batchDelete": "Bulk delete",
@@ -333,8 +299,8 @@
     }
   },
   "material": {
-    "title": "Material Library",
-    "description": "Filter by type and group, manage groups, and switch between table and card views.",
+    "title": "Asset Library",
+    "description": "Filter assets by type and group, manage groups, and switch between table and card views.",
     "types": {
       "image": "Image",
       "video": "Video",
@@ -345,8 +311,8 @@
       "all": "All"
     },
     "search": {
-      "placeholder": "Search materials",
-      "ariaLabel": "Search materials"
+      "placeholder": "Search assets",
+      "ariaLabel": "Search assets"
     },
     "view": {
       "table": "Table",
@@ -371,18 +337,17 @@
       "title": "Groups",
       "settingsTooltip": "Group settings",
       "dialogTitle": "Group settings",
-      "dialogDescription": "Create new groups or rename and delete existing groups.",
-      "close": "Close",
-      "newGroupPlaceholder": "Enter new group name",
+      "dialogDescription": "Create, rename, and delete material groups.",
+      "newGroupPlaceholder": "Enter a new group name",
       "createNew": "Create group",
       "empty": "No groups yet",
-      "emptyHint": "Enter a name above and click \"Create group\" to add",
+      "emptyHint": "Create your first group to organize materials.",
       "rename": "Rename",
       "deleteConfirm": "Delete this group?",
+      "close": "Close",
       "confirm": "OK",
       "cancel": "Cancel",
       "all": "All materials",
-      "default": "Default",
       "ungrouped": "Ungrouped"
     },
     "table": {
@@ -402,46 +367,116 @@
       "documentPreviewNotSupported": "Document preview not supported"
     },
     "edit": {
-      "title": "Edit material",
+      "title": "Edit asset",
       "group": "Group",
       "description": "Description",
       "type": "Type",
+      "tagsPlaceholder": "News, military, defense",
       "uploadedAt": "Uploaded",
       "fileSize": "File size",
-      "save": "Save",
-      "deleteMaterial": "Delete material"
+      "save": "Save"
     },
-    "emptyTitle": "No materials",
+    "emptyTitle": "No assets",
     "emptyDescription": "Try adjusting filters, or click \"Upload\" in the top-right corner to upload."
   },
   "topicCenter": {
-    "title": "Discover your creative inspiration",
-    "searchPlaceholder": "Enter keywords to search topics…",
-    "platform": "Platform",
-    "track": "Track",
-    "all": "All",
-    "allShort": "All",
-    "search": "Search",
     "actions": {
-      "more": "More actions",
-      "secondaryCreation": "Diverge",
-      "divergePromptPrefix": "Help me diverge this topic: ",
+      "secondaryCreation": "Brainstorm",
+      "divergePromptPrefix": "Help me brainstorm this topic: ",
       "divergeFailed": "Failed to start a diverge conversation. Please try again.",
-      "creationPromptXiaohongshu": "Help me create a Xiaohongshu image-text post; write the content based on {title}.",
-      "creationPromptMediumLongArticle": "Help me create a medium-to-long article; write the content based on {title}."
+      "creationPromptXiaohongshu": "Help me write a Xiaohongshu post based on {title}.",
+      "creationPromptMediumLongArticle": "Help me write a medium-length article based on {title}."
     },
-    "tabs": {
-      "hotTopics": "Hot Topics",
-      "trackTopics": "Track Topics"
-    },
-    "trackTopicsPlaceholder": "Track topics coming soon",
-    "hotRankBoardTitle": "Hot rankings",
+    "hotRankBoardTitle": "Trending Rankings",
     "hotRank": {
       "empty": "No trending data yet",
       "loadError": "Failed to load hot topics",
       "loadErrorHint": "Network or server error.",
       "retry": "Retry",
-      "updatedAgo": "Updated {time}"
+      "updatedAgo": "Updated at {time}"
+    },
+    "dataConnectors": {
+      "title": "Data Connectors",
+      "connectedSectionTitle": "Existing connectors",
+      "addConnectorSectionTitle": "Add connector",
+      "create": "Add connector",
+      "emptyTitle": "No connectors yet",
+      "emptyDescription": "Create a data connector first, then board data will appear here.",
+      "emptyAction": "Add connector",
+      "loadErrorHint": "The network or service is unavailable. Please try again later.",
+      "loading": "Loading...",
+      "loadMoreHint": "Scroll down to load more",
+      "retry": "Retry",
+      "unsupportedTitle": "This connector cannot be displayed here yet",
+      "unsupportedDescription": "The selected connector cannot display board data here yet.",
+      "boardsEmptyTitle": "No board data yet",
+      "boardsEmptyDescription": "The selected connector has no boards to display yet.",
+      "board": {
+        "empty": "No board items yet",
+        "loadError": "Failed to load board items",
+        "updateCount": "{count} updates",
+        "createAction": "Create",
+        "createPrompt": "Help me create content based on this article"
+      },
+      "boardDetail": {
+        "close": "Close",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating...",
+        "loadError": "Failed to load news detail. Please try again later.",
+        "viewOriginal": "View original",
+        "emptyContent": "No content available"
+      },
+      "providerDialog": {
+        "loadError": "Failed to load available apps"
+      },
+      "configDialog": {
+        "title": "Add connector",
+        "editTitle": "Edit connector",
+        "nameLabel": "Connector name",
+        "savedSecretPlaceholder": "Leave blank to keep the current value",
+        "providerNotFound": "Unable to load this connector's configuration schema.",
+        "enterPlaceholder": "Please enter {name}",
+        "selectPlaceholder": "Please select",
+        "cancel": "Cancel",
+        "submit": "Confirm",
+        "update": "Confirm",
+        "submitting": "Creating...",
+        "updating": "Saving...",
+        "createSuccess": "Connector created",
+        "createFailed": "Failed to create connector. Please try again later.",
+        "updateSuccess": "Connector updated",
+        "updateFailed": "Failed to update connector. Please try again later.",
+        "editAction": "Edit connector",
+        "validation": {
+          "required": "Please enter {name}"
+        },
+        "boardConfig": "Board configuration",
+        "deleteAction": "Delete connector",
+        "moreActions": "More connector actions"
+      },
+      "boardSetupDialog": {
+        "title": "Board configuration",
+        "sectionMyTopics": "My Topics",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "close": "Close",
+        "loadError": "Failed to load boards",
+        "empty": "No topic boards available to add",
+        "submitting": "Saving…",
+        "selectAtLeastOne": "Select at least one board",
+        "syncSuccess": "Boards saved",
+        "syncFailed": "Failed to save boards. Please try again later."
+      },
+      "deleteDialog": {
+        "close": "Close",
+        "title": "Delete connector",
+        "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete",
+        "success": "Connector deleted",
+        "failed": "Failed to delete connector. Please try again later."
+      }
     },
     "hotRankBoards": {
       "baidu": "Baidu Hot List",
@@ -449,35 +484,11 @@
       "weibo": "Weibo Hot List",
       "zhihu": "Zhihu Hot List",
       "zhixunbao": "Zhixunbao Hot List"
-    },
-    "platforms": {
-      "toutiao": "Toutiao",
-      "xhs": "Xiaohongshu",
-      "rednote": "Xiaohongshu",
-      "douyin": "Douyin",
-      "wx_mp": "WeChat Official Account",
-      "wechat_mp": "WeChat Official Account",
-      "wx_channels": "WeChat Channels",
-      "wechat_channels": "WeChat Channels",
-      "zhixunbao": "Zhixunbao"
-    },
-    "tracks": {
-      "shizheng": "Politics",
-      "guofang": "Defense",
-      "ai": "AI",
-      "jinrong": "Finance",
-      "shangye": "Business",
-      "touzi": "Investment",
-      "xinnengyuan": "New Energy",
-      "qiche": "Automotive",
-      "bandaoti": "Semiconductor",
-      "yiyao": "Pharma"
     }
   },
   "autoPublish": {
-    "title": "Auto publish",
+    "title": "Auto Publish",
     "description": "Manage scheduled generation and publishing: describe schedules in plain language, pick accounts and advanced options. Run immediately or edit anytime.",
-    "loading": "Loading tasks…",
     "newTask": "New scheduled plan",
     "search": {
       "placeholder": "Filter by task name",
@@ -491,27 +502,16 @@
       "name": "Task name",
       "prompt": "Prompt",
       "cron": "Schedule description",
-      "enabled": "Scheduling on",
+      "enabled": "Enabled",
       "toggleScheduleAria": "Toggle scheduling for “{name}”",
       "lastRun": "Last run",
       "lastStatus": "Last status",
       "actions": "Actions"
     },
-    "enabled": {
-      "yes": "Yes",
-      "no": "No"
-    },
     "actions": {
       "edit": "Edit",
       "runNow": "Run now",
       "delete": "Delete"
-    },
-    "runStatus": {
-      "queued": "Queued",
-      "running": "Running",
-      "success": "Success",
-      "partial_success": "Partial success",
-      "failed": "Failed"
     },
     "toast": {
       "createSuccess": "Scheduled task created",
@@ -547,17 +547,18 @@
         "name": "Task name",
         "prompt": "Prompt",
         "publishTargets": "Publish accounts",
+        "topicSourceBindings": "Data connections",
         "group": "Group",
         "scheduleText": "Schedule description",
-        "imageSource": "Images",
-        "persona": "Persona (optional)"
+        "imageSource": "Image source",
+        "persona": "Persona"
       },
       "placeholders": {
         "name": "e.g. Latest AI updates",
         "prompt": "e.g. I'm a tech blogger focused on AI trends and hot topics; search AI-related topics like LLMs, AI, OpenAI; generate ~300-word illustrated posts with ~10 images, mainly for Xiaohongshu.",
-        "platform": "Platform",
-        "group": "Group",
         "accounts": "Select accounts (search, multi-select)",
+        "topicSourceBindings": "Select data connections (search, multi-select)",
+        "searchTopicSourceBindings": "Search data connections…",
         "searchAccounts": "Search accounts…",
         "scheduleText": "e.g. Post once at 8am and 8pm every day",
         "persona": "Choose persona"
@@ -568,15 +569,24 @@
         "ungrouped": "Ungrouped"
       },
       "emptyAccounts": "No accounts available",
+      "emptyTopicSourceBindings": "No data connections available",
       "imageSource": {
         "ai_generate": "AI-generated images",
         "web_search": "Web search images",
         "media_library": "Media library",
         "none": "No images"
       },
-      "personaNone": "Without persona",
+      "optimizePrompt": {
+        "action": "Optimize prompt",
+        "loading": "Optimizing…",
+        "success": "Prompt optimized",
+        "failed": "Failed to optimize prompt",
+        "invalidResponse": "No optimized prompt returned",
+        "needName": "Enter a task name first",
+        "needPrompt": "Enter a prompt first"
+      },
+      "personaNone": "No persona",
       "validation": {
-        "required": "Enter task name, prompt, and schedule description",
         "name": "Enter a task name",
         "prompt": "Enter a prompt",
         "scheduleText": "Describe when to run (the system will build the schedule)",
@@ -590,7 +600,6 @@
         "scheduleOff": "Schedule off",
         "model": "Model",
         "modelDesc": "Model used for the task; default lets the system choose.",
-        "modelDefault": "Default model",
         "jitter": "Time jitter (anti-bot)",
         "jitterDesc": "Random delay around the scheduled time to avoid fixed-time patterns.",
         "jitterSummary": "Jitter {minutes} min"
@@ -607,21 +616,18 @@
     "platforms": {
       "toutiao": "Toutiao",
       "wechat_mp": "WeChat Official Account",
-      "rednote": "RedNote",
+      "rednote": "Xiaohongshu",
       "zhihu": "Zhihu",
       "baijiahao": "Baijiahao",
       "csdn": "CSDN"
     }
   },
   "creationCenter": {
-    "placeholder": "Creation Center placeholder. Coming soon.",
     "new": {
       "title": "Your AI Social Media Content Creation Expert",
       "subtitle": "Plan and write for Toutiao, Xiaohongshu, WeChat Official Accounts, Zhihu, Baijiahao, and CSDN",
-      "inputPlaceholder": "Describe your needs, e.g. a Toutiao article, Xiaohongshu note, Zhihu answer, WeChat article, Baijiahao piece, or CSDN tech post…",
-      "linkKnowledgeBase": "Link Knowledge Base",
       "addPersona": "Add Persona",
-      "noPersona": "No Persona",
+      "noPersona": "No persona",
       "addPersonaPrompt": "Help me add a persona",
       "deletePersonaDialog": {
         "close": "Close",
@@ -643,8 +649,8 @@
         "titleRequired": "Please provide a first-level heading as persona name.",
         "saveFailed": "Failed to update persona. Please try again."
       },
-      "sendAria": "Send and start conversation",
-      "createThreadFailed": "Failed to create conversation. Check network and LangGraph configuration."
+      "createThreadFailed": "Failed to create conversation. Check network and LangGraph configuration.",
+      "generatedFilesPanelTitle": "Generated Files"
     }
   },
   "billing": {
@@ -720,9 +726,7 @@
     },
     "clipboard": {
       "copyToClipboard": "Copy to clipboard",
-      "copiedToClipboard": "Copied successfully",
-      "failedToCopyToClipboard": "Failed to copy to clipboard",
-      "linkCopied": "Link copied to clipboard"
+      "copiedToClipboard": "Copied successfully"
     },
     "inputBox": {
       "placeholder": "How can I assist you today?",
@@ -797,10 +801,8 @@
       "moreSteps": "{count} more steps",
       "lessSteps": "Less steps",
       "executeCommand": "Execute command",
-      "presentFiles": "Present files",
       "needYourHelp": "Need your help",
       "useTool": "Use \"{toolName}\" tool",
-      "searchFor": "Search for \"{query}\"",
       "searchForRelatedInfo": "Search for related information",
       "searchForRelatedImages": "Search for related images",
       "searchForRelatedImagesFor": "Search for related images for \"{query}\"",
@@ -821,11 +823,9 @@
       "uploadingFiles": "Uploading files, please wait..."
     },
     "subtasks": {
-      "subtask": "Subtask",
       "executing": "Executing {count} subtasks",
       "in_progress": "Running subtask",
-      "completed": "Subtask completed",
-      "failed": "Subtask failed"
+      "completed": "Subtask completed"
     },
     "editorToolbar": {
       "blockType": "Paragraph & Headings",
@@ -863,7 +863,6 @@
       "uploading": "Uploading...",
       "uploadLocal": "Upload from device",
       "uploadContinue": "Upload more",
-      "uploadedCoverAlt": "Uploaded cover {index}",
       "reupload": "Re-upload",
       "libraryLoading": "Loading assets...",
       "emptyTitle": "No image assets",
@@ -873,10 +872,8 @@
       "searchButton": "Search",
       "searchKeywordRequired": "Please enter keywords to search images",
       "maxSelect": "Up to {count} image(s) can be selected",
-      "replaceModeSingleHint": " (replace mode supports single selection only)",
       "cancel": "Cancel",
-      "confirm": "Confirm",
-      "replaceCover": "Replace cover"
+      "confirm": "Confirm"
     },
     "slashMenu": {
       "placeholder": "Type \"/\" to insert images or content",
@@ -894,31 +891,11 @@
     "metaTitle": "Keduck AI - Chat-first AI creation and multi-platform publishing",
     "metaDescription": "A chat-centric AI content workspace: persona creation, trend expansion, multi-platform writing, smart visuals, and integrated publishing. Supports direct publishing in chat, manual publishing after document editing, and scheduled auto-run publishing plans.",
     "jsonLdDescription": "A chat-first AI creation platform for Toutiao, Xiaohongshu, WeChat Official Accounts, Zhihu, Baijiahao, and CSDN. Supports persona-driven writing, trend-based secondary creation, AI/web/library visuals, and both manual and automated publishing workflows.",
-    "metaFeaturesTitle": "Product Benefits - Chat-first AI creation",
-    "metaFeaturesDescription": "Learn how Keduck AI connects personas, topic expansion, writing, visuals, and publishing through chat, and enables automated execution with scheduled plans.",
-    "metaGuideTitle": "User Guide - From chat to publish",
-    "metaGuideDescription": "From persona creation and trend expansion to writing and publishing: supports both direct chat publishing and manual publishing after document editing, plus full-process scheduled automation.",
-    "metaPricingTitle": "Pricing — plans & credits",
-    "metaPricingDescription": "Three plan tiers with monthly and yearly billing. Final pricing is shown in the in-app \"Buy Plan\" page.",
-    "metaDownloadTitle": "Download",
-    "metaDownloadDescription": "Download the Keduck AI desktop app for Windows, macOS Intel, and macOS Apple Silicon.",
-    "metaFaqTitle": "FAQ",
-    "metaFaqDescription": "Covers common questions about personas, topic expansion, chat publishing, manual publishing, scheduled automation, visual options, and platform support.",
-    "metaContactTitle": "Contact",
-    "metaContactDescription": "Business collaboration, channel partnerships, and technical support contacts.",
-    "metaTermsTitle": "User Agreement",
-    "metaTermsDescription": "Keduck AI User Agreement covering account usage, platform integrations, billing, and liability boundaries.",
-    "metaPrivacyTitle": "Privacy Policy",
-    "metaPrivacyDescription": "Keduck AI Privacy Policy covering information collection, usage, sharing, storage, and user rights.",
-    "navFeatures": "Product Benefits",
     "navGuide": "User Guide",
     "navDownload": "Download",
     "navPricing": "Pricing",
     "navFaq": "FAQ",
     "navContact": "Contact",
-    "downloadPanelTitle": "Download",
-    "downloadPanelSubtitle": "Choose the build that matches your device",
-    "downloadTag": "Download",
     "downloadPageTitle": "Download Client",
     "downloadPageSubtitle": "Choose the build that matches your device and start creating and publishing quickly.",
     "downloadNow": "Download now",
@@ -934,12 +911,10 @@
     "themeSystem": "System",
     "langZh": "Chinese",
     "langEn": "English",
-    "heroBadge": "Chat-first · Multi-platform Publishing",
     "heroName": "Keduck AI",
     "heroTitlePrefix": "An ",
     "heroTitleHighlight": "AI chat creation and publishing assistant",
     "heroTitleSuffix": " platform",
-    "heroTitle": "Publish high-quality content consistently with chat",
     "heroSubtitle": "Complete the full creation flow in chat: persona, trend expansion, drafting, and publishing. Supports direct chat publishing, manual publishing after document editing, and scheduled automation.",
     "heroCtaPrimary": "Start creating",
     "heroCtaSecondary": "See pricing",
@@ -957,7 +932,6 @@
     "spotlightPublishDesc": "Publish in two ways: send by chat command to target accounts, or edit in-document and publish manually.",
     "spotlightAutomationTitle": "Scheduled plans, auto-run",
     "spotlightAutomationDesc": "Set task name, prompt, publishing accounts, and schedule notes, then let the system create and publish automatically on cadence.",
-    "spotlightReadMore": "Learn more →",
     "audienceTitle": "Who is it for? Teams and individuals needing stable content output",
     "audienceSubtitle": "Whether you work in content, growth, or operations, Keduck AI helps you create and publish more reliably.",
     "audience1Title": "Founders / Executives",
@@ -984,26 +958,7 @@
     "testimonial3Quote": "The visual workflow is a big win. AI images, web search, and library assets all work together, and insertion is automatic.",
     "testimonial3Name": "Claire Xu",
     "testimonial3Role": "Independent Creator",
-    "landingLinkGuide": "User Guide",
-    "landingLinkFaq": "FAQ",
-    "landingLinkContact": "Contact",
-    "featuresTitle": "Product Benefits",
-    "featuresSubtitle": "Bring key creation and publishing actions into one unified workflow: if it can be done in chat, you don't need to keep switching pages.",
-    "featuresPageLead": "The full workflow is: personas support creation, trends drive topic selection, chat generates content, smart visuals enrich drafts, and publishing executes delivery. Chat publishing supports both \"continue chatting and issue publish commands after generation\" and \"open the document for edits, then publish manually\". For stable batch execution, fill in task name, prompt, publish accounts, and schedule details in \"Create Scheduled Plan\" so the system can create and publish automatically on schedule.",
-    "feature1Title": "Complete core creation in chat",
-    "feature1Desc": "In one continuous chat, complete persona setup, topic expansion, writing, and revision without jumping between multiple modules.",
-    "feature2Title": "Personas make content sound like you",
-    "feature2Desc": "After creating personas, AI consistently follows your tone, audience, and expression style for more coherent and recognizable output.",
-    "feature3Title": "From trends to actionable topics",
-    "feature3Desc": "Perform secondary creation based on platform trends: expand directions first, then get executable topic suggestions to enter writing mode faster.",
-    "feature4Title": "Smart visuals, less effort",
-    "feature4Desc": "Supports AI image generation, web image search, and media library images. The system matches visuals based on your choice and inserts them automatically into the article.",
-    "feature5Title": "Flexible publishing methods",
-    "feature5Desc": "You can publish directly to target accounts in chat, or enter the document editor for refinement and publish manually to each platform.",
-    "feature6Title": "Scheduled plans run automatically",
-    "feature6Desc": "After filling plan information, the system automatically runs the full AI creation workflow and publishing at scheduled times, ideal for continuous operations and batch tasks.",
     "guideTitle": "User Guide",
-    "guideSubtitle": "First complete \"persona - expansion - writing\" in chat, then choose chat publishing, manual document publishing, or scheduled auto-publishing based on your scenario.",
     "guidePageLead": "You can start from any step, but we recommend defining personas and topic logic first before publishing for more stable quality and efficiency.",
     "guideStep1Title": "Sign in and open Creation Center",
     "guideStep1Desc": "Open Creation Center from the sidebar and start a new chat. Clearly describe your goal, platform, and tone requirements in one go.",
@@ -1018,7 +973,6 @@
     "guideStep6Title": "Upgrade plans as needed",
     "guideStep6Desc": "Open \"Buy Plan\" from the personal menu, then choose monthly or yearly billing and complete payment.",
     "pricingTitle": "Pricing",
-    "pricingSubtitle": "Three tiers aligned with in-app plans. Feature overview below; live prices are shown inside the app.",
     "pricingPageLead": "Credits power chat creation and scheduled-plan automation (including cadence-based generation and publish steps). Final amounts are shown in-app.",
     "pricingMonthly": "Monthly",
     "pricingYearly": "Yearly",
@@ -1039,27 +993,21 @@
     "faq3Q": "Which content platforms are supported?",
     "faq3A": "Currently supports content formats and structures for Toutiao, Xiaohongshu, WeChat Official Accounts, Zhihu, Baijiahao, and CSDN. Exact capabilities and account binding rules are shown in-app.",
     "faq4Q": "Is my data safe?",
-    "faq4A": "Use official downloads and channels. Follow your org’s compliance policies and back up important assets and finals.",
+    "faq4A": "Please download and access the product through official channels. For sensitive content, follow your organization's compliance requirements and back up important assets and final drafts regularly.",
     "faq5Q": "What publishing options are available, and how should I choose?",
     "faq5A": "There are three options: 1) Chat publishing: continue chatting after generation and issue commands to publish to target accounts. 2) Manual publishing: edit in document mode first, then manually choose platform and account. 3) Auto-publishing: fill in a scheduled plan and the system creates and publishes automatically on schedule. Use chat publishing for temporary trends, manual publishing for polished drafts, and auto-publishing for stable recurring columns.",
     "contactTitle": "Contact",
-    "contactSubtitle": "For business collaboration, channel partnerships, and technical support.",
-    "contactPageLead": "For enterprise procurement, partnerships, or private deployments, email us with your scenario and scale.",
-    "contactEmailLabel": "Email",
-    "contactEmailValue": "bd@beeize.com",
+    "contactSubtitle": "For business collaboration, channel partnerships, and technical support, contact us using the methods below.",
     "contactCardEmailTitle": "Email",
     "contactCardEmailLine1": "Send an email to bd@beeize.com",
     "contactCardEmailLine2": "We usually reply within 1-2 business days",
     "contactCardPhoneTitle": "Phone",
     "contactCardPhoneLine1": "19026741878",
-    "contactCardPhoneLine2": "Call this line for business inquiries",
-    "contactCardPhoneNumberRaw": "19026741878",
+    "contactCardPhoneLine2": "Call this hotline for business inquiries",
     "contactCardFeedbackTitle": "Feedback",
     "contactCardFeedbackLine1": "In app: \"Settings\" - \"Help & Feedback\"",
     "contactCardFeedbackLine2": "Submit issue details and we will handle it promptly",
-    "contactHint": "",
     "footerCopyright": "© {year} Fengmi Technology Co., Ltd. All rights reserved.",
-    "footerIcp": "Su ICP No. 2024079861-4",
-    "footerLegal": "Features may evolve with product updates."
+    "footerIcp": "Su ICP No. 2024079861-4"
   }
 }

@@ -117,11 +117,11 @@ async function handleResponseError(response: Response): Promise<never> {
       }
       throw new Error("未授权，请重新登录")
     case 403:
-      throw new Error("无权限访问")
+      throw new Error(errorMessage || "无权限访问")
     case 404:
-      throw new Error("请求的资源不存在")
+      throw new Error(errorMessage || "请求的资源不存在")
     case 500:
-      throw new Error("服务器错误")
+      throw new Error(errorMessage || "服务器错误")
     default:
       throw new Error(errorMessage)
   }

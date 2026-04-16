@@ -141,7 +141,7 @@ const TERMS_EN: Section[] = [
   {
     title: "1. Scope and Acceptance",
     paragraphs: [
-      "Welcome to MediaBee (the \"Service\"). These Terms apply to your access to our website, account registration, AI creation tools, asset management, scheduled plans, and multi-platform publishing features.",
+      "Welcome to Keduck AI (the \"Service\"). These Terms apply to your access to our website, account registration, AI creation tools, asset management, scheduled plans, and multi-platform publishing features.",
       "By registering, signing in, or continuing to use the Service, you agree to these Terms and related rules. If you do not agree, please stop using the Service.",
     ],
   },

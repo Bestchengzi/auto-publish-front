@@ -230,6 +230,7 @@ export function useThreadStream({
       threadId: string,
       message: PromptInputMessage,
       extraContext?: Record<string, unknown>,
+      extraAdditionalKwargs?: Record<string, unknown>,
     ) => {
       if (sendInFlightRef.current) {
         return;
@@ -255,8 +256,10 @@ export function useThreadStream({
         type: "human",
         id: `opt-human-${Date.now()}`,
         content: text ? [{ type: "text", text }] : "",
-        additional_kwargs:
-          optimisticFiles.length > 0 ? { files: optimisticFiles } : {},
+        additional_kwargs: {
+          ...(optimisticFiles.length > 0 ? { files: optimisticFiles } : {}),
+          ...(extraAdditionalKwargs ?? {}),
+        },
       };
 
       const newOptimistic: Message[] = [optimisticHumanMsg];
@@ -382,7 +385,10 @@ export function useThreadStream({
                   },
                 ],
                 additional_kwargs:
-                  filesForSubmit.length > 0 ? { files: filesForSubmit } : {},
+                  {
+                    ...(filesForSubmit.length > 0 ? { files: filesForSubmit } : {}),
+                    ...(extraAdditionalKwargs ?? {}),
+                  },
               },
             ],
           },
@@ -424,7 +430,13 @@ export function useThreadStream({
         sendInFlightRef.current = false;
       }
     },
-    [thread, _handleOnStart, t.uploads.uploadingFiles, context, queryClient],
+    [
+      thread,
+      _handleOnStart,
+      t.uploads.uploadingFiles,
+      context,
+      queryClient,
+    ],
   );
 
   // Merge thread with optimistic messages for display

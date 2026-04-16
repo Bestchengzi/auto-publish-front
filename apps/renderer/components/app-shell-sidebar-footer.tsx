@@ -6,6 +6,7 @@ import {
   CreditCardIcon,
   HouseIcon,
   LogOutIcon,
+  MessageSquareIcon,
   SettingsIcon,
   UserIcon,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import { useTheme } from "next-themes";
 
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { SubscriptionPlanDialog } from "@/components/billing/subscription-plan-dialog";
+import { FeedbackDialog } from "@/components/feedback/feedback-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -61,6 +63,14 @@ function switchLocalePath(pathname: string, nextLocale: "zh-CN" | "en") {
   return `/${nextLocale}${pathname.startsWith("/") ? "" : "/"}${pathname}`;
 }
 
+function getThreadIdFromPathname(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments[1] !== "creation-center") return null;
+  const threadId = segments[2];
+  if (!threadId || threadId === "new") return null;
+  return decodeURIComponent(threadId);
+}
+
 export function AppShellSidebarFooter() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -76,6 +86,7 @@ export function AppShellSidebarFooter() {
   const [userPhone, setUserPhone] = useState("");
   const [accent, setAccent] = useState<AccentPreset>("violet");
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const purchaseAfterLoginKey = "media-open-plan-after-login";
   const { data: billingAccount } = useQuery({
     queryKey: ["billing", "account"],
@@ -153,6 +164,7 @@ export function AppShellSidebarFooter() {
     const planDisplayName =
       billingAccount?.account.subscription?.plan_display_name?.trim() ||
       tSidebar("footer.freePlan");
+    const feedbackThreadId = getThreadIdFromPathname(pathname);
     const balancePoints = billingAccount?.account.balance_points ?? 0;
     const displayBalancePoints = Math.round(balancePoints / 100);
     const billingHint = tSidebar("footer.billingHint", {
@@ -235,6 +247,13 @@ export function AppShellSidebarFooter() {
             >
               <CreditCardIcon className="size-4" />
               {tSidebar("footer.buyPlan")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="py-2"
+              onClick={() => setFeedbackOpen(true)}
+            >
+              <MessageSquareIcon className="size-4" />
+              {tSidebar("footer.feedback")}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator className="mx-2 my-1.5" />
@@ -470,6 +489,12 @@ export function AppShellSidebarFooter() {
           open={planDialogOpen}
           onOpenChange={setPlanDialogOpen}
           account={billingAccount?.account ?? null}
+        />
+        <FeedbackDialog
+          open={feedbackOpen}
+          onOpenChange={setFeedbackOpen}
+          defaultContact={userPhone}
+          threadId={feedbackThreadId}
         />
       </>
     );

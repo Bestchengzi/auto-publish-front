@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, WandSparklesIcon } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -37,30 +37,46 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { listAccounts, type AccountResponse } from "@/lib/api/accounts";
 import { listAccountGroupsWithCounts } from "@/lib/api/account-groups";
+import { listTopicCenterBoards } from "@/lib/api/data-connectors";
 import { listModelsCatalog } from "@/lib/api/models-catalog";
 import { listPersonas } from "@/lib/api/personas";
 import { getApiErrorMessage } from "@/lib/request";
 import {
   createScheduledPublishTask,
+  optimizeScheduledPublishPrompt,
   updateScheduledPublishTask,
+  type ScheduledPublishOptimizePromptResponse,
   type PublishTargetsMap,
   type ScheduledPublishImageSource,
   type ScheduledPublishPlatform,
   type ScheduledPublishTaskResponse,
+  type ScheduledPublishTopicSourceBinding,
   SCHEDULED_PUBLISH_PLATFORM_IDS,
 } from "@/lib/api/scheduled-publish";
 import { getPlatformLogoPath } from "@/lib/platforms";
 import type { PlatformId } from "@/lib/platforms";
 
 const NONE_PERSONA = "__none__";
+const NONE_IMAGE_SOURCE = "__none__";
 
 const JITTER_MINUTES = [0, 10, 20, 30, 60, 120] as const;
+const IMAGE_SOURCE_OPTIONS = [
+  "ai_generate",
+  "web_search",
+  "media_library",
+] as const;
 
 type ScheduledDialogFieldErrors = {
   name?: string;
   prompt?: string;
   accounts?: string;
   scheduleText?: string;
+};
+
+type TopicSourceOption = {
+  value: string;
+  label: string;
+  avatarUrl?: string | null;
 };
 
 function RequiredMark() {
@@ -127,6 +143,26 @@ function buildPublishTargetsFromAccountIds(
   return out;
 }
 
+function extractOptimizedPrompt(
+  response: ScheduledPublishOptimizePromptResponse,
+): string | null {
+  if (typeof response === "string") {
+    return response.trim() || null;
+  }
+  const direct =
+    response.optimized_prompt ?? response.prompt ?? response.content ?? null;
+  if (typeof direct === "string" && direct.trim()) {
+    return direct.trim();
+  }
+  const nested = response.data;
+  const nestedValue =
+    nested?.optimized_prompt ?? nested?.prompt ?? nested?.content ?? null;
+  if (typeof nestedValue === "string" && nestedValue.trim()) {
+    return nestedValue.trim();
+  }
+  return null;
+}
+
 export function ScheduledTaskDialog({
   open,
   onOpenChange,
@@ -144,12 +180,15 @@ export function ScheduledTaskDialog({
   const [prompt, setPrompt] = React.useState("");
   const [scheduleText, setScheduleText] = React.useState("");
   const [imageSource, setImageSource] =
-    React.useState<ScheduledPublishImageSource | null>("ai_generate");
+    React.useState<ScheduledPublishImageSource | null>("web_search");
   const [platformFilter, setPlatformFilter] = React.useState<
     ScheduledPublishPlatform | "all"
   >("all");
   const [groupFilter, setGroupFilter] = React.useState<string>("all");
   const [selectedAccountIds, setSelectedAccountIds] = React.useState<string[]>(
+    [],
+  );
+  const [selectedTopicSourceValues, setSelectedTopicSourceValues] = React.useState<string[]>(
     [],
   );
   const [modelSelect, setModelSelect] = React.useState<string>("");
@@ -186,6 +225,7 @@ export function ScheduledTaskDialog({
   const groupsQuery = useQuery({
     queryKey: ["scheduled-task-dialog", "account-groups"],
     queryFn: listAccountGroupsWithCounts,
+    enabled: open,
     staleTime: 60 * 1000,
   });
 
@@ -213,6 +253,7 @@ export function ScheduledTaskDialog({
       }
       return items;
     },
+    enabled: open,
     staleTime: 30 * 1000,
   });
 
@@ -230,12 +271,26 @@ export function ScheduledTaskDialog({
   const modelsQuery = useQuery({
     queryKey: ["scheduled-task-dialog", "models"],
     queryFn: listModelsCatalog,
+    enabled: open,
     staleTime: 5 * 60 * 1000,
   });
 
   const personasQuery = useQuery({
     queryKey: ["scheduled-task-dialog", "personas"],
     queryFn: listPersonas,
+    enabled: open,
+    staleTime: 60 * 1000,
+  });
+
+  const boardsQuery = useQuery<TopicSourceOption[]>({
+    queryKey: ["scheduled-task-dialog", "topic-center-boards"],
+    queryFn: async () =>
+      (await listTopicCenterBoards()).items.map((item) => ({
+        value: item.board_id,
+        label: item.title,
+        avatarUrl: item.icon_url,
+      })),
+    enabled: open,
     staleTime: 60 * 1000,
   });
 
@@ -261,6 +316,21 @@ export function ScheduledTaskDialog({
     [accountsQuery.data],
   );
 
+  const topicSourceOptionByValue = React.useMemo(
+    () => new Map((boardsQuery.data ?? []).map((item) => [item.value, item])),
+    [boardsQuery.data],
+  );
+
+  const boardOptions = React.useMemo(
+    () =>
+      (boardsQuery.data ?? []).map((board) => ({
+        value: board.value,
+        label: board.label,
+        avatarUrl: board.avatarUrl,
+      })),
+    [boardsQuery.data],
+  );
+
   const resolveAccountLabel = React.useCallback(
     (id: string) => {
       const a = accountsById.get(id);
@@ -274,25 +344,48 @@ export function ScheduledTaskDialog({
     [accountsById],
   );
 
+  const resolveBoardLabel = React.useCallback(
+    (id: string) => topicSourceOptionByValue.get(id)?.label,
+    [topicSourceOptionByValue],
+  );
+
+  const resolveBoardAvatar = React.useCallback(
+    (id: string) => topicSourceOptionByValue.get(id)?.avatarUrl ?? undefined,
+    [topicSourceOptionByValue],
+  );
+
+  const validateField = React.useCallback(
+    (
+      key: keyof ScheduledDialogFieldErrors,
+      accountIds: string[] = selectedAccountIds,
+    ) => {
+      if (key === "name") {
+        return name.trim() ? undefined : t("dialog.validation.name");
+      }
+      if (key === "prompt") {
+        return prompt.trim() ? undefined : t("dialog.validation.prompt");
+      }
+      if (key === "scheduleText") {
+        return scheduleText.trim()
+          ? undefined
+          : t("dialog.validation.scheduleText");
+      }
+      if (key === "accounts") {
+        return Object.keys(
+          buildPublishTargetsFromAccountIds(accountIds, accountsById),
+        ).length > 0
+          ? undefined
+          : t("dialog.validation.accounts");
+      }
+      return undefined;
+    },
+    [accountsById, name, prompt, scheduleText, selectedAccountIds, t],
+  );
+
   const handleFieldBlur = React.useCallback(
     (key: keyof ScheduledDialogFieldErrors) => {
       setTouchedFields((prev) => ({ ...prev, [key]: true }));
-      let message: string | undefined;
-      if (key === "name") {
-        if (!name.trim()) message = t("dialog.validation.name");
-      } else if (key === "prompt") {
-        if (!prompt.trim()) message = t("dialog.validation.prompt");
-      } else if (key === "scheduleText") {
-        if (!scheduleText.trim()) message = t("dialog.validation.scheduleText");
-      } else if (key === "accounts") {
-        const publish_targets = buildPublishTargetsFromAccountIds(
-          selectedAccountIds,
-          accountsById,
-        );
-        if (Object.keys(publish_targets).length === 0) {
-          message = t("dialog.validation.accounts");
-        }
-      }
+      const message = validateField(key);
       setFieldErrors((prev) => {
         const next = { ...prev };
         if (message) next[key] = message;
@@ -300,7 +393,7 @@ export function ScheduledTaskDialog({
         return next;
       });
     },
-    [name, prompt, scheduleText, selectedAccountIds, accountsById, t],
+    [validateField],
   );
 
   React.useEffect(() => {
@@ -316,7 +409,9 @@ export function ScheduledTaskDialog({
       setImageSource(task.image_source);
       setScheduleEnabled(task.schedule_enabled);
       setJitterMinutes(
-        JITTER_MINUTES.includes(task.jitter_minutes as (typeof JITTER_MINUTES)[number])
+        JITTER_MINUTES.includes(
+          task.jitter_minutes as (typeof JITTER_MINUTES)[number],
+        )
           ? task.jitter_minutes
           : 0,
       );
@@ -324,23 +419,27 @@ export function ScheduledTaskDialog({
       setPlatformFilter("all");
       setGroupFilter("all");
       setSelectedAccountIds(collectAccountIdsFromTargets(task.publish_targets));
+      setSelectedTopicSourceValues(
+        (task.topic_source_bindings ?? []).map((binding) => binding.board_id),
+      );
       setAdvancedOpen(true);
     } else {
       setName("");
       setPrompt("");
       setScheduleText("");
-      setImageSource("ai_generate");
+      setImageSource("web_search");
       setScheduleEnabled(true);
       setJitterMinutes(0);
       setPersonaId(NONE_PERSONA);
       setPlatformFilter("all");
       setGroupFilter("all");
       setSelectedAccountIds([]);
+      setSelectedTopicSourceValues([]);
       setAdvancedOpen(false);
     }
     setFieldErrors({});
     setTouchedFields({});
-  }, [open, mode, task]);
+  }, [mode, open, task]);
 
   /** 模型目录就绪后设置选中项：新建默认第一项；编辑沿用任务模型（无效则第一项）。不依赖本 effect 重置其它表单字段。 */
   React.useEffect(() => {
@@ -357,17 +456,28 @@ export function ScheduledTaskDialog({
     }
   }, [open, mode, task, modelsQuery.data?.models]);
 
-  const createMutation = useMutation({
-    mutationFn: createScheduledPublishTask,
-    onSuccess: () => {
-      toast.success(t("toast.createSuccess"));
+  const handleSaveSuccess = React.useCallback(
+    (message: string) => {
+      toast.success(message);
       void queryClient.invalidateQueries({
         queryKey: ["auto-publish", "tasks"],
       });
       onOpenChange(false);
     },
-    onError: (e) =>
-      toast.error(getApiErrorMessage(e, t("toast.saveFailed"))),
+    [onOpenChange, queryClient],
+  );
+
+  const handleSaveError = React.useCallback(
+    (error: unknown) => {
+      toast.error(getApiErrorMessage(error, t("toast.saveFailed")));
+    },
+    [t],
+  );
+
+  const createMutation = useMutation({
+    mutationFn: createScheduledPublishTask,
+    onSuccess: () => handleSaveSuccess(t("toast.createSuccess")),
+    onError: handleSaveError,
   });
 
   const updateMutation = useMutation({
@@ -378,32 +488,59 @@ export function ScheduledTaskDialog({
       id: string;
       body: Parameters<typeof updateScheduledPublishTask>[1];
     }) => updateScheduledPublishTask(id, body),
-    onSuccess: () => {
-      toast.success(t("toast.updateSuccess"));
-      void queryClient.invalidateQueries({
-        queryKey: ["auto-publish", "tasks"],
-      });
-      onOpenChange(false);
-    },
-    onError: (e) =>
-      toast.error(getApiErrorMessage(e, t("toast.saveFailed"))),
+    onSuccess: () => handleSaveSuccess(t("toast.updateSuccess")),
+    onError: handleSaveError,
   });
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const optimizePromptMutation = useMutation({
+    mutationFn: optimizeScheduledPublishPrompt,
+    onSuccess: (response) => {
+      const nextPrompt = extractOptimizedPrompt(response);
+      if (!nextPrompt) {
+        toast.error(t("dialog.optimizePrompt.invalidResponse"));
+        return;
+      }
+      setPrompt(nextPrompt);
+      clearFieldError("prompt");
+      toast.success(t("dialog.optimizePrompt.success"));
+    },
+    onError: (e) =>
+      toast.error(
+        getApiErrorMessage(e, t("dialog.optimizePrompt.failed")),
+      ),
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    optimizePromptMutation.isPending;
 
   function onSubmit() {
-    const publish_targets = buildPublishTargetsFromAccountIds(
+    const nextErrors: ScheduledDialogFieldErrors = {};
+    const trimmedName = name.trim();
+    const trimmedPrompt = prompt.trim();
+    const trimmedScheduleText = scheduleText.trim();
+    const publishTargets = buildPublishTargetsFromAccountIds(
       selectedAccountIds,
       accountsById,
     );
-    const nextErrors: ScheduledDialogFieldErrors = {};
-    if (!name.trim()) nextErrors.name = t("dialog.validation.name");
-    if (!prompt.trim()) nextErrors.prompt = t("dialog.validation.prompt");
-    if (!scheduleText.trim()) {
-      nextErrors.scheduleText = t("dialog.validation.scheduleText");
-    }
-    if (Object.keys(publish_targets).length === 0) {
-      nextErrors.accounts = t("dialog.validation.accounts");
+    const topicSourceBindings: ScheduledPublishTopicSourceBinding[] =
+      selectedTopicSourceValues.map((value) => {
+        return {
+          board_id: value,
+          item_limit: 20,
+        };
+      });
+
+    nextErrors.name = validateField("name");
+    nextErrors.prompt = validateField("prompt");
+    nextErrors.scheduleText = validateField("scheduleText");
+    nextErrors.accounts = validateField("accounts");
+
+    for (const key of Object.keys(nextErrors) as (keyof ScheduledDialogFieldErrors)[]) {
+      if (!nextErrors[key]) {
+        delete nextErrors[key];
+      }
     }
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
@@ -419,18 +556,19 @@ export function ScheduledTaskDialog({
     setFieldErrors({});
 
     const model_name = modelSelect.trim() || null;
-    const persona_id =
-      personaId === NONE_PERSONA ? null : personaId;
-    const schedule_text = scheduleText.trim();
+    const persona_id = personaId === NONE_PERSONA ? null : personaId;
 
     if (mode === "create") {
       createMutation.mutate({
-        name: name.trim(),
-        prompt: prompt.trim(),
+        name: trimmedName,
+        prompt: trimmedPrompt,
         image_source: imageSource,
         timezone,
-        schedule_text,
-        publish_targets,
+        schedule_text: trimmedScheduleText,
+        publish_targets: publishTargets,
+        ...(topicSourceBindings.length > 0
+          ? { topic_source_bindings: topicSourceBindings }
+          : {}),
         schedule_enabled: scheduleEnabled,
         jitter_minutes: jitterMinutes,
         persona_id: persona_id ?? undefined,
@@ -443,16 +581,19 @@ export function ScheduledTaskDialog({
     updateMutation.mutate({
       id: task.id,
       body: {
-        name: name.trim(),
-        prompt: prompt.trim(),
+        name: trimmedName,
+        prompt: trimmedPrompt,
         model_name,
         schedule_enabled: scheduleEnabled,
         jitter_minutes: jitterMinutes,
         persona_id,
         image_source: imageSource,
         timezone,
-        schedule_text,
-        publish_targets,
+        schedule_text: trimmedScheduleText,
+        publish_targets: publishTargets,
+        ...(topicSourceBindings.length > 0
+          ? { topic_source_bindings: topicSourceBindings }
+          : {}),
       },
     });
   }
@@ -481,6 +622,52 @@ export function ScheduledTaskDialog({
     }
     return String(platformFilter);
   }, [platformFilter, t]);
+
+  const topicSourceBindingsLabel = t("dialog.fields.topicSourceBindings");
+  const topicSourceBindingsPlaceholder = t(
+    "dialog.placeholders.topicSourceBindings",
+  );
+  const topicSourceBindingsSearchPlaceholder = t(
+    "dialog.placeholders.searchTopicSourceBindings",
+  );
+  const emptyTopicSourceBindingsText = t("dialog.emptyTopicSourceBindings");
+  const imageSourceOptions = React.useMemo(
+    () =>
+      IMAGE_SOURCE_OPTIONS.map((value) => ({
+        value,
+        label: t(`dialog.imageSource.${value}`),
+      })),
+    [t],
+  );
+
+  function onOptimizePrompt() {
+    const trimmedName = name.trim();
+    const trimmedPrompt = prompt.trim();
+
+    if (!trimmedName) {
+      setTouchedFields((prev) => ({ ...prev, name: true }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        name: t("dialog.validation.name"),
+      }));
+      toast.error(t("dialog.optimizePrompt.needName"));
+      return;
+    }
+    if (!trimmedPrompt) {
+      setTouchedFields((prev) => ({ ...prev, prompt: true }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        prompt: t("dialog.validation.prompt"),
+      }));
+      toast.error(t("dialog.optimizePrompt.needPrompt"));
+      return;
+    }
+    optimizePromptMutation.mutate({
+      name: trimmedName,
+      prompt: trimmedPrompt,
+      persona_id: personaId === NONE_PERSONA ? null : personaId,
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -536,13 +723,66 @@ export function ScheduledTaskDialog({
             </div>
 
             <div className="space-y-2">
-              <label
-                htmlFor="st-prompt"
-                className="block text-sm font-medium leading-none"
+              <div className="text-sm font-medium leading-none">
+                {t("dialog.fields.persona")}
+              </div>
+              <Select
+                value={personaId}
+                onValueChange={(v) => setPersonaId(v ?? NONE_PERSONA)}
               >
-                {t("dialog.fields.prompt")}
-                <RequiredMark />
-              </label>
+                <SelectTrigger className="h-9 w-full bg-muted/40">
+                  <SelectValue placeholder={t("dialog.placeholders.persona")}>
+                    {(value) => {
+                      if (value == null || value === "") return null;
+                      if (value === NONE_PERSONA) {
+                        return t("dialog.personaNone");
+                      }
+                      const p = (personasQuery.data?.items ?? []).find(
+                        (x) => x.id === value,
+                      );
+                      if (p) {
+                        return `${p.name} (${p.platform})`;
+                      }
+                      return value;
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_PERSONA}>
+                    {t("dialog.personaNone")}
+                  </SelectItem>
+                  {(personasQuery.data?.items ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} ({p.platform})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <label
+                  htmlFor="st-prompt"
+                  className="block text-sm font-medium leading-none"
+                >
+                  {t("dialog.fields.prompt")}
+                  <RequiredMark />
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOptimizePrompt}
+                  disabled={optimizePromptMutation.isPending}
+                  className="h-7 px-2.5 text-xs"
+                >
+                  <WandSparklesIcon className="mr-1 size-3.5" />
+                  {optimizePromptMutation.isPending
+                    ? t("dialog.optimizePrompt.loading")
+                    : t("dialog.optimizePrompt.action")}
+                </Button>
+              </div>
               <div className="relative">
                 <Textarea
                   id="st-prompt"
@@ -675,12 +915,14 @@ export function ScheduledTaskDialog({
                     onValuesChange={(v) => {
                       setSelectedAccountIds(v);
                       if (touchedFields.accounts) {
-                        const publish_targets =
-                          buildPublishTargetsFromAccountIds(v, accountsById);
                         setFieldErrors((prev) => {
                           const next = { ...prev };
-                          if (Object.keys(publish_targets).length === 0) {
-                            next.accounts = t("dialog.validation.accounts");
+                          const nextAccountsError = validateField(
+                            "accounts",
+                            v,
+                          );
+                          if (nextAccountsError) {
+                            next.accounts = nextAccountsError;
                           } else {
                             delete next.accounts;
                           }
@@ -760,12 +1002,12 @@ export function ScheduledTaskDialog({
                 {t("dialog.fields.imageSource")}
               </div>
               <Select
-                value={imageSource ?? "__none__"}
+                value={imageSource ?? NONE_IMAGE_SOURCE}
                 onValueChange={(v) =>
                   setImageSource(
-                    v === "__none__"
+                    v === NONE_IMAGE_SOURCE
                       ? null
-                      : ((v ?? "ai_generate") as ScheduledPublishImageSource),
+                      : ((v ?? "web_search") as ScheduledPublishImageSource),
                   )
                 }
               >
@@ -773,73 +1015,48 @@ export function ScheduledTaskDialog({
                   <SelectValue>
                     {(value) => {
                       if (value == null || value === "") return null;
-                      if (value === "__none__") return t("dialog.imageSource.none");
-                      const key = value as ScheduledPublishImageSource;
-                      if (
-                        key === "ai_generate" ||
-                        key === "web_search" ||
-                        key === "media_library"
-                      ) {
-                        return t(`dialog.imageSource.${key}`);
+                      if (value === NONE_IMAGE_SOURCE) {
+                        return t("dialog.imageSource.none");
                       }
-                      return value;
+                      const key = value as ScheduledPublishImageSource;
+                      return (
+                        imageSourceOptions.find((option) => option.value === key)
+                          ?.label ?? value
+                      );
                     }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">
+                  <SelectItem value={NONE_IMAGE_SOURCE}>
                     {t("dialog.imageSource.none")}
                   </SelectItem>
-                  <SelectItem value="ai_generate">
-                    {t("dialog.imageSource.ai_generate")}
-                  </SelectItem>
-                  <SelectItem value="web_search">
-                    {t("dialog.imageSource.web_search")}
-                  </SelectItem>
-                  <SelectItem value="media_library">
-                    {t("dialog.imageSource.media_library")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium leading-none">
-                {t("dialog.fields.persona")}
-              </div>
-              <Select
-                value={personaId}
-                onValueChange={(v) => setPersonaId(v ?? NONE_PERSONA)}
-              >
-                <SelectTrigger className="h-9 w-full bg-muted/40">
-                  <SelectValue placeholder={t("dialog.placeholders.persona")}>
-                    {(value) => {
-                      if (value == null || value === "") return null;
-                      if (value === NONE_PERSONA) {
-                        return t("dialog.personaNone");
-                      }
-                      const p = (personasQuery.data?.items ?? []).find(
-                        (x) => x.id === value,
-                      );
-                      if (p) {
-                        return `${p.name} (${p.platform})`;
-                      }
-                      return value;
-                    }}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_PERSONA}>
-                    {t("dialog.personaNone")}
-                  </SelectItem>
-                  {(personasQuery.data?.items ?? []).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({p.platform})
+                  {imageSourceOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {boardOptions.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-sm font-medium leading-none">
+                  {topicSourceBindingsLabel}
+                </div>
+                <MultiSelect
+                  options={boardOptions}
+                  values={selectedTopicSourceValues}
+                  onValuesChange={setSelectedTopicSourceValues}
+                  resolveSelectedLabel={resolveBoardLabel}
+                  resolveSelectedAvatar={resolveBoardAvatar}
+                  placeholder={topicSourceBindingsPlaceholder}
+                  searchPlaceholder={topicSourceBindingsSearchPlaceholder}
+                  emptyText={emptyTopicSourceBindingsText}
+                  className="h-9 w-full bg-muted/40"
+                />
+              </div>
+            ) : null}
 
             <div className="overflow-hidden rounded-xl border border-border bg-muted/15">
               <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>

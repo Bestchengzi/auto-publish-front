@@ -97,7 +97,7 @@ export function AccountManagement() {
   );
   const [editingGroupName, setEditingGroupName] = React.useState("");
 
-  const [view, setView] = React.useState<"table" | "card">("card");
+  const [view, setView] = React.useState<"table" | "card">("table");
 
   const {
     query,

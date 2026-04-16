@@ -132,6 +132,7 @@ export function InputBox({
   onPersonaSelect,
   onDeletePersonaRequest,
   onEditPersonaRequest,
+  showPersonaManagementActions = false,
   ...props
 }: Omit<ComponentProps<typeof PromptInput>, "onSubmit"> & {
   assistantId?: string | null;
@@ -167,6 +168,7 @@ export function InputBox({
   onPersonaSelect?: (personaId: string | null) => void;
   onDeletePersonaRequest?: (persona: { id: string; name: string }) => void;
   onEditPersonaRequest?: (persona: { id: string; name: string }) => void;
+  showPersonaManagementActions?: boolean;
 }) {
   const { t } = useI18n();
   const searchParams = useSearchParams();
@@ -295,6 +297,11 @@ export function InputBox({
     }
     return null;
   }, [personas, selectedPersonaId]);
+  const canEditPersona =
+    showPersonaManagementActions && Boolean(onEditPersonaRequest);
+  const canDeletePersona =
+    showPersonaManagementActions && Boolean(onDeletePersonaRequest);
+  const hasPersonaManagementActions = canEditPersona || canDeletePersona;
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -634,48 +641,64 @@ export function InputBox({
                         onPersonaSelect(persona.id);
                         setPersonaMenuOpen(false);
                       }}
-                    >
+                      >
                       <span className="truncate">{persona.name}</span>
-                      <span className="relative ml-auto flex h-5 w-12 items-center justify-end">
-                        <span className="absolute inset-0 z-10 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          <Tooltip content={t.common.edit}>
-                            <button
-                              type="button"
-                              className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground group-hover:pointer-events-auto"
-                              aria-label={t.common.edit}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                event.preventDefault();
-                                setPersonaMenuOpen(false);
-                                onEditPersonaRequest?.({
-                                  id: persona.id,
-                                  name: persona.name,
-                                });
-                              }}
-                            >
-                              <PencilIcon className="size-[13px]" />
-                            </button>
-                          </Tooltip>
-                          <Tooltip content={t.common.delete}>
-                            <button
-                              type="button"
-                              className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-destructive group-hover:pointer-events-auto"
-                              aria-label={t.common.delete}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                event.preventDefault();
-                                setPersonaMenuOpen(false);
-                                onDeletePersonaRequest?.({
-                                  id: persona.id,
-                                  name: persona.name,
-                                });
-                              }}
-                            >
-                              <Trash2Icon className="size-[13px]" />
-                            </button>
-                          </Tooltip>
-                        </span>
-                        <span className="pointer-events-none absolute inset-0 flex items-center justify-end transition-opacity group-hover:opacity-0">
+                      <span
+                        className={cn(
+                          "relative ml-auto flex h-5 items-center justify-end",
+                          hasPersonaManagementActions ? "w-12" : "w-4",
+                        )}
+                      >
+                        {hasPersonaManagementActions ? (
+                          <span className="absolute inset-0 z-10 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            {canEditPersona ? (
+                              <Tooltip content={t.common.edit}>
+                                <button
+                                  type="button"
+                                  className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground group-hover:pointer-events-auto"
+                                  aria-label={t.common.edit}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    setPersonaMenuOpen(false);
+                                    onEditPersonaRequest?.({
+                                      id: persona.id,
+                                      name: persona.name,
+                                    });
+                                  }}
+                                >
+                                  <PencilIcon className="size-[13px]" />
+                                </button>
+                              </Tooltip>
+                            ) : null}
+                            {canDeletePersona ? (
+                              <Tooltip content={t.common.delete}>
+                                <button
+                                  type="button"
+                                  className="pointer-events-none inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-destructive group-hover:pointer-events-auto"
+                                  aria-label={t.common.delete}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    setPersonaMenuOpen(false);
+                                    onDeletePersonaRequest?.({
+                                      id: persona.id,
+                                      name: persona.name,
+                                    });
+                                  }}
+                                >
+                                  <Trash2Icon className="size-[13px]" />
+                                </button>
+                              </Tooltip>
+                            ) : null}
+                          </span>
+                        ) : null}
+                        <span
+                          className={cn(
+                            "pointer-events-none absolute inset-0 flex items-center justify-end transition-opacity",
+                            hasPersonaManagementActions && "group-hover:opacity-0",
+                          )}
+                        >
                           {selectedPersona?.id === persona.id ? (
                             <CheckIcon className="size-4" />
                           ) : (

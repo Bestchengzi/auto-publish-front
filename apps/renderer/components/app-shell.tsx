@@ -91,7 +91,7 @@ export async function AppShell({
                 icon={<PenSquareIcon className="size-4" />}
                 label={t("sidebar.items.creationCenter")}
               />
-              <NavItem
+              <AppShellProtectedNavItem
                 href={`/${locale}/topic-center`}
                 active={activeKey === "topicCenter"}
                 icon={<LightbulbIcon className="size-4" />}

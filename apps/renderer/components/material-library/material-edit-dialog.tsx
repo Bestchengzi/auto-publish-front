@@ -45,6 +45,7 @@ type MaterialEditDialogProps = {
   ungroupedLabel: string;
   typeLabel: string;
   tagsLabel: string;
+  tagsPlaceholder: string;
   uploadedAtLabel: string;
   fileSizeLabel: string;
   saveLabel: string;
@@ -76,6 +77,7 @@ export function MaterialEditDialog({
   ungroupedLabel,
   typeLabel,
   tagsLabel,
+  tagsPlaceholder,
   uploadedAtLabel,
   fileSizeLabel,
   saveLabel,
@@ -249,7 +251,7 @@ export function MaterialEditDialog({
                   id="material-tags"
                   value={tagsStr}
                   onChange={(e) => setTagsStr(e.target.value)}
-                  placeholder="时政、军事、国防"
+                  placeholder={tagsPlaceholder}
                   className="w-full"
                 />
               </div>

@@ -92,33 +92,16 @@ function parseSelectionMarkerFromThreadText(
   }
 
   const start = threadMessagesText.indexOf(MARKER_START);
-  const lines: string[] = [];
-
-  if (start !== -1) {
-    const end = threadMessagesText.indexOf(MARKER_END, start);
-    if (end === -1) return null;
-    const block = threadMessagesText
-      .slice(start + MARKER_START.length, end)
-      .trim();
-    lines.push(
-      ...block
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean),
-    );
-  } else {
-    // Fallback: support summary text (e.g. "我已完成填写：") for refresh replay.
-    const isSummaryText =
-      threadMessagesText.includes("我已完成填写") ||
-      threadMessagesText.includes("我已完成选择");
-    if (!isSummaryText) return null;
-    lines.push(
-      ...threadMessagesText
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean),
-    );
-  }
+  if (start === -1) return null;
+  const end = threadMessagesText.indexOf(MARKER_END, start);
+  if (end === -1) return null;
+  const block = threadMessagesText
+    .slice(start + MARKER_START.length, end)
+    .trim();
+  const lines = block
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   const out: PersonaBuilderSelection = { qa: {} };
   for (const line of lines) {
@@ -370,4 +353,3 @@ export function PersonaBuilderSelector({
     </div>
   );
 }
-

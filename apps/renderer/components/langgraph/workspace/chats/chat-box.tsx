@@ -1,5 +1,4 @@
 import {
-  CheckIcon,
   ChevronLeftIcon,
   FilesIcon,
   Loader2Icon,
@@ -417,15 +416,18 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   threadId,
 }) => {
   const tLanggraph = useTranslations("langgraph");
-  const td = (
-    key: string,
-    fallback: string,
-    values?: Record<string, string | number>,
-  ) => {
-    const fullKey = `coverDrawer.${key}`;
-    if (!tLanggraph.has(fullKey)) return fallback;
-    return values ? tLanggraph(fullKey, values) : tLanggraph(fullKey);
-  };
+  const td = useCallback(
+    (
+      key: string,
+      fallback: string,
+      values?: Record<string, string | number>,
+    ) => {
+      const fullKey = `coverDrawer.${key}`;
+      if (!tLanggraph.has(fullKey)) return fallback;
+      return values ? tLanggraph(fullKey, values) : tLanggraph(fullKey);
+    },
+    [tLanggraph],
+  );
   const { thread } = useThread();
   const threadIdRef = useRef(threadId);
   const layoutRef = useRef<GroupImperativeHandle>(null);

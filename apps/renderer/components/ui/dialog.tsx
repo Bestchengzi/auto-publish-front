@@ -48,7 +48,7 @@ function DialogContent({
     <DialogPortal>
       <DialogBackdrop
         className={cn(
-          "fixed inset-0 z-50 bg-black/50",
+          "fixed inset-0 z-50 bg-black/50 backface-hidden [will-change:opacity] [transform:translateZ(0)]",
           "duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           "motion-reduce:transition-none motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none",
         )}
@@ -57,8 +57,8 @@ function DialogContent({
         <DialogPopup
           data-slot="dialog-content"
           className={cn(
-            "relative w-full max-w-lg rounded-xl border bg-background px-6 py-4 shadow-lg outline-none",
-            "origin-center backface-hidden",
+            "relative isolate w-full max-w-lg rounded-xl border bg-background px-6 py-4 shadow-lg outline-none",
+            "origin-center backface-hidden transform-gpu will-change-transform",
             "duration-200 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:slide-in-from-top-2",
             "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:slide-out-to-top-2",
             "motion-reduce:transition-none motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none",

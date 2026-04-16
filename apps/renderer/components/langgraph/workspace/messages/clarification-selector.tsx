@@ -98,12 +98,33 @@ function parseQuestionsFromToolArgs(
 function parseSelectionMarkerFromThreadText(
   threadMessagesText: string,
 ): ClarificationSelection | null {
+  function splitQuestionAnswerLine(
+    line: string,
+  ): { question: string; answer: string } | null {
+    const raw = line.replace(/^- /, "").trim();
+    if (!raw) return null;
+
+    // Use the LAST separator because question text itself may include `：`
+    // (for example, "您的可用在线账号有：头条号、百家号、知乎、CSDN").
+    const sepIdxCN = raw.lastIndexOf("：");
+    const sepIdxEN = raw.lastIndexOf(":");
+    const sepIdx = Math.max(sepIdxCN, sepIdxEN);
+    if (sepIdx <= 0 || sepIdx >= raw.length - 1) return null;
+
+    const question = raw.slice(0, sepIdx).trim();
+    const answer = raw.slice(sepIdx + 1).trim();
+    if (!question || !answer) return null;
+    return { question, answer };
+  }
+
   const start = threadMessagesText.indexOf(MARKER_START);
   if (start === -1) return null;
   const end = threadMessagesText.indexOf(MARKER_END, start);
   if (end === -1) return null;
 
-  const block = threadMessagesText.slice(start + MARKER_START.length, end).trim();
+  const block = threadMessagesText
+    .slice(start + MARKER_START.length, end)
+    .trim();
   const lines = block
     .split("\n")
     .map((l) => l.trim())
@@ -117,11 +138,10 @@ function parseSelectionMarkerFromThreadText(
       continue;
     }
 
-    // Pair line: <question>：<option>
-    const pair = /^(?:- )?(.+?)[:：]\s*(.+)$/.exec(line);
+    const pair = splitQuestionAnswerLine(line);
     if (!pair) continue;
-    const q = normalizeForMatch(pair[1] ?? "");
-    const a = (pair[2] ?? "").trim();
+    const q = normalizeForMatch(pair.question);
+    const a = pair.answer;
     if (!q || !a) continue;
     out.qa[q] = a;
   }
@@ -468,4 +488,3 @@ export function ClarificationSelector({
     </div>
   );
 }
-
