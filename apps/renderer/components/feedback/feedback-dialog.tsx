@@ -18,10 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-const TITLE_MAX_LENGTH = 200;
-const CONTENT_MAX_LENGTH = 5000;
-const CONTACT_MAX_LENGTH = 128;
-
 type FeedbackDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -170,7 +166,6 @@ export function FeedbackDialog({
               <Input
                 id="feedback-title"
                 value={title}
-                maxLength={TITLE_MAX_LENGTH}
                 aria-invalid={Boolean(touchedFields.title && fieldErrors.title)}
                 aria-describedby={
                   touchedFields.title && fieldErrors.title
@@ -211,7 +206,6 @@ export function FeedbackDialog({
               <Textarea
                 id="feedback-content"
                 rows={6}
-                maxLength={CONTENT_MAX_LENGTH}
                 resizeMode="vertical"
                 value={content}
                 aria-invalid={Boolean(touchedFields.content && fieldErrors.content)}
@@ -252,7 +246,6 @@ export function FeedbackDialog({
             <Input
               id="feedback-contact"
               value={contact}
-              maxLength={CONTACT_MAX_LENGTH}
               className="bg-muted/40"
               placeholder={t("fields.contact.placeholder")}
               onChange={(event) => setContact(event.target.value)}

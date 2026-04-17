@@ -21,12 +21,15 @@ export interface LoginDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLoginSuccess?: () => void;
+  inviteCode?: string | null;
 }
 
 function WeChatQRContent({
   onLoginSuccess,
+  inviteCode,
 }: {
   onLoginSuccess: () => void;
+  inviteCode?: string | null;
 }) {
   const queryClient = useQueryClient();
   const t = useTranslations("auth.loginDialog");
@@ -69,7 +72,7 @@ function WeChatQRContent({
   const fetchQRCode = useCallback(async () => {
     try {
       setStatus("loading");
-      const data = await getWechatParamQrcode();
+      const data = await getWechatParamQrcode(inviteCode);
       setQrcodeUrl(data.url);
       setTicket(data.id);
       setStatus("pending");
@@ -83,7 +86,7 @@ function WeChatQRContent({
         void fetchQRCode();
       }, 1000);
     }
-  }, [t]);
+  }, [inviteCode, t]);
 
   useEffect(() => {
     if (status === "loading" && !qrcodeUrl) {
@@ -226,6 +229,7 @@ export function LoginDialog({
   open,
   onOpenChange,
   onLoginSuccess,
+  inviteCode,
 }: LoginDialogProps) {
   const t = useTranslations("auth.loginDialog");
   const [session, setSession] = useState(0);
@@ -235,6 +239,14 @@ export function LoginDialog({
   }, [open]);
 
   const handleLoginSuccess = () => {
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      if (currentUrl.searchParams.has("invite")) {
+        currentUrl.searchParams.delete("invite");
+        const nextUrl = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+        window.history.replaceState(null, "", nextUrl);
+      }
+    }
     onLoginSuccess?.();
     onOpenChange(false);
   };
@@ -284,6 +296,7 @@ export function LoginDialog({
           <WeChatQRContent
             key={session}
             onLoginSuccess={handleLoginSuccess}
+            inviteCode={inviteCode}
           />
         </div>
       </DialogContent>

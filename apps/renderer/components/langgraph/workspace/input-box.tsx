@@ -14,7 +14,7 @@ import {
   Trash2Icon,
   ZapIcon,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+// import { useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -42,16 +42,16 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from "@/components/langgraph/ai-elements/prompt-input";
-import { Button } from "@/components/ui/button";
-import { ConfettiButton } from "@/components/ui/confetti-button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// import { Button } from "@/components/ui/button";
+// import { ConfettiButton } from "@/components/ui/confetti-button";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
 import {
   DropdownMenuGroup,
   DropdownMenuLabel,
@@ -59,19 +59,19 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { getBackendBaseURL } from "@/lib/langgraph/core/config";
+// import { getBackendBaseURL } from "@/lib/langgraph/core/config";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useModels } from "@/lib/langgraph/core/models/hooks";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
-import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
+// import { textOfMessage } from "@/lib/langgraph/core/threads/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
-import { request } from "@/lib/request";
+// import { request } from "@/lib/request";
 import { cn } from "@/lib/utils";
 
-import {
-  Suggestion,
-  Suggestions,
-} from "@/components/langgraph/ai-elements/suggestion";
+// import {
+//   Suggestion,
+//   Suggestions,
+// } from "@/components/langgraph/ai-elements/suggestion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,7 +79,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useThread } from "./messages/context";
+// import { useThread } from "./messages/context";
 import { ModeHoverGuide } from "./mode-hover-guide";
 import { Tooltip } from "./tooltip";
 
@@ -171,25 +171,27 @@ export function InputBox({
   showPersonaManagementActions?: boolean;
 }) {
   const { t } = useI18n();
-  const searchParams = useSearchParams();
+  // 建议功能暂时停用：保留原逻辑位置，后续需要恢复时再放开。
+  // const searchParams = useSearchParams();
   const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
   const canUseAuthFeatures = authReady && isLoggedIn;
   const { models } = useModels({ enabled: canUseAuthFeatures });
-  const { thread } = useThread();
+  // const { thread } = useThread();
   const { textInput } = usePromptInputController();
   const attachments = usePromptInputAttachments();
   const promptRootRef = useRef<HTMLDivElement | null>(null);
 
-  const [followups, setFollowups] = useState<string[]>([]);
-  const [followupsHidden, setFollowupsHidden] = useState(false);
-  const [followupsLoading, setFollowupsLoading] = useState(false);
+  // 建议接口 `/api/threads/:threadId/suggestions` 相关状态暂时停用。
+  // const [followups, setFollowups] = useState<string[]>([]);
+  // const [followupsHidden, setFollowupsHidden] = useState(false);
+  // const [followupsLoading, setFollowupsLoading] = useState(false);
   const lastGeneratedForAiIdRef = useRef<string | null>(null);
   const wasStreamingRef = useRef(false);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(
-    null,
-  );
+  // const [confirmOpen, setConfirmOpen] = useState(false);
+  // const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(
+  //   null,
+  // );
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [reasoningEffortMenuOpen, setReasoningEffortMenuOpen] = useState(false);
   const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
@@ -312,14 +314,16 @@ export function InputBox({
       if (!message.text) {
         return;
       }
-      setFollowups([]);
-      setFollowupsHidden(false);
-      setFollowupsLoading(false);
+      // 建议能力暂时停用。
+      // setFollowups([]);
+      // setFollowupsHidden(false);
+      // setFollowupsLoading(false);
       onSubmit?.(message);
     },
     [onSubmit, onStop, status],
   );
 
+  /*
   const requestFormSubmit = useCallback(() => {
     const form = promptRootRef.current?.querySelector("form");
     form?.requestSubmit();
@@ -420,6 +424,7 @@ export function InputBox({
 
     return () => controller.abort();
   }, [context.model_name, disabled, status, thread.messages, threadId]);
+  */
 
   return (
     <div ref={promptRootRef} className="relative">
@@ -925,77 +930,55 @@ export function InputBox({
             />
           </PromptInputTools>
         </PromptInputFooter>
-        {isNewThread && searchParams.get("mode") !== "skill" && (
-          <div className="absolute right-0 -bottom-20 left-0 z-0 flex items-center justify-center">
-            <SuggestionList />
-          </div>
-        )}
+        {/*
+          建议按钮区暂时停用，先保留原实现以便后续恢复。
+          {isNewThread && searchParams.get("mode") !== "skill" && (
+            <div className="absolute right-0 -bottom-20 left-0 z-0 flex items-center justify-center">
+              <SuggestionList />
+            </div>
+          )}
+        */}
         {!isNewThread && (
           <div className="bg-background absolute right-0 -bottom-[17px] left-0 z-0 h-4"></div>
         )}
       </PromptInput>
 
-      {!disabled &&
-        !isNewThread &&
-        !followupsHidden &&
-        (followupsLoading || followups.length > 0) && (
-          // <div className="absolute right-0 -top-20 left-0 z-20 flex items-center justify-center">
-          //   <div className="flex items-center gap-2">
-          //     {followupsLoading ? (
-          //       <div className="text-muted-foreground rounded-full border border-border bg-background/80 px-4 py-2 text-xs backdrop-blur-sm dark:bg-card dark:backdrop-blur-none">
-          //         {t.inputBox.followupLoading}
-          //       </div>
-          //     ) : (
-          //       <Suggestions className="min-h-16 w-fit items-start">
-          //         {followups.map((s) => (
-          //           <Suggestion
-          //             key={s}
-          //             suggestion={s}
-          //             onClick={() => handleFollowupClick(s)}
-          //           />
-          //         ))}
-          //         <Button
-          //           aria-label={t.common.close}
-          //           className="text-muted-foreground cursor-pointer rounded-full px-3 text-xs font-normal dark:border-border dark:bg-card dark:hover:bg-muted"
-          //           variant="outline"
-          //           size="sm"
-          //           type="button"
-          //           onClick={() => setFollowupsHidden(true)}
-          //         >
-          //           <XIcon className="size-4" />
-          //         </Button>
-          //       </Suggestions>
-          //     )}
-          //   </div>
-          // </div>
-          <div></div>
-        )}
+      {/*
+        旧的追问建议展示区与确认弹窗暂时停用。
+        {!disabled &&
+          !isNewThread &&
+          !followupsHidden &&
+          (followupsLoading || followups.length > 0) && (
+            <div></div>
+          )}
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t.inputBox.followupConfirmTitle}</DialogTitle>
-            <DialogDescription>
-              {t.inputBox.followupConfirmDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              {t.common.cancel}
-            </Button>
-            <Button variant="secondary" onClick={confirmAppendAndSend}>
-              {t.inputBox.followupConfirmAppend}
-            </Button>
-            <Button onClick={confirmReplaceAndSend}>
-              {t.inputBox.followupConfirmReplace}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t.inputBox.followupConfirmTitle}</DialogTitle>
+              <DialogDescription>
+                {t.inputBox.followupConfirmDescription}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                {t.common.cancel}
+              </Button>
+              <Button variant="secondary" onClick={confirmAppendAndSend}>
+                {t.inputBox.followupConfirmAppend}
+              </Button>
+              <Button onClick={confirmReplaceAndSend}>
+                {t.inputBox.followupConfirmReplace}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      */}
     </div>
   );
 }
 
+/*
 function SuggestionList() {
   const { t } = useI18n();
   const { textInput } = usePromptInputController();
@@ -1065,6 +1048,7 @@ function SuggestionList() {
     </Suggestions>
   );
 }
+*/
 
 function AddAttachmentsButton({
   className,

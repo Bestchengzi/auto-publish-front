@@ -67,8 +67,12 @@ function normalizeScanTokenResponse(raw: unknown): WechatScanTokenResponse | nul
   };
 }
 
-export async function getWechatParamQrcode(): Promise<WechatParamQrcodeResponse> {
-  return request<WechatParamQrcodeResponse>(apiUrl("/api/wechat/param_qrcode"), {
+export async function getWechatParamQrcode(
+  inviteCode?: string | null,
+): Promise<WechatParamQrcodeResponse> {
+  const invite = typeof inviteCode === "string" ? inviteCode.trim() : "";
+  const query = invite.length > 0 ? `?invite_code=${encodeURIComponent(invite)}` : "";
+  return request<WechatParamQrcodeResponse>(apiUrl(`/api/wechat/param_qrcode${query}`), {
     method: "GET",
   });
 }

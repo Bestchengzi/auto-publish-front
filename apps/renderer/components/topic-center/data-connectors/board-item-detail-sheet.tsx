@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLinkIcon, GlobeIcon } from "lucide-react";
+import { ExternalLinkIcon, GlobeIcon, LanguagesIcon } from "lucide-react";
 import dayjs from "dayjs";
 
 import {
@@ -34,6 +34,15 @@ type BoardItemDetailSheetProps = {
   }) => Promise<void>;
   creating?: boolean;
   t: TopicCenterTranslator;
+};
+
+type DetailDisplayLanguage = "zh" | "original";
+
+type DetailContentVariants = {
+  originalTitle: string;
+  translatedTitle: string | null;
+  originalBody: string;
+  translatedBody: string | null;
 };
 
 function pickString(value: unknown): string | null {
@@ -69,37 +78,68 @@ function pickNestedExtraString(
   return null;
 }
 
-function resolveDetailTitle(
+function resolveOriginalDetailTitle(
   detail: TopicBoardItemDetailResponse | undefined,
   item: TopicDataListItemResponse | null,
 ): string {
   return (
     pickString(detail?.title) ??
-    pickExtraString(detail?.extra, ["zh_title", "zhTitle", "title"]) ??
+    pickExtraString(detail?.extra, ["title"]) ??
     pickString(item?.title) ??
+    pickExtraString(item?.extra, ["title"]) ??
     ""
   );
 }
 
-function resolveDetailBody(
+function resolveTranslatedDetailTitle(
+  detail: TopicBoardItemDetailResponse | undefined,
+  item: TopicDataListItemResponse | null,
+): string | null {
+  return (
+    pickString(detail?.title_zh) ??
+    pickExtraString(detail?.extra, ["title_zh", "zh_title", "titleZh", "zhTitle"]) ??
+    pickString(item?.title_zh) ??
+    pickExtraString(item?.extra, ["title_zh", "zh_title", "titleZh", "zhTitle"])
+  );
+}
+
+function resolveOriginalDetailBody(
   detail: TopicBoardItemDetailResponse | undefined,
   item: TopicDataListItemResponse | null,
 ): string {
   return (
     pickString(detail?.content_text) ??
     pickString(detail?.content) ??
-    pickExtraString(detail?.extra, [
-      "zh_content",
-      "zhContent",
-      "content_text",
-      "content",
-      "full_text",
-      "body",
-    ]) ??
+    pickExtraString(detail?.extra, ["content_text", "content", "full_text", "body"]) ??
+    pickExtraString(item?.extra, ["content_text", "content", "full_text", "body"]) ??
     pickString(detail?.summary) ??
     pickString(item?.summary) ??
     ""
   );
+}
+
+function resolveTranslatedDetailBody(
+  detail: TopicBoardItemDetailResponse | undefined,
+  item: TopicDataListItemResponse | null,
+): string | null {
+  return (
+    pickString(detail?.content_zh) ??
+    pickExtraString(detail?.extra, ["content_zh", "zh_content", "contentZh", "zhContent"]) ??
+    pickString(item?.content_zh) ??
+    pickExtraString(item?.extra, ["content_zh", "zh_content", "contentZh", "zhContent"])
+  );
+}
+
+function resolveDetailContentVariants(
+  detail: TopicBoardItemDetailResponse | undefined,
+  item: TopicDataListItemResponse | null,
+): DetailContentVariants {
+  return {
+    originalTitle: resolveOriginalDetailTitle(detail, item),
+    translatedTitle: resolveTranslatedDetailTitle(detail, item),
+    originalBody: resolveOriginalDetailBody(detail, item),
+    translatedBody: resolveTranslatedDetailBody(detail, item),
+  };
 }
 
 function formatPublishedAt(value: string | null | undefined): string | null {
@@ -240,12 +280,29 @@ export function BoardItemDetailSheet({
   });
 
   const detail = detailQuery.data;
-  const title = resolveDetailTitle(detail, item);
-  const body = resolveDetailBody(detail, item);
+  const contentVariants = React.useMemo(
+    () => resolveDetailContentVariants(detail, item),
+    [detail, item],
+  );
+  const hasTranslatedContent = Boolean(
+    contentVariants.translatedTitle || contentVariants.translatedBody,
+  );
+  const [languageOverride, setLanguageOverride] =
+    React.useState<DetailDisplayLanguage | null>(null);
   const sourceName = resolveSourceName(detail, item);
   const sourceIconUrl = resolveLogoSrc(resolveSourceLogo(detail, item));
   const mediaType = resolveMediaType(detail, item);
   const [logoLoadFailed, setLogoLoadFailed] = React.useState(false);
+  const displayLanguage: DetailDisplayLanguage =
+    languageOverride ?? (hasTranslatedContent ? "zh" : "original");
+  const title =
+    displayLanguage === "zh"
+      ? contentVariants.translatedTitle ?? contentVariants.originalTitle
+      : contentVariants.originalTitle || contentVariants.translatedTitle || "";
+  const body =
+    displayLanguage === "zh"
+      ? contentVariants.translatedBody ?? contentVariants.originalBody
+      : contentVariants.originalBody || contentVariants.translatedBody || "";
   const publishedAt =
     formatPublishedAt(detail?.published_at) ?? formatPublishedAt(item?.published_at ?? null);
   const originalUrl =
@@ -279,6 +336,11 @@ export function BoardItemDetailSheet({
   React.useEffect(() => {
     setLogoLoadFailed(false);
   }, [sourceIconUrl]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setLanguageOverride(null);
+  }, [itemId, open]);
 
   const handleCreate = React.useCallback(async () => {
     await onCreate({
@@ -373,7 +435,7 @@ export function BoardItemDetailSheet({
                   </h2>
                 ) : null}
 
-                {(publishedAt || mediaType || originalUrl) && (
+                {(publishedAt || mediaType || originalUrl || hasTranslatedContent) && (
                   <div className="mb-8 flex flex-col gap-3 border-b border-gray-200 pb-6 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
                     <div className="flex flex-wrap items-center gap-4">
                       {publishedAt ? (
@@ -398,6 +460,29 @@ export function BoardItemDetailSheet({
                         </a>
                       ) : null}
                     </div>
+                    {hasTranslatedContent ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-lg"
+                        className="rounded-xl text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:border-primary/30 focus-visible:ring-primary/20 dark:hover:bg-primary/15 dark:hover:text-primary"
+                        onClick={() =>
+                          setLanguageOverride(displayLanguage === "zh" ? "original" : "zh")
+                        }
+                        aria-label={
+                          displayLanguage === "zh"
+                            ? t("dataConnectors.boardDetail.switchToOriginal")
+                            : t("dataConnectors.boardDetail.switchToChinese")
+                        }
+                        title={
+                          displayLanguage === "zh"
+                            ? t("dataConnectors.boardDetail.switchToOriginal")
+                            : t("dataConnectors.boardDetail.switchToChinese")
+                        }
+                      >
+                        <LanguagesIcon className="size-[18px]" />
+                      </Button>
+                    ) : null}
                   </div>
                 )}
 

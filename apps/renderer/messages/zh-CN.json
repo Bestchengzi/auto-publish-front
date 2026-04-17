@@ -72,6 +72,7 @@
       "profileSettings": "个人设置",
       "visitWebsite": "访问官网",
       "buyPlan": "购买套餐",
+      "earnPoints": "赚取积分",
       "feedback": "用户反馈",
       "logout": "退出登录",
       "personal": "个人",
@@ -85,7 +86,29 @@
       "accent": "主色",
       "accentNeutral": "黑色",
       "accentBlue": "蓝色",
-      "accentViolet": "紫色"
+      "accentViolet": "紫色",
+      "earnPointsDialog": {
+        "title": "赚取积分",
+        "description": "分享你的专属邀请链接，邀请好友注册即可获得积分奖励。",
+        "shareTitle": "分享邀请",
+        "copy": "复制链接",
+        "copySuccess": "邀请链接已复制",
+        "copyFailed": "复制失败，请手动复制",
+        "emptyInviteCode": "邀请码生成中，请稍后重试",
+        "stepsTitle": "赢取积分流程",
+        "step1": {
+          "title": "分享专属邀请链接",
+          "description": "复制邀请链接并分享给好友。"
+        },
+        "step2": {
+          "title": "好友注册成功",
+          "description": "好友通过邀请链接或海报完成注册。"
+        },
+        "step3": {
+          "title": "获得积分奖励",
+          "description": "每成功邀请 1 位新用户注册，您和好友各得 500 积分；好友首次充值时，您还可获得额外奖励。"
+        }
+      }
     }
   },
   "feedback": {
@@ -425,7 +448,11 @@
         "creating": "创作中...",
         "loadError": "新闻详情加载失败，请稍后重试",
         "viewOriginal": "查看原文",
-        "emptyContent": "暂无正文"
+        "emptyContent": "暂无正文",
+        "languageChinese": "中文",
+        "languageOriginal": "原文",
+        "switchToChinese": "切换为中文",
+        "switchToOriginal": "切换为原文"
       },
       "providerDialog": {
         "loadError": "可选应用加载失败"
@@ -512,6 +539,13 @@
       "edit": "编辑",
       "runNow": "立即执行",
       "delete": "删除"
+    },
+    "runStatus": {
+      "queued": "排队中",
+      "running": "执行中",
+      "success": "成功",
+      "partialSuccess": "部分成功",
+      "failed": "失败"
     },
     "toast": {
       "createSuccess": "已创建定时任务",

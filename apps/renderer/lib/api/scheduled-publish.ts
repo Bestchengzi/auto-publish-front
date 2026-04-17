@@ -33,6 +33,20 @@ export type ScheduledPublishTopicSourceBinding = {
   item_limit: number;
 };
 
+export type ScheduledPublishReasoningMode = "flash" | "thinking" | "pro";
+
+export type ScheduledPublishReasoningEffort =
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high";
+
+export type ScheduledPublishReasoningSettings = {
+  thinking_enabled?: boolean;
+  is_plan_mode?: boolean;
+  reasoning_effort?: ScheduledPublishReasoningEffort | null;
+};
+
 export type ScheduledPublishTaskCreateBody = {
   name: string;
   prompt: string;
@@ -46,7 +60,7 @@ export type ScheduledPublishTaskCreateBody = {
   schedule_text: string;
   publish_targets: PublishTargetsMap;
   topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
-};
+} & ScheduledPublishReasoningSettings;
 
 export type ScheduledPublishTaskUpdateBody = {
   name: string;
@@ -60,7 +74,7 @@ export type ScheduledPublishTaskUpdateBody = {
   schedule_text: string;
   publish_targets: PublishTargetsMap;
   topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
-};
+} & ScheduledPublishReasoningSettings;
 
 export type ScheduledPublishLastRunStatus =
   | "queued"
@@ -85,9 +99,13 @@ export type ScheduledPublishTaskResponse = {
   schedule: ScheduledPublishCronSchedule;
   publish_targets: PublishTargetsMap;
   topic_source_bindings?: ScheduledPublishTopicSourceBinding[];
+  thinking_enabled?: boolean;
+  is_plan_mode?: boolean;
+  reasoning_effort?: ScheduledPublishReasoningEffort | null;
   next_run_at: string;
   last_run_at: string | null;
   last_run_status: ScheduledPublishLastRunStatus | null;
+  last_run_error_message?: string | null;
   created_at: string;
   updated_at: string;
 };

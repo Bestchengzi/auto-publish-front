@@ -64,6 +64,15 @@ function AuthRouteGuardInner({
   ]);
 
   useEffect(() => {
+    if (!ready || isLoggedIn || !pathname) return;
+    if (normalizedPath !== targetPath) return;
+    const inviteCode = searchParams.get("invite")?.trim() ?? "";
+    if (!inviteCode) return;
+
+    window.dispatchEvent(new Event("media-auth-open-login"));
+  }, [isLoggedIn, normalizedPath, pathname, ready, searchParams, targetPath]);
+
+  useEffect(() => {
     if (!ready || !pathname) return;
     if (normalizedPath !== targetPath) return;
     if (searchParams.get(purchaseFlag) !== "1") return;

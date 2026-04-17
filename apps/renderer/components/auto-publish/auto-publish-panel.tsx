@@ -67,6 +67,9 @@ function taskRowToUpdateBody(
     timezone: row.timezone,
     schedule_text: row.schedule_text?.trim() || row.schedule?.expression || "",
     publish_targets: row.publish_targets,
+    thinking_enabled: row.thinking_enabled,
+    is_plan_mode: row.is_plan_mode,
+    reasoning_effort: row.reasoning_effort,
     ...overrides,
   };
 }
@@ -109,6 +112,14 @@ function PromptCell({ text }: { text: string }) {
     </Tooltip>
   );
 }
+
+const LAST_RUN_STATUS_LABELS: Record<ScheduledPublishLastRunStatus, string> = {
+  queued: "runStatus.queued",
+  running: "runStatus.running",
+  success: "runStatus.success",
+  partial_success: "runStatus.partialSuccess",
+  failed: "runStatus.failed",
+};
 
 export function AutoPublishPanel() {
   const t = useTranslations("autoPublish");
@@ -196,8 +207,8 @@ export function AutoPublishPanel() {
 
   function statusLabel(s: ScheduledPublishLastRunStatus | null): string {
     if (!s) return "—";
-    const key = `runStatus.${s}` as const;
-    return t(key);
+    const key = LAST_RUN_STATUS_LABELS[s];
+    return key ? t(key) : s;
   }
 
   function lastRunStatusClassName(
@@ -218,6 +229,31 @@ export function AutoPublishPanel() {
       default:
         return "text-muted-foreground";
     }
+  }
+
+  function renderLastRunStatus(row: ScheduledPublishTaskResponse) {
+    const statusText = statusLabel(row.last_run_status);
+    const isFailed = row.last_run_status === "failed";
+    const errorMessage = row.last_run_error_message?.trim();
+    if (!isFailed || !errorMessage) {
+      return statusText;
+    }
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span className="inline-block cursor-help underline decoration-dotted underline-offset-2">
+              {statusText}
+            </span>
+          }
+        />
+        <TooltipContent side="top" className="max-w-md">
+          <p className="whitespace-pre-wrap break-words text-left">
+            {errorMessage}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    );
   }
 
   return (
@@ -331,7 +367,7 @@ export function AutoPublishPanel() {
                               lastRunStatusClassName(row.last_run_status),
                             )}
                           >
-                            {statusLabel(row.last_run_status)}
+                            {renderLastRunStatus(row)}
                           </TableCell>
                           <TableCell className="w-28 shrink-0 text-center">
                             <div className="flex justify-center">

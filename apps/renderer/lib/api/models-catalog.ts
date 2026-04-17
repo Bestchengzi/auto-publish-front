@@ -6,6 +6,8 @@ export type ModelCatalogItem = {
   name: string;
   display_name: string | null;
   description: string | null;
+  supports_thinking?: boolean;
+  supports_reasoning_effort?: boolean;
 };
 
 export type ModelsListResponse = {

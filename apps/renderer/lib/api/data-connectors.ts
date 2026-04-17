@@ -144,6 +144,8 @@ export type DataConnectionBoardSelectionRequest = {
 export type TopicDataListItemResponse = {
   item_id: string;
   title: string;
+  title_zh?: string | null;
+  content_zh?: string | null;
   source_name?: string | null;
   published_at?: string | null;
   summary?: string | null;
@@ -165,11 +167,13 @@ export type TopicBoardItemDetailResponse = {
   item_id: string;
   board_id?: string;
   title: string;
+  title_zh?: string | null;
   source_name?: string | null;
   source_url?: string | null;
   published_at?: string | null;
   summary?: string | null;
   content_text?: string | null;
+  content_zh?: string | null;
   content?: string | null;
   content_url?: string | null;
   cover_image_url?: string | null;

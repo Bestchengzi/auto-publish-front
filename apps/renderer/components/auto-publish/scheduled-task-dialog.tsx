@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ChevronDownIcon, WandSparklesIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  GraduationCapIcon,
+  LightbulbIcon,
+  WandSparklesIcon,
+  ZapIcon,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -49,6 +55,7 @@ import {
   type PublishTargetsMap,
   type ScheduledPublishImageSource,
   type ScheduledPublishPlatform,
+  type ScheduledPublishReasoningMode,
   type ScheduledPublishTaskResponse,
   type ScheduledPublishTopicSourceBinding,
   SCHEDULED_PUBLISH_PLATFORM_IDS,
@@ -65,6 +72,7 @@ const IMAGE_SOURCE_OPTIONS = [
   "web_search",
   "media_library",
 ] as const;
+const REASONING_MODE_OPTIONS = ["flash", "thinking", "pro"] as const;
 
 type ScheduledDialogFieldErrors = {
   name?: string;
@@ -163,6 +171,37 @@ function extractOptimizedPrompt(
   return null;
 }
 
+function getResolvedReasoningMode(
+  mode: ScheduledPublishReasoningMode | undefined,
+  supportsThinking: boolean | undefined,
+): ScheduledPublishReasoningMode {
+  if (supportsThinking === false && mode !== "flash") {
+    return "flash";
+  }
+  return mode ?? "flash";
+}
+
+function getReasoningModeFromTask(
+  task: ScheduledPublishTaskResponse | null,
+): ScheduledPublishReasoningMode {
+  if (task?.is_plan_mode) {
+    return "pro";
+  }
+  if (task?.thinking_enabled) {
+    return "thinking";
+  }
+  return "flash";
+}
+
+function getReasoningPayload(mode: ScheduledPublishReasoningMode) {
+  return {
+    thinking_enabled: mode !== "flash",
+    is_plan_mode: mode === "pro",
+    reasoning_effort:
+      mode === "pro" ? "medium" : mode === "thinking" ? "low" : "minimal",
+  } as const;
+}
+
 export function ScheduledTaskDialog({
   open,
   onOpenChange,
@@ -175,6 +214,7 @@ export function ScheduledTaskDialog({
   task: ScheduledPublishTaskResponse | null;
 }) {
   const t = useTranslations("autoPublish");
+  const tInputBox = useTranslations("langgraph.inputBox");
   const queryClient = useQueryClient();
   const [name, setName] = React.useState("");
   const [prompt, setPrompt] = React.useState("");
@@ -192,6 +232,8 @@ export function ScheduledTaskDialog({
     [],
   );
   const [modelSelect, setModelSelect] = React.useState<string>("");
+  const [reasoningMode, setReasoningMode] =
+    React.useState<ScheduledPublishReasoningMode>("flash");
   const [jitterMinutes, setJitterMinutes] = React.useState<number>(0);
   const [scheduleEnabled, setScheduleEnabled] = React.useState(true);
   const [personaId, setPersonaId] = React.useState<string>(NONE_PERSONA);
@@ -398,45 +440,40 @@ export function ScheduledTaskDialog({
 
   React.useEffect(() => {
     if (!open) return;
-    if (mode === "edit" && task) {
-      setName(task.name);
-      setPrompt(task.prompt);
-      setScheduleText(
-        task.schedule_text?.trim()
-          ? task.schedule_text
-          : (task.schedule?.expression ?? ""),
-      );
-      setImageSource(task.image_source);
-      setScheduleEnabled(task.schedule_enabled);
-      setJitterMinutes(
-        JITTER_MINUTES.includes(
-          task.jitter_minutes as (typeof JITTER_MINUTES)[number],
-        )
-          ? task.jitter_minutes
-          : 0,
-      );
-      setPersonaId(task.persona_id ?? NONE_PERSONA);
-      setPlatformFilter("all");
-      setGroupFilter("all");
-      setSelectedAccountIds(collectAccountIdsFromTargets(task.publish_targets));
-      setSelectedTopicSourceValues(
-        (task.topic_source_bindings ?? []).map((binding) => binding.board_id),
-      );
-      setAdvancedOpen(true);
-    } else {
-      setName("");
-      setPrompt("");
-      setScheduleText("");
-      setImageSource("web_search");
-      setScheduleEnabled(true);
-      setJitterMinutes(0);
-      setPersonaId(NONE_PERSONA);
-      setPlatformFilter("all");
-      setGroupFilter("all");
-      setSelectedAccountIds([]);
-      setSelectedTopicSourceValues([]);
-      setAdvancedOpen(false);
-    }
+    const currentTask = mode === "edit" ? task : null;
+    setName(currentTask?.name ?? "");
+    setPrompt(currentTask?.prompt ?? "");
+    setScheduleText(
+      currentTask?.schedule_text?.trim()
+        ? currentTask.schedule_text
+        : (currentTask?.schedule?.expression ?? ""),
+    );
+    setImageSource(currentTask?.image_source ?? "web_search");
+    setScheduleEnabled(currentTask?.schedule_enabled ?? true);
+    setJitterMinutes(
+      JITTER_MINUTES.includes(
+        (currentTask?.jitter_minutes ?? 0) as (typeof JITTER_MINUTES)[number],
+      )
+        ? (currentTask?.jitter_minutes ?? 0)
+        : 0,
+    );
+    setPersonaId(currentTask?.persona_id ?? NONE_PERSONA);
+    setPlatformFilter("all");
+    setGroupFilter("all");
+    setSelectedAccountIds(
+      currentTask
+        ? collectAccountIdsFromTargets(currentTask.publish_targets)
+        : [],
+    );
+    setSelectedTopicSourceValues(
+      (currentTask?.topic_source_bindings ?? []).map(
+        (binding) => binding.board_id,
+      ),
+    );
+    setReasoningMode(
+      currentTask ? getReasoningModeFromTask(currentTask) : "flash",
+    );
+    setAdvancedOpen(false);
     setFieldErrors({});
     setTouchedFields({});
   }, [mode, open, task]);
@@ -447,6 +484,7 @@ export function ScheduledTaskDialog({
     const models = modelsQuery.data?.models ?? [];
     if (models.length === 0) {
       setModelSelect("");
+      setReasoningMode("flash");
       return;
     }
     if (mode === "edit" && task) {
@@ -455,6 +493,24 @@ export function ScheduledTaskDialog({
       setModelSelect(models[0]!.name);
     }
   }, [open, mode, task, modelsQuery.data?.models]);
+
+  const selectedModel = React.useMemo(() => {
+    const models = modelsQuery.data?.models ?? [];
+    if (models.length === 0) return undefined;
+    return models.find((m) => m.name === modelSelect) ?? models[0];
+  }, [modelSelect, modelsQuery.data?.models]);
+
+  const supportThinking = selectedModel?.supports_thinking !== false;
+
+  React.useEffect(() => {
+    const nextMode = getResolvedReasoningMode(
+      reasoningMode,
+      selectedModel?.supports_thinking,
+    );
+    if (nextMode !== reasoningMode) {
+      setReasoningMode(nextMode);
+    }
+  }, [reasoningMode, selectedModel?.supports_thinking]);
 
   const handleSaveSuccess = React.useCallback(
     (message: string) => {
@@ -525,12 +581,10 @@ export function ScheduledTaskDialog({
       accountsById,
     );
     const topicSourceBindings: ScheduledPublishTopicSourceBinding[] =
-      selectedTopicSourceValues.map((value) => {
-        return {
-          board_id: value,
-          item_limit: 20,
-        };
-      });
+      selectedTopicSourceValues.map((value) => ({
+        board_id: value,
+        item_limit: 20,
+      }));
 
     nextErrors.name = validateField("name");
     nextErrors.prompt = validateField("prompt");
@@ -557,20 +611,25 @@ export function ScheduledTaskDialog({
 
     const model_name = modelSelect.trim() || null;
     const persona_id = personaId === NONE_PERSONA ? null : personaId;
+    const reasoningPayload = getReasoningPayload(reasoningMode);
+    const commonPayload = {
+      name: trimmedName,
+      prompt: trimmedPrompt,
+      image_source: imageSource,
+      timezone,
+      schedule_text: trimmedScheduleText,
+      publish_targets: publishTargets,
+      schedule_enabled: scheduleEnabled,
+      jitter_minutes: jitterMinutes,
+      ...reasoningPayload,
+      ...(topicSourceBindings.length > 0
+        ? { topic_source_bindings: topicSourceBindings }
+        : {}),
+    };
 
     if (mode === "create") {
       createMutation.mutate({
-        name: trimmedName,
-        prompt: trimmedPrompt,
-        image_source: imageSource,
-        timezone,
-        schedule_text: trimmedScheduleText,
-        publish_targets: publishTargets,
-        ...(topicSourceBindings.length > 0
-          ? { topic_source_bindings: topicSourceBindings }
-          : {}),
-        schedule_enabled: scheduleEnabled,
-        jitter_minutes: jitterMinutes,
+        ...commonPayload,
         persona_id: persona_id ?? undefined,
         ...(model_name ? { model_name } : {}),
       });
@@ -581,29 +640,61 @@ export function ScheduledTaskDialog({
     updateMutation.mutate({
       id: task.id,
       body: {
-        name: trimmedName,
-        prompt: trimmedPrompt,
+        ...commonPayload,
         model_name,
-        schedule_enabled: scheduleEnabled,
-        jitter_minutes: jitterMinutes,
         persona_id,
-        image_source: imageSource,
-        timezone,
-        schedule_text: trimmedScheduleText,
-        publish_targets: publishTargets,
-        ...(topicSourceBindings.length > 0
-          ? { topic_source_bindings: topicSourceBindings }
-          : {}),
       },
     });
   }
 
-  const modelSummaryLabel =
-    modelsQuery.data?.models.find((m) => m.name === modelSelect)
-      ?.display_name ??
-    (modelSelect || "—");
+  const reasoningModeOptions = React.useMemo(
+    (): Array<{
+      value: ScheduledPublishReasoningMode;
+      label: string;
+      description: string;
+      icon: typeof ZapIcon;
+    }> =>
+      REASONING_MODE_OPTIONS.filter((value) =>
+        supportThinking ? true : value === "flash",
+      ).map((value) => {
+        if (value === "flash") {
+          return {
+            value,
+            label: tInputBox("flashMode"),
+            description: tInputBox("flashModeDescription"),
+            icon: ZapIcon,
+          };
+        }
+        if (value === "thinking") {
+          return {
+            value,
+            label: tInputBox("reasoningMode"),
+            description: tInputBox("reasoningModeDescription"),
+            icon: LightbulbIcon,
+          };
+        }
+        return {
+          value,
+          label: tInputBox("proMode"),
+          description: tInputBox("proModeDescription"),
+          icon: GraduationCapIcon,
+        };
+      }),
+    [supportThinking, tInputBox],
+  );
 
-  const advancedSummary = `${modelSummaryLabel} · ${scheduleEnabled ? t("dialog.advanced.scheduleOn") : t("dialog.advanced.scheduleOff")} · ${t("dialog.advanced.jitterSummary", { minutes: jitterMinutes })}`;
+  const selectedReasoningModeOption =
+    reasoningModeOptions.find((option) => option.value === reasoningMode) ??
+    reasoningModeOptions[0];
+
+  const modelSummaryLabel =
+    (selectedModel?.display_name ?? selectedModel?.name ?? modelSelect) || "—";
+  const advancedSummary = `${modelSummaryLabel} · ${selectedReasoningModeOption?.label ?? tInputBox("flashMode")} · ${scheduleEnabled ? t("dialog.advanced.scheduleOn") : t("dialog.advanced.scheduleOff")} · ${t("dialog.advanced.jitterSummary", { minutes: jitterMinutes })}`;
+  const reasoningModeFieldLabel = `${tInputBox("reasoningMode")}${/^[A-Za-z]/.test(
+    tInputBox("reasoningMode"),
+  )
+    ? ` ${tInputBox("mode")}`
+    : tInputBox("mode")}`;
 
   /** 不依赖 SelectValue 子函数（Base UI 下易退回显示原始 value），与账号页一致用手动文案 */
   const groupSelectDisplay = React.useMemo(() => {
@@ -1136,6 +1227,68 @@ export function ScheduledTaskDialog({
                                 {m.display_name || m.name}
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="text-sm font-medium text-foreground">
+                          {reasoningModeFieldLabel}
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {selectedReasoningModeOption?.description}
+                        </p>
+                      </div>
+                      <div className="w-full shrink-0 sm:w-64 sm:max-w-[50%]">
+                        <Select
+                          value={reasoningMode}
+                          onValueChange={(value) => {
+                            if (
+                              value === "flash" ||
+                              value === "thinking" ||
+                              value === "pro"
+                            ) {
+                              setReasoningMode(
+                                getResolvedReasoningMode(
+                                  value,
+                                  selectedModel?.supports_thinking,
+                                ),
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-9 w-full border-0 bg-background/80 shadow-none ring-1 ring-border/60">
+                            <SelectValue>
+                              {(value) => {
+                                if (value == null || value === "") return null;
+                                const option = reasoningModeOptions.find(
+                                  (item) => item.value === value,
+                                );
+                                if (!option) return value;
+                                const Icon = option.icon;
+                                return (
+                                  <span className="inline-flex items-center gap-2">
+                                    <Icon className="size-4 text-muted-foreground" />
+                                    <span>{option.label}</span>
+                                  </span>
+                                );
+                              }}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {reasoningModeOptions.map((option) => {
+                              const Icon = option.icon;
+                              return (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <span className="inline-flex items-center gap-2">
+                                    <Icon className="size-4 text-muted-foreground" />
+                                    {option.label}
+                                  </span>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>

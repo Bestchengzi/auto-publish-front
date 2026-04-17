@@ -4,8 +4,19 @@ export type PublishStatus = "success" | "failed" | "publishing";
 export type PublishTriggerType = "manual" | "dialog" | "unknown";
 export type PublishFailureLog = {
   accountId: string;
+  accountName: string;
   platform: string;
   reason: string;
+};
+
+export type WorkPublishAccount = {
+  accountId: string;
+  accountName: string;
+  avatarUrl: string | null;
+  platform: string;
+  success: boolean;
+  publishedUrl: string | null;
+  errorMessage: string;
 };
 
 export type Work = {
@@ -18,4 +29,5 @@ export type Work = {
   successCount: number;
   failedCount: number;
   failedLogs: PublishFailureLog[];
+  publishAccounts: WorkPublishAccount[];
 };

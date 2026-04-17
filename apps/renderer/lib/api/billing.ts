@@ -37,6 +37,7 @@ export type BillingSubscriptionSummary = {
 
 export type BillingAccount = {
   owner_id: string;
+  invite_code: string | null;
   balance_points: number;
   recharge_balance_points: number;
   subscription_balance_points: number;

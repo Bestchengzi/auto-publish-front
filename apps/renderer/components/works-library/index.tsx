@@ -65,6 +65,7 @@ import type {
   PublishStatus,
   PublishTriggerType,
   Work,
+  WorkPublishAccount,
 } from "./types";
 import { PublishStatusBadge } from "./publish-status-badge";
 import { WorkEmptyState } from "./work-empty-state";
@@ -133,14 +134,69 @@ function mapTriggerSourceToPublishType(triggerSource?: string): PublishTriggerTy
 function mapFailureLogs(group: PublishRecordGroupResponse): PublishFailureLog[] {
   return group.records
     .filter((item) => !item.success)
-    .map((item) => ({
+    .map((item) => {
+      const reasonFromPublishInfo = extractErrorMessageFromPublishInfo(item.publish_info);
+      return {
+        accountId: item.account_id,
+        accountName:
+          (typeof item.account_info?.nickname === "string" &&
+          item.account_info.nickname.trim().length > 0
+            ? item.account_info.nickname.trim()
+            : typeof item.account_info?.account === "string" &&
+                item.account_info.account.trim().length > 0
+              ? item.account_info.account.trim()
+              : item.account_id),
+        platform: item.platform,
+        reason:
+          reasonFromPublishInfo ||
+          (typeof item.error_message === "string" && item.error_message.trim().length > 0
+            ? item.error_message.trim()
+            : ""),
+      };
+    });
+}
+
+function extractErrorMessageFromPublishInfo(publishInfo: unknown): string {
+  if (!publishInfo || typeof publishInfo !== "object" || Array.isArray(publishInfo)) {
+    return "";
+  }
+  const record = publishInfo as Record<string, unknown>;
+  const directMessage = record.error_message;
+  if (typeof directMessage === "string" && directMessage.trim().length > 0) {
+    return directMessage.trim();
+  }
+  return "";
+}
+
+function mapPublishAccounts(group: PublishRecordGroupResponse): WorkPublishAccount[] {
+  const accountMap = new Map<string, WorkPublishAccount>();
+  for (const item of group.records) {
+    const accountName =
+      (typeof item.account_info?.nickname === "string" &&
+      item.account_info.nickname.trim().length > 0
+        ? item.account_info.nickname.trim()
+        : typeof item.account_info?.account === "string" &&
+            item.account_info.account.trim().length > 0
+          ? item.account_info.account.trim()
+          : item.account_id);
+    const errorFromPublishInfo = extractErrorMessageFromPublishInfo(item.publish_info);
+    const fallbackError =
+      typeof item.error_message === "string" && item.error_message.trim().length > 0
+        ? item.error_message.trim()
+        : "";
+
+    accountMap.set(item.account_id, {
       accountId: item.account_id,
+      accountName,
+      avatarUrl:
+        typeof item.account_info?.avatar === "string" ? item.account_info.avatar : null,
       platform: item.platform,
-      reason:
-        typeof item.error_message === "string" && item.error_message.trim().length > 0
-          ? item.error_message.trim()
-          : "",
-    }));
+      success: item.success,
+      publishedUrl: typeof item.published_url === "string" ? item.published_url : null,
+      errorMessage: errorFromPublishInfo || fallbackError,
+    });
+  }
+  return Array.from(accountMap.values());
 }
 
 function mapGroupToWork(group: PublishRecordGroupResponse): Work {
@@ -162,6 +218,7 @@ function mapGroupToWork(group: PublishRecordGroupResponse): Work {
     successCount: group.success_account_count,
     failedCount: group.failed_account_count,
     failedLogs: mapFailureLogs(group),
+    publishAccounts: mapPublishAccounts(group),
   };
 }
 
@@ -375,6 +432,26 @@ export function WorksLibrary() {
   );
   const activePlatform = platformFilter === "all" ? null : platformMap.get(platformFilter);
 
+  function handlePublishAccountClick(work: Work, account: WorkPublishAccount) {
+    if (account.success && account.publishedUrl) {
+      window.open(account.publishedUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setPendingFailureLogWork({
+      ...work,
+      successCount: 0,
+      failedCount: 1,
+      failedLogs: [
+        {
+          accountId: account.accountId,
+          accountName: account.accountName,
+          platform: account.platform,
+          reason: account.errorMessage,
+        },
+      ],
+    });
+  }
+
   return (
     <div className="w-full h-full">
       <div className="h-full w-full max-w-[92rem] mx-auto rounded-xl p-8 px-10 flex flex-col">
@@ -553,24 +630,72 @@ export function WorksLibrary() {
                               <WorksLibraryTitleCell title={w.title} />
                             </TableCell>
                             <TableCell className="w-44 min-w-44 max-w-44">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {w.platformIds.length > 0 ? (
-                                  w.platformIds.map((pid) => {
-                                    const platform = platformMap.get(pid);
-                                    return platform ? (
-                                      <PlatformLogo
-                                        key={pid}
-                                        platformId={platform.id}
-                                        size={28}
-                                      />
-                                    ) : null;
-                                  })
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    —
-                                  </span>
-                                )}
-                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger
+                                  render={
+                                    <button
+                                      type="button"
+                                      className="flex flex-wrap items-center gap-1.5"
+                                      aria-label={t("table.platform")}
+                                    >
+                                      {w.platformIds.length > 0 ? (
+                                        w.platformIds.map((pid) => {
+                                          const platform = platformMap.get(pid);
+                                          return platform ? (
+                                            <PlatformLogo
+                                              key={pid}
+                                              platformId={platform.id}
+                                              size={28}
+                                            />
+                                          ) : null;
+                                        })
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">
+                                          —
+                                        </span>
+                                      )}
+                                    </button>
+                                  }
+                                />
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-48 p-1"
+                                >
+                                  {w.publishAccounts.map((account) => {
+                                    const accountPlatform = isPlatformId(account.platform)
+                                      ? account.platform
+                                      : null;
+                                    return (
+                                      <DropdownMenuItem
+                                        key={`${w.id}-${account.accountId}`}
+                                        onClick={() => handlePublishAccountClick(w, account)}
+                                        className="gap-3"
+                                      >
+                                        {account.avatarUrl ? (
+                                          <img
+                                            src={account.avatarUrl}
+                                            alt=""
+                                            referrerPolicy="no-referrer"
+                                            className="size-7 shrink-0 rounded-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = "none";
+                                            }}
+                                          />
+                                        ) : null}
+                                        <span className="min-w-0 flex-1 truncate text-sm">
+                                          {account.accountName}
+                                        </span>
+                                        {accountPlatform ? (
+                                          <PlatformLogo
+                                            platformId={accountPlatform}
+                                            size={20}
+                                          />
+                                        ) : null}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                             <TableCell className="w-[8.5rem] max-w-[8.5rem] text-sm tabular-nums text-foreground">
                               {w.createdAt}
@@ -753,7 +878,7 @@ export function WorksLibrary() {
                         >
                           <div className="flex flex-wrap items-baseline justify-between gap-2">
                             <span className="font-medium text-foreground">
-                              {log.accountId}
+                              {log.accountName}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {platformLabel}

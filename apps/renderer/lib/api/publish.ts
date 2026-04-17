@@ -97,6 +97,13 @@ export type PublishRecordResponse = {
   id: string;
   thread_id: string;
   account_id: string;
+  account_info?: {
+    id?: string;
+    avatar?: string | null;
+    nickname?: string | null;
+    account?: string | null;
+    platform?: string | null;
+  } | null;
   platform: string;
   trigger_source: string;
   success: boolean;

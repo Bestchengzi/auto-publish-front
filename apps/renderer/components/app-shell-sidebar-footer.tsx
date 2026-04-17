@@ -3,18 +3,22 @@
 import { useEffect, useState } from "react";
 import {
   ChevronRightIcon,
+  CopyIcon,
   CreditCardIcon,
+  GiftIcon,
   HouseIcon,
+  LinkIcon,
   LogOutIcon,
   MessageSquareIcon,
   SettingsIcon,
   UserIcon,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { SubscriptionPlanDialog } from "@/components/billing/subscription-plan-dialog";
@@ -75,6 +79,7 @@ export function AppShellSidebarFooter() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const t = useTranslations("sidebar.items");
   const tSidebar = useTranslations("sidebar");
@@ -87,7 +92,10 @@ export function AppShellSidebarFooter() {
   const [accent, setAccent] = useState<AccentPreset>("violet");
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [earnPointsOpen, setEarnPointsOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
   const purchaseAfterLoginKey = "media-open-plan-after-login";
+  const inviteCodeStorageKey = "media-billing-invite-code";
   const { data: billingAccount } = useQuery({
     queryKey: ["billing", "account"],
     queryFn: getBillingAccount,
@@ -138,6 +146,10 @@ export function AppShellSidebarFooter() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     setAccent(readAccentStorage());
+    const cachedInviteCode = window.localStorage.getItem(inviteCodeStorageKey);
+    if (cachedInviteCode && cachedInviteCode.trim().length > 0) {
+      setInviteCode(cachedInviteCode.trim());
+    }
 
     const syncAccent = (event: StorageEvent) => {
       if (event.key && event.key !== ACCENT_STORAGE_KEY) return;
@@ -148,6 +160,17 @@ export function AppShellSidebarFooter() {
       window.removeEventListener("storage", syncAccent);
     };
   }, []);
+
+  useEffect(() => {
+    const nextInviteCode = billingAccount?.account.invite_code?.trim() ?? "";
+    if (nextInviteCode.length === 0) return;
+    setInviteCode(nextInviteCode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(inviteCodeStorageKey, nextInviteCode);
+    }
+  }, [billingAccount]);
+
+  const inviteCodeFromQuery = searchParams.get("invite")?.trim() ?? "";
 
   if (!ready) {
     return <div className="min-h-12 p-3" />;
@@ -171,6 +194,10 @@ export function AppShellSidebarFooter() {
       plan: planDisplayName,
       points: displayBalancePoints.toLocaleString(locale === "en" ? "en-US" : "zh-CN"),
     });
+    const inviteLink =
+      inviteCode.length > 0
+        ? `${window.location.origin}/${locale}/creation-center/new?invite=${encodeURIComponent(inviteCode)}`
+        : "";
     return (
       <>
         <DropdownMenu>
@@ -213,6 +240,9 @@ export function AppShellSidebarFooter() {
                 {userPhone ? (
                   <div className="mt-0.5 text-sm text-muted-foreground">{userPhone}</div>
                 ) : null}
+                <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {billingHint}
+                </div>
               </div>
             </div>
 
@@ -230,6 +260,20 @@ export function AppShellSidebarFooter() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="py-2"
+              onClick={() => setEarnPointsOpen(true)}
+            >
+              <GiftIcon className="size-4" />
+              {tSidebar("footer.earnPoints")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="py-2"
+              onClick={() => setPlanDialogOpen(true)}
+            >
+              <CreditCardIcon className="size-4" />
+              {tSidebar("footer.buyPlan")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="py-2"
               onClick={() =>
                 window.open(
                   `/${locale}/site`,
@@ -240,13 +284,6 @@ export function AppShellSidebarFooter() {
             >
               <HouseIcon className="size-4" />
               {tSidebar("footer.visitWebsite")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="py-2"
-              onClick={() => setPlanDialogOpen(true)}
-            >
-              <CreditCardIcon className="size-4" />
-              {tSidebar("footer.buyPlan")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="py-2"
@@ -496,6 +533,74 @@ export function AppShellSidebarFooter() {
           defaultContact={userPhone}
           threadId={feedbackThreadId}
         />
+        <Dialog open={earnPointsOpen} onOpenChange={setEarnPointsOpen}>
+          <DialogContent className="max-w-xl p-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
+              <div className="text-lg font-semibold text-foreground">
+                {tSidebar("footer.earnPointsDialog.title")}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tSidebar("footer.earnPointsDialog.description")}
+              </p>
+            </div>
+            <div className="space-y-5 px-6 py-5">
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                  <LinkIcon className="size-4 text-primary" />
+                  {tSidebar("footer.earnPointsDialog.shareTitle")}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+                    <span className="block truncate">
+                      {inviteLink || tSidebar("footer.earnPointsDialog.emptyInviteCode")}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!inviteLink}
+                    onClick={async () => {
+                      if (!inviteLink) return;
+                      try {
+                        await navigator.clipboard.writeText(inviteLink);
+                        toast.success(tSidebar("footer.earnPointsDialog.copySuccess"));
+                      } catch {
+                        toast.error(tSidebar("footer.earnPointsDialog.copyFailed"));
+                      }
+                    }}
+                  >
+                    <CopyIcon className="size-4" />
+                    {tSidebar("footer.earnPointsDialog.copy")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-foreground">
+                  {tSidebar("footer.earnPointsDialog.stepsTitle")}
+                </div>
+                {(["step1", "step2", "step3"] as const).map((stepKey, index) => (
+                  <div
+                    key={stepKey}
+                    className="flex items-start gap-3 rounded-lg border border-border bg-background p-3"
+                  >
+                    <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-foreground">
+                        {tSidebar(`footer.earnPointsDialog.${stepKey}.title`)}
+                      </div>
+                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        {tSidebar(`footer.earnPointsDialog.${stepKey}.description`)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </>
     );
   }
@@ -512,6 +617,7 @@ export function AppShellSidebarFooter() {
       <LoginDialog
         open={loginOpen}
         onOpenChange={setLoginOpen}
+        inviteCode={inviteCodeFromQuery}
         onLoginSuccess={() => {
           if (typeof window === "undefined") return;
           const shouldOpenPlan =

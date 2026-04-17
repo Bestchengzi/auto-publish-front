@@ -72,6 +72,7 @@
       "profileSettings": "Profile settings",
       "visitWebsite": "Visit website",
       "buyPlan": "Buy plan",
+      "earnPoints": "Earn points",
       "feedback": "User Feedback",
       "logout": "Log out",
       "personal": "Personal",
@@ -85,7 +86,29 @@
       "accent": "Accent",
       "accentNeutral": "Black",
       "accentBlue": "Blue",
-      "accentViolet": "Violet"
+      "accentViolet": "Violet",
+      "earnPointsDialog": {
+        "title": "Earn Points",
+        "description": "Share your exclusive invite link and earn points when friends sign up.",
+        "shareTitle": "Share Invite",
+        "copy": "Copy Link",
+        "copySuccess": "Invite link copied",
+        "copyFailed": "Copy failed, please copy manually",
+        "emptyInviteCode": "Invite code is generating, please try again later",
+        "stepsTitle": "How to earn points",
+        "step1": {
+          "title": "Share your exclusive invite link",
+          "description": "Copy and share the invite link with your friends."
+        },
+        "step2": {
+          "title": "Friend signs up successfully",
+          "description": "Your friend completes sign-up via the invite link or poster."
+        },
+        "step3": {
+          "title": "Get reward points",
+          "description": "For each successful new user sign-up, both you and your friend get 500 points. You can also receive extra rewards when your friend makes their first top-up."
+        }
+      }
     }
   },
   "feedback": {
@@ -425,7 +448,11 @@
         "creating": "Creating...",
         "loadError": "Failed to load news detail. Please try again later.",
         "viewOriginal": "View original",
-        "emptyContent": "No content available"
+        "emptyContent": "No content available",
+        "languageChinese": "Chinese",
+        "languageOriginal": "Original",
+        "switchToChinese": "Show Chinese",
+        "switchToOriginal": "Show original"
       },
       "providerDialog": {
         "loadError": "Failed to load available apps"
@@ -512,6 +539,13 @@
       "edit": "Edit",
       "runNow": "Run now",
       "delete": "Delete"
+    },
+    "runStatus": {
+      "queued": "Queued",
+      "running": "Running",
+      "success": "Success",
+      "partialSuccess": "Partially successful",
+      "failed": "Failed"
     },
     "toast": {
       "createSuccess": "Scheduled task created",

@@ -116,6 +116,7 @@ export function MultiSelect({
                     width={20}
                     height={20}
                     unoptimized
+                    referrerPolicy="no-referrer"
                     className="mr-1 inline-block size-5 rounded-full object-cover align-middle"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
@@ -158,6 +159,7 @@ export function MultiSelect({
                         width={20}
                         height={20}
                         unoptimized
+                        referrerPolicy="no-referrer"
                         className="size-5 shrink-0 rounded-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = "none";

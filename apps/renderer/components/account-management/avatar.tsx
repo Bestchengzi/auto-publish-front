@@ -50,6 +50,7 @@ export function Avatar({
             <img
               src={effectiveSrc}
               alt=""
+              referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
               className={cn(
                 "size-8 shrink-0 cursor-pointer rounded-full object-cover ring-2 ring-background",
