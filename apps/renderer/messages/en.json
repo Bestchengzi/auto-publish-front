@@ -438,8 +438,7 @@
         "empty": "No board items yet",
         "loadError": "Failed to load board items",
         "updateCount": "{count} updates",
-        "createAction": "Create",
-        "createPrompt": "Help me create content based on this article"
+        "createAction": "Create"
       },
       "boardDetail": {
         "close": "Close",

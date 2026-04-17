@@ -24,7 +24,9 @@ type BoardItemDetailSheetProps = {
   onOpenChange: (open: boolean) => void;
   onCreate: (payload: {
     title: string;
+    title_zh?: string;
     content_text: string;
+    content_zh?: string;
     source_name: string;
     published_at: string;
     source_url: string;
@@ -344,8 +346,10 @@ export function BoardItemDetailSheet({
 
   const handleCreate = React.useCallback(async () => {
     await onCreate({
-      title: title || "",
-      content_text: body || "",
+      title: contentVariants.originalTitle || "",
+      title_zh: contentVariants.translatedTitle ?? undefined,
+      content_text: contentVariants.originalBody || "",
+      content_zh: contentVariants.translatedBody ?? undefined,
       source_name: sourceName || "",
       published_at: publishedAt || "",
       source_url: originalUrl || "",
@@ -360,7 +364,10 @@ export function BoardItemDetailSheet({
         (imageUrls[0] ?? ""),
     });
   }, [
-    body,
+    contentVariants.originalBody,
+    contentVariants.originalTitle,
+    contentVariants.translatedBody,
+    contentVariants.translatedTitle,
     detail?.cover_image_url,
     detail?.extra,
     imageUrls,
@@ -370,7 +377,6 @@ export function BoardItemDetailSheet({
     originalUrl,
     publishedAt,
     sourceName,
-    title,
   ]);
 
   return (

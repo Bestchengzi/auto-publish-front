@@ -438,8 +438,7 @@
         "empty": "暂无榜单内容",
         "loadError": "榜单内容加载失败",
         "updateCount": "{count}条更新",
-        "createAction": "创作",
-        "createPrompt": "帮我基于该文章进行创作"
+        "createAction": "创作"
       },
       "boardDetail": {
         "close": "关闭",

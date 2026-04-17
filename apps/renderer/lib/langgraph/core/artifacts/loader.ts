@@ -38,7 +38,11 @@ export function loadArtifactContentFromToolCall({
         (toolCall) => toolCall.id === toolCallId,
       );
       if (toolCall) {
-        return toolCall.args.content;
+        const args = toolCall.args as Record<string, unknown> | undefined;
+        if (toolCall.name === "str_replace") {
+          return typeof args?.new_str === "string" ? args.new_str : undefined;
+        }
+        return typeof args?.content === "string" ? args.content : undefined;
       }
     }
   }

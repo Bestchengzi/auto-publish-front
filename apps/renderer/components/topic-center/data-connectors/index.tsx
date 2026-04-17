@@ -331,7 +331,9 @@ export function TopicCenterDataConnectorsPanel({
   const handleCreateFromDetail = React.useCallback(
     async (payload: {
       title: string;
+      title_zh?: string;
       content_text: string;
+      content_zh?: string;
       source_name: string;
       published_at: string;
       source_url: string;
@@ -342,6 +344,12 @@ export function TopicCenterDataConnectorsPanel({
       if (creatingFromDetail) return;
       setCreatingFromDetail(true);
       try {
+        const normalizedTitle = (payload.title_zh ?? payload.title ?? "").trim();
+        const normalizedContent = (
+          payload.content_zh ??
+          payload.content_text ??
+          ""
+        ).trim();
         const threadId = await createThread({ metadata: {} });
         const now = new Date().toISOString();
         const optimisticTitle = "新对话";
@@ -371,12 +379,14 @@ export function TopicCenterDataConnectorsPanel({
 
         stashPendingInitialMessage({
           threadId,
-          text: t("dataConnectors.board.createPrompt"),
+          text: "基于选择的文章进行创作",
           personaId: selectedPersonaId,
           additionalKwargs: {
             news_item: {
               ...payload,
-              context_text: payload.content_text,
+              title: normalizedTitle,
+              content_text: normalizedContent,
+              context_text: normalizedContent,
             },
           },
         });

@@ -45,6 +45,10 @@ import {
 } from "@/lib/api/publish";
 import * as accountsApi from "@/lib/api/accounts";
 import * as mediaApi from "@/lib/api/media";
+import {
+  extractPresentFilesFromMessage,
+  hasPresentFiles,
+} from "@/lib/langgraph/core/messages/utils";
 import { getPlatformsWithNames } from "@/lib/platforms";
 import { getApiErrorMessage, request } from "@/lib/request";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
@@ -520,8 +524,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   );
   const publishDraftSessionKeyRef = useRef<string>("");
   const suppressPublishDraftSaveRef = useRef(false);
-  const prevMarkdownArtifactsRef = useRef<Set<string>>(new Set());
-  const historyHydratedRef = useRef(false);
+  const presentFilesHydratedRef = useRef(false);
+  const lastAutoOpenedPresentFilesIdRef = useRef<string | null>(null);
   const markdownArtifacts = useMemo(
     () =>
       (thread.values.artifacts ?? []).filter((file) =>
@@ -529,6 +533,28 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       ),
     [thread.values.artifacts],
   );
+  const latestPresentedMarkdownArtifact = useMemo(() => {
+    for (let index = thread.messages.length - 1; index >= 0; index -= 1) {
+      const message = thread.messages[index];
+      if (!message || !hasPresentFiles(message)) {
+        continue;
+      }
+
+      const markdownFiles = extractPresentFilesFromMessage(message).filter(
+        (file) => file.toLowerCase().endsWith(".md"),
+      );
+      if (markdownFiles.length === 0) {
+        continue;
+      }
+
+      return {
+        messageId: String(message.id ?? `present-files-${index}`),
+        filepath: markdownFiles[0]!,
+      };
+    }
+
+    return null;
+  }, [thread.messages]);
 
   useEffect(() => {
     publishPanelStateRef.current = {
@@ -613,8 +639,8 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
       threadIdRef.current = threadId;
       publishDraftsRef.current.clear();
       publishDraftSessionKeyRef.current = "";
-      prevMarkdownArtifactsRef.current = new Set();
-      historyHydratedRef.current = false;
+      presentFilesHydratedRef.current = false;
+      lastAutoOpenedPresentFilesIdRef.current = null;
       deselect();
     }
 
@@ -631,28 +657,38 @@ const ChatBox: React.FC<{ children: React.ReactNode; threadId: string }> = ({
   }, [threadId, deselect, setArtifacts, markdownArtifacts]);
 
   useEffect(() => {
-    // On initial page refresh/load, history API may hydrate artifacts in batches.
-    // Do not auto-open the right panel during this hydration stage.
-    if (!historyHydratedRef.current) {
+    // Treat freshly streamed present_files as the authoritative "final document ready"
+    // signal, while avoiding auto-opening historical files during initial hydration.
+    if (!presentFilesHydratedRef.current) {
       if (thread.isThreadLoading) {
         return;
       }
-      prevMarkdownArtifactsRef.current = new Set(markdownArtifacts);
-      historyHydratedRef.current = true;
+      lastAutoOpenedPresentFilesIdRef.current =
+        latestPresentedMarkdownArtifact?.messageId ?? null;
+      presentFilesHydratedRef.current = true;
       return;
     }
 
-    const nextSet = new Set(markdownArtifacts);
-    const prevSet = prevMarkdownArtifactsRef.current;
-    const newlyAdded = markdownArtifacts.filter((file) => !prevSet.has(file));
-    if (newlyAdded.length > 0) {
-      const latestMarkdown = newlyAdded[newlyAdded.length - 1]!;
-      selectArtifact(latestMarkdown);
-      setArtifactsOpen(true);
+    if (!latestPresentedMarkdownArtifact) {
+      return;
+    }
+    if (
+      latestPresentedMarkdownArtifact.messageId ===
+      lastAutoOpenedPresentFilesIdRef.current
+    ) {
+      return;
     }
 
-    prevMarkdownArtifactsRef.current = nextSet;
-  }, [markdownArtifacts, selectArtifact, setArtifactsOpen, thread.isThreadLoading]);
+    lastAutoOpenedPresentFilesIdRef.current =
+      latestPresentedMarkdownArtifact.messageId;
+    selectArtifact(latestPresentedMarkdownArtifact.filepath);
+    setArtifactsOpen(true);
+  }, [
+    latestPresentedMarkdownArtifact,
+    selectArtifact,
+    setArtifactsOpen,
+    thread.isThreadLoading,
+  ]);
 
   useEffect(() => {
     if (layoutRef.current) {
