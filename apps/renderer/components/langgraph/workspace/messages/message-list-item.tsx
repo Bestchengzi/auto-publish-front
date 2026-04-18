@@ -226,6 +226,7 @@ function MessageContent_({
   if (isHuman) {
     const messageResponse = contentToDisplay ? (
       <AIElementMessageResponse
+        plugins={humanMessagePlugins.plugins}
         remarkPlugins={humanMessagePlugins.remarkPlugins}
         rehypePlugins={humanMessagePlugins.rehypePlugins}
         components={components}

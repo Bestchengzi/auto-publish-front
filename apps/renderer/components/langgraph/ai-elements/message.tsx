@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { cn } from "@/lib/utils";
 import type { FileUIPart, UIMessage } from "ai";
 import Image from "next/image";
@@ -20,8 +21,6 @@ import {
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
-
-import { messageCodeComponents } from "./streamdown-code-components";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
@@ -308,13 +307,21 @@ export const MessageBranchPage = ({
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
-  ({ className, components, ...props }: MessageResponseProps) => {
-    const mergedComponents = useMemo(
+  ({ className, translations, ...props }: MessageResponseProps) => {
+    const { t } = useI18n();
+    const mergedTranslations = useMemo(
       () => ({
-        ...messageCodeComponents,
-        ...components,
+        copyCode: t.clipboard.copyToClipboard,
+        copied: t.clipboard.copiedToClipboard,
+        downloadFile: t.common.download,
+        ...translations,
       }),
-      [components],
+      [
+        t.clipboard.copyToClipboard,
+        t.clipboard.copiedToClipboard,
+        t.common.download,
+        translations,
+      ],
     );
 
     return (
@@ -323,17 +330,12 @@ export const MessageResponse = memo(
           "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_li>p]:m-0 [&_li>p]:inline",
           className,
         )}
-        components={mergedComponents}
+        translations={mergedTranslations}
         {...props}
       />
     );
   },
-  (prevProps, nextProps) =>
-    prevProps.children === nextProps.children &&
-    prevProps.className === nextProps.className &&
-    prevProps.components === nextProps.components &&
-    prevProps.rehypePlugins === nextProps.rehypePlugins &&
-    prevProps.remarkPlugins === nextProps.remarkPlugins,
+  (prevProps, nextProps) => prevProps.children === nextProps.children,
 );
 
 MessageResponse.displayName = "MessageResponse";

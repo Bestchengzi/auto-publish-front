@@ -22,6 +22,7 @@ export type MarkdownContentProps = {
   rehypePlugins: MessageResponseProps["rehypePlugins"];
   className?: string;
   remarkPlugins?: MessageResponseProps["remarkPlugins"];
+  plugins?: MessageResponseProps["plugins"];
   components?: MessageResponseProps["components"];
 };
 
@@ -31,6 +32,7 @@ export function MarkdownContent({
   rehypePlugins,
   className,
   remarkPlugins = streamdownPlugins.remarkPlugins,
+  plugins = streamdownPlugins.plugins,
   components: componentsFromProps,
 }: MarkdownContentProps) {
   const components = useMemo(() => {
@@ -65,6 +67,7 @@ export function MarkdownContent({
       className={className}
       remarkPlugins={remarkPlugins}
       rehypePlugins={rehypePlugins}
+      plugins={plugins}
       components={components}
     >
       {content}

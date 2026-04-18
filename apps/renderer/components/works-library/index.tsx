@@ -9,6 +9,7 @@ import {
   type QueryKey,
 } from "@tanstack/react-query";
 import { CircleAlertIcon, MoreHorizontalIcon, Trash2Icon } from "lucide-react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import {
@@ -675,9 +676,12 @@ export function WorksLibrary() {
                                         className="gap-3"
                                       >
                                         {account.avatarUrl ? (
-                                          <img
+                                          <Image
                                             src={account.avatarUrl}
-                                            alt=""
+                                            alt={account.accountName}
+                                            width={28}
+                                            height={28}
+                                            unoptimized
                                             referrerPolicy="no-referrer"
                                             className="size-7 shrink-0 rounded-full object-cover"
                                             onError={(e) => {

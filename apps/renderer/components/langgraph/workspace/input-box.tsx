@@ -9,7 +9,6 @@ import {
   PaperclipIcon,
   PencilIcon,
   PlusIcon,
-  SparklesIcon,
   RocketIcon,
   Trash2Icon,
   ZapIcon,
@@ -120,7 +119,7 @@ export function InputBox({
   context,
   extraHeader,
   isNewThread,
-  threadId,
+  threadId: _threadId,
   initialValue,
   onContextChange,
   onSubmit,
@@ -172,6 +171,7 @@ export function InputBox({
   showPersonaManagementActions?: boolean;
 }) {
   const { t } = useI18n();
+  void _threadId;
   // 建议功能暂时停用：保留原逻辑位置，后续需要恢复时再放开。
   // const searchParams = useSearchParams();
   const { ready: authReady, isLoggedIn } = useAuthLoggedIn();
@@ -186,8 +186,6 @@ export function InputBox({
   // const [followups, setFollowups] = useState<string[]>([]);
   // const [followupsHidden, setFollowupsHidden] = useState(false);
   // const [followupsLoading, setFollowupsLoading] = useState(false);
-  const lastGeneratedForAiIdRef = useRef<string | null>(null);
-  const wasStreamingRef = useRef(false);
 
   // const [confirmOpen, setConfirmOpen] = useState(false);
   // const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(

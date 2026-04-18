@@ -6,13 +6,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
+import { streamdownPlugins } from "@/lib/langgraph/core/streamdown";
 import { cn } from "@/lib/utils";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, memo, useContext, useEffect, useState } from "react";
+import { createContext, memo, useContext, useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
-
-import { messageCodeComponents } from "./streamdown-code-components";
 import { Shimmer } from "./shimmer";
 
 type ReasoningContextValue = {
@@ -163,18 +163,36 @@ export type ReasoningContentProps = ComponentProps<
 };
 
 export const ReasoningContent = memo(
-  ({ className, children, ...props }: ReasoningContentProps) => (
-    <CollapsibleContent
-      className={cn(
-        "mt-4 text-sm",
-        "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
-        className,
-      )}
-      {...props}
-    >
-      <Streamdown components={messageCodeComponents}>{children}</Streamdown>
-    </CollapsibleContent>
-  )
+  ({ className, children, ...props }: ReasoningContentProps) => {
+    const { t } = useI18n();
+    const translations = useMemo(
+      () => ({
+        copyCode: t.clipboard.copyToClipboard,
+        copied: t.clipboard.copiedToClipboard,
+        downloadFile: t.common.download,
+      }),
+      [
+        t.clipboard.copyToClipboard,
+        t.clipboard.copiedToClipboard,
+        t.common.download,
+      ],
+    );
+
+    return (
+      <CollapsibleContent
+        className={cn(
+          "mt-4 text-sm",
+          "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
+          className
+        )}
+        {...props}
+      >
+        <Streamdown {...streamdownPlugins} translations={translations}>
+          {children}
+        </Streamdown>
+      </CollapsibleContent>
+    );
+  }
 );
 
 Reasoning.displayName = "Reasoning";

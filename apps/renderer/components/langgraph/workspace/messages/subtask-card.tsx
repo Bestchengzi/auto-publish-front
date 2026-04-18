@@ -13,7 +13,6 @@ import {
   ChainOfThoughtContent,
   ChainOfThoughtStep,
 } from "@/components/langgraph/ai-elements/chain-of-thought";
-import { messageCodeComponents } from "@/components/langgraph/ai-elements/streamdown-code-components";
 import { Shimmer } from "@/components/langgraph/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -43,13 +42,17 @@ export function SubtaskCard({
   const [collapsed, setCollapsed] = useState(true);
   const rehypePlugins = useRehypeSplitWordsIntoSpans(isLoading);
   const task = useSubtask(taskId)!;
-  const promptComponents = useMemo(
-    () =>
-      ({
-        ...messageCodeComponents,
-        a: CitationLink,
-      }) as ComponentProps<typeof Streamdown>["components"],
-    [],
+  const streamdownTranslations = useMemo(
+    () => ({
+      copyCode: t.clipboard.copyToClipboard,
+      copied: t.clipboard.copiedToClipboard,
+      downloadFile: t.common.download,
+    }),
+    [
+      t.clipboard.copyToClipboard,
+      t.clipboard.copiedToClipboard,
+      t.common.download,
+    ],
   );
   const icon = useMemo(() => {
     if (task.status === "completed") {
@@ -137,7 +140,12 @@ export function SubtaskCard({
               label={
                 <Streamdown
                   {...streamdownPluginsWithWordAnimation}
-                  components={promptComponents}
+                  components={
+                    { a: CitationLink } as ComponentProps<
+                      typeof Streamdown
+                    >["components"]
+                  }
+                  translations={streamdownTranslations}
                 >
                   {task.prompt}
                 </Streamdown>
