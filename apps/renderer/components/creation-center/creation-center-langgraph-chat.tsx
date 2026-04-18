@@ -258,7 +258,7 @@ export function CreationCenterLanggraphChat() {
     });
     void sendMessage(
       threadId,
-      { text: pending.text, files: [] },
+      { text: pending.text, files: pending.files },
       pending.personaId ? { persona_id: pending.personaId } : {},
       pending.additionalKwargs,
     );

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import {
   type ComponentProps,
   createContext,
@@ -16,16 +16,18 @@ import { type BundledLanguage, codeToHtml, type ShikiTransformer } from "shiki";
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
-  language: BundledLanguage;
+  language: string;
   showLineNumbers?: boolean;
 };
 
 type CodeBlockContextType = {
   code: string;
+  language: string;
 };
 
 const CodeBlockContext = createContext<CodeBlockContextType>({
   code: "",
+  language: "text",
 });
 
 const lineNumberTransformer: ShikiTransformer = {
@@ -49,27 +51,45 @@ const lineNumberTransformer: ShikiTransformer = {
   },
 };
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function createFallbackCodeHtml(code: string) {
+  return `<pre><code>${escapeHtml(code)}</code></pre>`;
+}
+
 export async function highlightCode(
   code: string,
-  language: BundledLanguage,
+  language: string,
   showLineNumbers = false,
 ) {
   const transformers: ShikiTransformer[] = showLineNumbers
     ? [lineNumberTransformer]
     : [];
 
-  return await Promise.all([
-    codeToHtml(code, {
-      lang: language,
-      theme: "one-light",
-      transformers,
-    }),
-    codeToHtml(code, {
-      lang: language,
-      theme: "one-dark-pro",
-      transformers,
-    }),
-  ]);
+  try {
+    return await Promise.all([
+      codeToHtml(code, {
+        lang: language as BundledLanguage,
+        theme: "one-light",
+        transformers,
+      }),
+      codeToHtml(code, {
+        lang: language as BundledLanguage,
+        theme: "one-dark-pro",
+        transformers,
+      }),
+    ]);
+  } catch {
+    const fallbackHtml = createFallbackCodeHtml(code);
+    return [fallbackHtml, fallbackHtml];
+  }
 }
 
 export const CodeBlock = ({
@@ -82,47 +102,51 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("");
   const [darkHtml, setDarkHtml] = useState<string>("");
-  const mounted = useRef(false);
+  const displayLanguage = language.trim().toLowerCase() || "text";
 
   useEffect(() => {
-    highlightCode(code, language, showLineNumbers).then(([light, dark]) => {
-      if (!mounted.current) {
+    let cancelled = false;
+
+    highlightCode(code, displayLanguage, showLineNumbers).then(([light, dark]) => {
+      if (!cancelled) {
         setHtml(light);
         setDarkHtml(dark);
-        mounted.current = true;
       }
     });
 
     return () => {
-      mounted.current = false;
+      cancelled = true;
     };
-  }, [code, language, showLineNumbers]);
+  }, [code, displayLanguage, showLineNumbers]);
 
   return (
-    <CodeBlockContext.Provider value={{ code }}>
+    <CodeBlockContext.Provider value={{ code, language: displayLanguage }}>
       <div
         className={cn(
-          "group bg-background text-foreground relative size-full overflow-hidden rounded-md border",
+          "group relative size-full overflow-hidden rounded-2xl border border-border bg-background text-foreground",
           className,
         )}
         {...props}
       >
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+          <span className="min-w-0 truncate font-mono lowercase">
+            {displayLanguage}
+          </span>
+          {children ? (
+            <div className="flex shrink-0 items-center gap-1">{children}</div>
+          ) : null}
+        </div>
         <div className="relative size-full">
           <div
-            className="[&>pre]:bg-background! [&>pre]:text-foreground! size-full overflow-auto dark:hidden [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:text-sm [&>pre]:whitespace-pre-wrap"
+            className="overflow-auto px-4 py-4 dark:hidden [&>pre]:m-0 [&>pre]:border-none! [&>pre]:bg-transparent! [&>pre]:p-0! [&>pre]:text-foreground! [&>pre]:text-sm [&>pre]:whitespace-pre-wrap [&_code]:font-mono [&_code]:text-sm"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
             dangerouslySetInnerHTML={{ __html: html }}
           />
           <div
-            className="[&>pre]:bg-background! [&>pre]:text-foreground! hidden size-full overflow-auto dark:block [&_code]:font-mono [&_code]:text-sm [&>pre]:m-0 [&>pre]:text-sm [&>pre]:whitespace-pre-wrap"
+            className="hidden overflow-auto px-4 py-4 dark:block [&>pre]:m-0 [&>pre]:border-none! [&>pre]:bg-transparent! [&>pre]:p-0! [&>pre]:text-foreground! [&>pre]:text-sm [&>pre]:whitespace-pre-wrap [&_code]:font-mono [&_code]:text-sm"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
             dangerouslySetInnerHTML={{ __html: darkHtml }}
           />
-          {children && (
-            <div className="absolute top-2 right-2 flex items-center gap-2">
-              {children}
-            </div>
-          )}
         </div>
       </div>
     </CodeBlockContext.Provider>
@@ -145,6 +169,16 @@ export const CodeBlockCopyButton = ({
 }: CodeBlockCopyButtonProps) => {
   const [isCopied, setIsCopied] = useState(false);
   const { code } = useContext(CodeBlockContext);
+  const timeoutRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const copyToClipboard = async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
@@ -156,7 +190,13 @@ export const CodeBlockCopyButton = ({
       await navigator.clipboard.writeText(code);
       setIsCopied(true);
       onCopy?.();
-      setTimeout(() => setIsCopied(false), timeout);
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
+        setIsCopied(false);
+        timeoutRef.current = null;
+      }, timeout);
     } catch (error) {
       onError?.(error as Error);
     }
@@ -166,13 +206,104 @@ export const CodeBlockCopyButton = ({
 
   return (
     <Button
-      className={cn("shrink-0", className)}
+      aria-label="Copy code"
+      className={cn(
+        "size-7 shrink-0 rounded-md text-muted-foreground hover:text-foreground",
+        className,
+      )}
       onClick={copyToClipboard}
-      size="icon"
+      size="icon-sm"
+      type="button"
       variant="ghost"
       {...props}
     >
       {children ?? <Icon size={14} />}
+    </Button>
+  );
+};
+
+const DOWNLOAD_EXTENSION_MAP: Record<string, string> = {
+  bash: "sh",
+  shell: "sh",
+  sh: "sh",
+  zsh: "sh",
+  powershell: "ps1",
+  ps1: "ps1",
+  python: "py",
+  py: "py",
+  javascript: "js",
+  js: "js",
+  typescript: "ts",
+  ts: "ts",
+  jsx: "jsx",
+  tsx: "tsx",
+  json: "json",
+  html: "html",
+  css: "css",
+  scss: "scss",
+  less: "less",
+  sql: "sql",
+  xml: "xml",
+  yaml: "yml",
+  yml: "yml",
+  markdown: "md",
+  md: "md",
+  text: "txt",
+  txt: "txt",
+  plaintext: "txt",
+};
+
+function downloadCodeAsFile(filename: string, content: string) {
+  if (typeof window === "undefined") return;
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export type CodeBlockDownloadButtonProps = ComponentProps<typeof Button> & {
+  onDownload?: () => void;
+  onError?: (error: Error) => void;
+};
+
+export const CodeBlockDownloadButton = ({
+  onDownload,
+  onError,
+  children,
+  className,
+  ...props
+}: CodeBlockDownloadButtonProps) => {
+  const { code, language } = useContext(CodeBlockContext);
+
+  const downloadCode = () => {
+    try {
+      const extension = DOWNLOAD_EXTENSION_MAP[language] ?? "txt";
+      downloadCodeAsFile(`code.${extension}`, code);
+      onDownload?.();
+    } catch (error) {
+      onError?.(error as Error);
+    }
+  };
+
+  return (
+    <Button
+      aria-label="Download code"
+      className={cn(
+        "size-7 shrink-0 rounded-md text-muted-foreground hover:text-foreground",
+        className,
+      )}
+      onClick={downloadCode}
+      size="icon-sm"
+      type="button"
+      variant="ghost"
+      {...props}
+    >
+      {children ?? <DownloadIcon size={14} />}
     </Button>
   );
 };

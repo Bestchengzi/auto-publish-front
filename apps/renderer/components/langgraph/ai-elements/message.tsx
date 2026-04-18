@@ -21,6 +21,8 @@ import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
 
+import { messageCodeComponents } from "./streamdown-code-components";
+
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
 };
@@ -306,16 +308,32 @@ export const MessageBranchPage = ({
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
-    <Streamdown
-      className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_li>p]:m-0 [&_li>p]:inline",
-        className,
-      )}
-      {...props}
-    />
-  ),
-  (prevProps, nextProps) => prevProps.children === nextProps.children,
+  ({ className, components, ...props }: MessageResponseProps) => {
+    const mergedComponents = useMemo(
+      () => ({
+        ...messageCodeComponents,
+        ...components,
+      }),
+      [components],
+    );
+
+    return (
+      <Streamdown
+        className={cn(
+          "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_li>p]:m-0 [&_li>p]:inline",
+          className,
+        )}
+        components={mergedComponents}
+        {...props}
+      />
+    );
+  },
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children &&
+    prevProps.className === nextProps.className &&
+    prevProps.components === nextProps.components &&
+    prevProps.rehypePlugins === nextProps.rehypePlugins &&
+    prevProps.remarkPlugins === nextProps.remarkPlugins,
 );
 
 MessageResponse.displayName = "MessageResponse";

@@ -1,7 +1,7 @@
 import type { PlatformId } from "@/components/account-management/types";
 
 export type PublishStatus = "success" | "failed" | "publishing";
-export type PublishTriggerType = "manual" | "dialog" | "unknown";
+export type PublishTriggerType = "manual" | "dialog" | "auto" | "unknown";
 export type PublishFailureLog = {
   accountId: string;
   accountName: string;

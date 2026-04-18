@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ImagesIcon,
   LightbulbIcon,
@@ -16,13 +19,28 @@ import { RecentCreations } from "@/components/recent-creations/recent-creations"
 import { Separator } from "@/components/ui/separator";
 
 type ActiveKey =
-  | "overview"
   | "account"
   | "assetLibrary"
   | "worksLibrary"
   | "topicCenter"
   | "creationCenter"
   | "autoPublish";
+
+function resolveActiveKey(pathname: string | null, locale: string): ActiveKey {
+  if (!pathname) return "creationCenter";
+  const normalized = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  const prefix = `/${locale}/`;
+  if (!normalized.startsWith(prefix)) return "creationCenter";
+  const rest = normalized.slice(prefix.length);
+  const segment = rest.split("/")[0] ?? "";
+  if (segment === "creation-center") return "creationCenter";
+  if (segment === "topic-center") return "topicCenter";
+  if (segment === "auto-publish") return "autoPublish";
+  if (segment === "account") return "account";
+  if (segment === "asset-library") return "assetLibrary";
+  if (segment === "works-library") return "worksLibrary";
+  return "creationCenter";
+}
 
 function NavItem({
   href,
@@ -50,16 +68,16 @@ function NavItem({
   );
 }
 
-export async function AppShell({
+export function AppShell({
   locale,
-  activeKey,
   children,
 }: {
   locale: string;
-  activeKey: ActiveKey;
   children: React.ReactNode;
 }) {
-  const t = await getTranslations();
+  const pathname = usePathname();
+  const activeKey = resolveActiveKey(pathname, locale);
+  const t = useTranslations();
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-muted/40 dark:bg-muted/40">

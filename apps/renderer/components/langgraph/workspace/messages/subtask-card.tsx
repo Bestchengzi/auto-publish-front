@@ -13,6 +13,7 @@ import {
   ChainOfThoughtContent,
   ChainOfThoughtStep,
 } from "@/components/langgraph/ai-elements/chain-of-thought";
+import { messageCodeComponents } from "@/components/langgraph/ai-elements/streamdown-code-components";
 import { Shimmer } from "@/components/langgraph/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -42,6 +43,14 @@ export function SubtaskCard({
   const [collapsed, setCollapsed] = useState(true);
   const rehypePlugins = useRehypeSplitWordsIntoSpans(isLoading);
   const task = useSubtask(taskId)!;
+  const promptComponents = useMemo(
+    () =>
+      ({
+        ...messageCodeComponents,
+        a: CitationLink,
+      }) as ComponentProps<typeof Streamdown>["components"],
+    [],
+  );
   const icon = useMemo(() => {
     if (task.status === "completed") {
       return <CheckCircleIcon className="size-3" />;
@@ -128,11 +137,7 @@ export function SubtaskCard({
               label={
                 <Streamdown
                   {...streamdownPluginsWithWordAnimation}
-                  components={
-                    { a: CitationLink } as ComponentProps<
-                      typeof Streamdown
-                    >["components"]
-                  }
+                  components={promptComponents}
                 >
                   {task.prompt}
                 </Streamdown>

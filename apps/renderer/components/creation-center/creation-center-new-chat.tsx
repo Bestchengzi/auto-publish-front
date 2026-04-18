@@ -41,6 +41,7 @@ import {
 import { PlatformLogo } from "@/components/account-management/platform-logo";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import type { PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
+import type { FileUIPart } from "ai";
 import { cn } from "@/lib/utils";
 import { createThread } from "@/lib/langgraph-client";
 import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
@@ -297,9 +298,9 @@ export function CreationCenterNewChat() {
   }, [context, personaOptions, personasFetched, selectedPersonaId, setSettings]);
 
   const startThreadWithText = useCallback(
-    async (text: string) => {
+    async (text: string, files: FileUIPart[] = []) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      if (!trimmed && files.length === 0) return;
       setIsStarting(true);
       try {
         const threadId = await createThread({ metadata: {} });
@@ -331,6 +332,7 @@ export function CreationCenterNewChat() {
           threadId,
           text: trimmed,
           personaId: selectedPersonaId,
+          ...(files.length > 0 ? { files } : {}),
         });
         setSettings("context", {
           ...context,
@@ -352,10 +354,10 @@ export function CreationCenterNewChat() {
     async (message: PromptInputMessage) => {
       if (isStarting) return;
       const text = message.text.trim();
-      if (!text) return;
+      const files = message.files ?? [];
+      if (!text && files.length === 0) return;
 
-      // 这里先仅支持发送文本；附件会在进入聊天页后再由对应逻辑处理。
-      await startThreadWithText(text);
+      await startThreadWithText(text, files);
     },
     [isStarting, startThreadWithText],
   );

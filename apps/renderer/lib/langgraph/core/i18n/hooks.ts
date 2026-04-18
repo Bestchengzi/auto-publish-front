@@ -82,6 +82,9 @@ type LanggraphMessages = {
     followupConfirmDescription: string;
     followupConfirmAppend: string;
     followupConfirmReplace: string;
+    smartSearch: string;
+    smartSearchTooltipOn: string;
+    smartSearchTooltipOff: string;
     suggestions: Array<{
       suggestion: string;
       prompt: string;

@@ -165,7 +165,11 @@
       "authNeedDesktopTitle": "Use desktop app to add accounts",
       "authNeedDesktopWithDownload": "Adding accounts is not available in the browser. If you have not installed the desktop app yet, do you want to go to the download page?",
       "authNeedDesktopCancel": "Not now",
-      "authNeedDesktopGoDownload": "Go to desktop download"
+      "authNeedDesktopGoDownload": "Go to desktop download",
+      "authSuccess": "Account added successfully",
+      "authBusy": "An authorization flow is already in progress. Please try again shortly.",
+      "authUnsupported": "Authorization is not supported for this platform yet.",
+      "authFailed": "Failed to add account: {message}"
     },
     "editDrawer": {
       "title": "Edit account",
@@ -260,6 +264,7 @@
     "publishType": {
       "manual": "Manual",
       "dialog": "Chat",
+      "auto": "Automatic",
       "unknown": "Unknown"
     },
     "platforms": {
@@ -790,6 +795,9 @@
       "followupConfirmDescription": "You already have text in the input. Choose how to send it.",
       "followupConfirmAppend": "Append & send",
       "followupConfirmReplace": "Replace & send",
+      "smartSearch": "Smart search",
+      "smartSearchTooltipOn": "Web search is on. Click to turn off.",
+      "smartSearchTooltipOff": "Web search is off. Click to turn on.",
       "suggestions": [
         {
           "suggestion": "Write",

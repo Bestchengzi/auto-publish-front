@@ -1,7 +1,7 @@
 "use client";
 
 import "katex/dist/katex.min.css";
-import "streamdown/styles.css";
+// import "streamdown/styles.css";
 
 import { PromptInputProvider } from "@/components/langgraph/ai-elements/prompt-input";
 import { ArtifactsProvider } from "@/components/langgraph/workspace/artifacts";

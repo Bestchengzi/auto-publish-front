@@ -11,6 +11,8 @@ import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
+
+import { messageCodeComponents } from "./streamdown-code-components";
 import { Shimmer } from "./shimmer";
 
 type ReasoningContextValue = {
@@ -166,11 +168,11 @@ export const ReasoningContent = memo(
       className={cn(
         "mt-4 text-sm",
         "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
-        className
+        className,
       )}
       {...props}
     >
-      <Streamdown>{children}</Streamdown>
+      <Streamdown components={messageCodeComponents}>{children}</Streamdown>
     </CollapsibleContent>
   )
 );

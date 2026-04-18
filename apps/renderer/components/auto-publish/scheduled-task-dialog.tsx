@@ -10,7 +10,6 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { QueryKey } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -272,36 +271,7 @@ export function ScheduledTaskDialog({
   });
 
   const accountsQuery = useQuery({
-    queryKey: [
-      "scheduled-task-dialog",
-      "accounts",
-      platformFilter,
-      groupFilter,
-    ] as QueryKey,
-    queryFn: async () => {
-      let groupIdParam: number | null = null;
-      if (groupFilter !== "all" && groupFilter !== "ungrouped") {
-        const n = parseInt(groupFilter, 10);
-        if (!Number.isNaN(n)) groupIdParam = n;
-      }
-      const res = await listAccounts({
-        platforms:
-          platformFilter === "all" ? undefined : platformFilter,
-        group_id: groupIdParam,
-      });
-      let items = res.items.filter((a) => isScheduledPlatform(a.platform));
-      if (groupFilter === "ungrouped") {
-        items = items.filter((a) => !a.groups?.length);
-      }
-      return items;
-    },
-    enabled: open,
-    staleTime: 30 * 1000,
-  });
-
-  /** 全量列表：用于已选账号展示 / 组平台映射；与左侧筛选无关，避免筛走已选项后丢昵称或丢平台信息 */
-  const accountsForEditLabelsQuery = useQuery({
-    queryKey: ["scheduled-task-dialog", "accounts-all-labels"],
+    queryKey: ["scheduled-task-dialog", "accounts"],
     queryFn: async () => {
       const res = await listAccounts({});
       return res.items.filter((a) => isScheduledPlatform(a.platform));
@@ -309,6 +279,26 @@ export function ScheduledTaskDialog({
     enabled: open,
     staleTime: 60 * 1000,
   });
+
+  /** 全量列表：用于已选账号展示 / 组平台映射；与左侧筛选无关，避免筛走已选项后丢昵称或丢平台信息 */
+  const filteredAccounts = React.useMemo(() => {
+    const items = accountsQuery.data ?? [];
+    return items.filter((account) => {
+      if (platformFilter !== "all" && account.platform !== platformFilter) {
+        return false;
+      }
+      if (groupFilter === "ungrouped") {
+        return !account.groups?.length;
+      }
+      if (groupFilter !== "all") {
+        return (
+          account.groups?.some((group) => String(group.id) === groupFilter) ??
+          false
+        );
+      }
+      return true;
+    });
+  }, [accountsQuery.data, groupFilter, platformFilter]);
 
   const modelsQuery = useQuery({
     queryKey: ["scheduled-task-dialog", "models"],
@@ -338,24 +328,21 @@ export function ScheduledTaskDialog({
 
   const accountsById = React.useMemo(() => {
     const m = new Map<string, AccountResponse>();
-    for (const a of accountsForEditLabelsQuery.data ?? []) {
-      m.set(a.id, a);
-    }
     for (const a of accountsQuery.data ?? []) {
       m.set(a.id, a);
     }
     return m;
-  }, [accountsQuery.data, accountsForEditLabelsQuery.data]);
+  }, [accountsQuery.data]);
 
   const accountOptions = React.useMemo(
     () =>
-      (accountsQuery.data ?? []).map((a) => ({
+      filteredAccounts.map((a) => ({
         value: a.id,
         label: a.nickname || a.account,
         avatarUrl: a.avatar,
         trailingLogoUrl: getPlatformLogoPath(a.platform as PlatformId),
       })),
-    [accountsQuery.data],
+    [filteredAccounts],
   );
 
   const topicSourceOptionByValue = React.useMemo(
@@ -479,26 +466,43 @@ export function ScheduledTaskDialog({
   }, [mode, open, task]);
 
   /** 模型目录就绪后设置选中项：新建默认第一项；编辑沿用任务模型（无效则第一项）。不依赖本 effect 重置其它表单字段。 */
+  const modelList = React.useMemo(
+    () => modelsQuery.data?.models ?? [],
+    [modelsQuery.data?.models],
+  );
+
+  const effectiveModelSelect = React.useMemo(() => {
+    if (modelList.length === 0) return "";
+    const trimmed = modelSelect.trim();
+    if (trimmed && modelList.some((model) => model.name === trimmed)) {
+      return trimmed;
+    }
+    if (mode === "edit" && task) {
+      return pickModelSelect(modelList, task.model_name);
+    }
+    return modelList[0]!.name;
+  }, [mode, modelList, modelSelect, task]);
+
   React.useEffect(() => {
     if (!open) return;
-    const models = modelsQuery.data?.models ?? [];
-    if (models.length === 0) {
+    if (modelList.length === 0) {
       setModelSelect("");
-      setReasoningMode("flash");
       return;
     }
     if (mode === "edit" && task) {
-      setModelSelect(pickModelSelect(models, task.model_name));
+      setModelSelect(pickModelSelect(modelList, task.model_name));
     } else {
-      setModelSelect(models[0]!.name);
+      setModelSelect(modelList[0]!.name);
     }
-  }, [open, mode, task, modelsQuery.data?.models]);
+  }, [open, mode, modelList, task]);
 
   const selectedModel = React.useMemo(() => {
-    const models = modelsQuery.data?.models ?? [];
-    if (models.length === 0) return undefined;
-    return models.find((m) => m.name === modelSelect) ?? models[0];
-  }, [modelSelect, modelsQuery.data?.models]);
+    if (modelList.length === 0 || !effectiveModelSelect) return undefined;
+    return (
+      modelList.find((model) => model.name === effectiveModelSelect) ??
+      modelList[0]
+    );
+  }, [effectiveModelSelect, modelList]);
 
   const supportThinking = selectedModel?.supports_thinking !== false;
 
@@ -609,7 +613,7 @@ export function ScheduledTaskDialog({
     }
     setFieldErrors({});
 
-    const model_name = modelSelect.trim() || null;
+    const model_name = effectiveModelSelect.trim() || null;
     const persona_id = personaId === NONE_PERSONA ? null : personaId;
     const reasoningPayload = getReasoningPayload(reasoningMode);
     const commonPayload = {
@@ -1202,27 +1206,25 @@ export function ScheduledTaskDialog({
                       </div>
                       <div className="w-full shrink-0 sm:w-64 sm:max-w-[50%]">
                         <Select
-                          value={modelSelect}
+                          value={effectiveModelSelect}
                           onValueChange={(v) => {
                             if (v) setModelSelect(v);
                           }}
                         >
                           <SelectTrigger
                             className="h-9 w-full border-0 bg-background/80 shadow-none ring-1 ring-border/60"
-                            disabled={(modelsQuery.data?.models ?? []).length === 0}
+                            disabled={modelList.length === 0}
                           >
                             <SelectValue>
                               {(value) => {
                                 if (value == null || value === "") return null;
-                                const m = (modelsQuery.data?.models ?? []).find(
-                                  (x) => x.name === value,
-                                );
+                                const m = modelList.find((x) => x.name === value);
                                 return m?.display_name ?? m?.name ?? value;
                               }}
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            {(modelsQuery.data?.models ?? []).map((m) => (
+                            {modelList.map((m) => (
                               <SelectItem key={m.name} value={m.name}>
                                 {m.display_name || m.name}
                               </SelectItem>

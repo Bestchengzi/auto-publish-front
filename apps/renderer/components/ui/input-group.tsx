@@ -26,6 +26,9 @@ function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
         // Focus state.
         "has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot=input-group-control]:focus-visible]:ring-[3px]",
 
+        // When the main control (e.g. textarea) is disabled, wash the whole group so footer matches.
+        "has-[[data-slot=input-group-control]:disabled]:bg-input/50 dark:has-[[data-slot=input-group-control]:disabled]:bg-input/80",
+
         // Error state.
         "has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[[data-slot][aria-invalid=true]]:border-destructive dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40",
 
@@ -137,6 +140,7 @@ function InputGroupInput({
       data-slot="input-group-control"
       className={cn(
         "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent",
+        "disabled:bg-transparent disabled:opacity-100 dark:disabled:bg-transparent dark:disabled:opacity-100",
         className,
       )}
       {...props}
@@ -153,6 +157,8 @@ function InputGroupTextarea({
       data-slot="input-group-control"
       className={cn(
         "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
+        // Background + opacity come from the parent InputGroup when disabled.
+        "disabled:bg-transparent disabled:opacity-100 dark:disabled:bg-transparent dark:disabled:opacity-100",
         className,
       )}
       {...props}

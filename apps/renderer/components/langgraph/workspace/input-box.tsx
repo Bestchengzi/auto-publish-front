@@ -13,6 +13,7 @@ import {
   RocketIcon,
   Trash2Icon,
   ZapIcon,
+  GlobeIcon,
 } from "lucide-react";
 // import { useSearchParams } from "next/navigation";
 import {
@@ -285,6 +286,7 @@ export function InputBox({
   );
 
   const selectedMode = getResolvedMode(context.mode, supportThinking);
+  const searchEnabled = context.search_enabled !== false;
   const hasSubmitContent =
     textInput.value.trim().length > 0 || attachments.files.length > 0;
   const submitDisabled =
@@ -311,7 +313,9 @@ export function InputBox({
         onStop?.();
         return;
       }
-      if (!message.text) {
+      const hasText = Boolean(message.text?.trim());
+      const hasFiles = (message.files?.length ?? 0) > 0;
+      if (!hasText && !hasFiles) {
         return;
       }
       // 建议能力暂时停用。
@@ -474,6 +478,36 @@ export function InputBox({
               className="px-2!"
               disabled={disabled || !canUseAuthFeatures}
             />
+            <Tooltip
+              content={
+                searchEnabled
+                  ? t.inputBox.smartSearchTooltipOn
+                  : t.inputBox.smartSearchTooltipOff
+              }
+            >
+              <PromptInputButton
+                type="button"
+                className={cn(
+                  "gap-1! px-2!",
+                  searchEnabled
+                    ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                    : "text-muted-foreground hover:text-muted-foreground",
+                )}
+                disabled={disabled || !canUseAuthFeatures}
+                aria-pressed={searchEnabled}
+                onClick={() =>
+                  onContextChange?.({
+                    ...context,
+                    search_enabled: !searchEnabled,
+                  })
+                }
+              >
+                <GlobeIcon className="size-3 shrink-0" />
+                <span className="max-w-[5.5rem] truncate text-xs font-normal sm:max-w-none">
+                  {t.inputBox.smartSearch}
+                </span>
+              </PromptInputButton>
+            </Tooltip>
             <PromptInputActionMenu
               open={modeMenuOpen}
               onOpenChange={setModeMenuOpen}

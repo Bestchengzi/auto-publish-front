@@ -122,8 +122,11 @@ function extractTitleFromGroup(group: PublishRecordGroupResponse): string {
 }
 
 function mapTriggerSourceToPublishType(triggerSource?: string): PublishTriggerType {
-  if (triggerSource === "manual_api" || triggerSource === "scheduled_task") {
+  if (triggerSource === "manual_api") {
     return "manual";
+  }
+  if (triggerSource === "scheduled_task") {
+    return "auto";
   }
   if (triggerSource === "auto_tool") {
     return "dialog";
@@ -705,7 +708,9 @@ export function WorksLibrary() {
                                 ? t("publishType.manual")
                                 : w.publishType === "dialog"
                                   ? t("publishType.dialog")
-                                  : t("publishType.unknown")}
+                                  : w.publishType === "auto"
+                                    ? t("publishType.auto")
+                                    : t("publishType.unknown")}
                             </TableCell>
                             <TableCell className="w-[6.75rem] max-w-[6.75rem] min-w-0">
                               <PublishStatusBadge

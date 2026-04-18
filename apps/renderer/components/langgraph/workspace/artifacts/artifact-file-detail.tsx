@@ -909,6 +909,7 @@ export function ArtifactFileDetail({
               ? "low"
               : undefined),
       thread_id: threadId,
+      search_enabled: localContext.search_enabled ?? true,
     } as unknown as AgentThreadContext;
   }, [localContext, threadId]);
 

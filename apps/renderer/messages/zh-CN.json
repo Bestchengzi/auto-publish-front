@@ -165,7 +165,11 @@
       "authNeedDesktopTitle": "请在客户端添加账号",
       "authNeedDesktopWithDownload": "浏览器端暂不支持添加账号功能。如果您还未下载客户端，是否前往下载客户端？",
       "authNeedDesktopCancel": "暂不前往",
-      "authNeedDesktopGoDownload": "前往下载客户端"
+      "authNeedDesktopGoDownload": "前往下载客户端",
+      "authSuccess": "账号添加成功",
+      "authBusy": "已有授权流程在进行中，请稍后重试",
+      "authUnsupported": "当前平台暂不支持授权登录",
+      "authFailed": "账号添加失败：{message}"
     },
     "editDrawer": {
       "title": "编辑账号",
@@ -260,6 +264,7 @@
     "publishType": {
       "manual": "手动发布",
       "dialog": "对话发布",
+      "auto": "自动发布",
       "unknown": "未知"
     },
     "platforms": {
@@ -790,6 +795,9 @@
       "followupConfirmDescription": "当前输入框已有内容，选择发送方式。",
       "followupConfirmAppend": "追加并发送",
       "followupConfirmReplace": "替换并发送",
+      "smartSearch": "智能搜索",
+      "smartSearchTooltipOn": "联网搜索已开启，点击关闭",
+      "smartSearchTooltipOff": "联网搜索已关闭，点击开启",
       "suggestions": [
         {
           "suggestion": "写作",
