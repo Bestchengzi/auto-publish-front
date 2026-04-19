@@ -46,7 +46,6 @@ import {
   CompactCenteredState,
   DataConnectorBoardsSkeleton,
   DataConnectorSectionSkeleton,
-  ProviderListSkeleton,
 } from "./skeletons";
 import type {
   ConnectionDialogMode,
@@ -114,7 +113,6 @@ export function TopicCenterDataConnectorsPanel({
     queryKey: PROVIDERS_QUERY_KEY,
     queryFn: listDataConnectorProviders,
     staleTime: 5 * 60 * 1000,
-    enabled: createMenuOpen || configDialogOpen || Boolean(boardSetupConnectionId),
   });
 
   const connections = React.useMemo(
@@ -352,7 +350,7 @@ export function TopicCenterDataConnectorsPanel({
         ).trim();
         const threadId = await createThread({ metadata: {} });
         const now = new Date().toISOString();
-        const optimisticTitle = "新对话";
+        const optimisticTitle = t("actions.newConversationTitle");
         const optimisticThread = {
           thread_id: threadId,
           created_at: now,
@@ -379,7 +377,7 @@ export function TopicCenterDataConnectorsPanel({
 
         stashPendingInitialMessage({
           threadId,
-          text: "基于选择的文章进行创作",
+          text: t("actions.createFromArticlePrompt"),
           personaId: selectedPersonaId,
           additionalKwargs: {
             news_item: {
@@ -459,11 +457,7 @@ export function TopicCenterDataConnectorsPanel({
         <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
           {t("dataConnectors.addConnectorSectionTitle")}
         </div>
-        {providersQuery.isPending ? (
-          <div className="px-2 py-2">
-            <ProviderListSkeleton />
-          </div>
-        ) : providersQuery.isError ? (
+        {providersQuery.isError ? (
           <div className="px-2 py-2 text-sm text-muted-foreground">
             {t("dataConnectors.providerDialog.loadError")}
           </div>

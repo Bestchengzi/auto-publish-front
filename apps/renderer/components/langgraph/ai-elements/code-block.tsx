@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { cn } from "@/lib/utils";
 import { CheckIcon, CopyIcon } from "lucide-react";
+import { useTheme } from "next-themes";
 import {
   type ComponentProps,
   createContext,
@@ -49,27 +50,38 @@ const lineNumberTransformer: ShikiTransformer = {
   },
 };
 
+type ShikiTheme = "one-light" | "one-dark-pro";
+
+const highlightCache = new Map<string, Promise<string>>();
+
 export async function highlightCode(
   code: string,
   language: BundledLanguage,
+  theme: ShikiTheme,
   showLineNumbers = false,
 ) {
   const transformers: ShikiTransformer[] = showLineNumbers
     ? [lineNumberTransformer]
     : [];
+  const cacheKey = JSON.stringify([theme, language, showLineNumbers, code]);
+  const cachedHtml = highlightCache.get(cacheKey);
 
-  return await Promise.all([
-    codeToHtml(code, {
-      lang: language,
-      theme: "one-light",
-      transformers,
-    }),
-    codeToHtml(code, {
-      lang: language,
-      theme: "one-dark-pro",
-      transformers,
-    }),
-  ]);
+  if (cachedHtml) {
+    return cachedHtml;
+  }
+
+  const htmlPromise = codeToHtml(code, {
+    lang: language,
+    theme,
+    transformers,
+  }).catch((error) => {
+    highlightCache.delete(cacheKey);
+    throw error;
+  });
+
+  highlightCache.set(cacheKey, htmlPromise);
+
+  return await htmlPromise;
 }
 
 export const CodeBlock = ({
@@ -80,23 +92,28 @@ export const CodeBlock = ({
   children,
   ...props
 }: CodeBlockProps) => {
+  const { resolvedTheme } = useTheme();
   const [html, setHtml] = useState<string>("");
-  const [darkHtml, setDarkHtml] = useState<string>("");
+  const shikiTheme: ShikiTheme =
+    resolvedTheme === "dark" ? "one-dark-pro" : "one-light";
 
   useEffect(() => {
     let cancelled = false;
 
-    highlightCode(code, language, showLineNumbers).then(([light, dark]) => {
-      if (!cancelled) {
-        setHtml(light);
-        setDarkHtml(dark);
-      }
-    });
+    highlightCode(code, language, shikiTheme, showLineNumbers)
+      .then((nextHtml) => {
+        if (!cancelled) {
+          setHtml(nextHtml);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to highlight code block:", error);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [code, language, showLineNumbers]);
+  }, [code, language, shikiTheme, showLineNumbers]);
 
   return (
     <CodeBlockContext.Provider value={{ code }}>
@@ -117,14 +134,9 @@ export const CodeBlock = ({
         </div>
         <div className="relative size-full">
           <div
-            className="overflow-auto px-4 py-4 dark:hidden [&>pre]:m-0 [&>pre]:border-none! [&>pre]:bg-transparent! [&>pre]:p-0! [&>pre]:text-foreground! [&>pre]:text-sm [&>pre]:whitespace-pre-wrap [&_code]:font-mono [&_code]:text-sm"
+            className="overflow-auto px-4 py-4 [&>pre]:m-0 [&>pre]:border-none! [&>pre]:bg-transparent! [&>pre]:p-0! [&>pre]:text-foreground! [&>pre]:text-sm [&>pre]:whitespace-pre-wrap [&_code]:font-mono [&_code]:text-sm"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
             dangerouslySetInnerHTML={{ __html: html }}
-          />
-          <div
-            className="hidden overflow-auto px-4 py-4 dark:block [&>pre]:m-0 [&>pre]:border-none! [&>pre]:bg-transparent! [&>pre]:p-0! [&>pre]:text-foreground! [&>pre]:text-sm [&>pre]:whitespace-pre-wrap [&_code]:font-mono [&_code]:text-sm"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
-            dangerouslySetInnerHTML={{ __html: darkHtml }}
           />
         </div>
       </div>

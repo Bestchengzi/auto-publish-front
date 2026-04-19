@@ -410,8 +410,10 @@
   "topicCenter": {
     "actions": {
       "secondaryCreation": "发散",
+      "newConversationTitle": "新对话",
       "divergePromptPrefix": "帮我话题发散：",
       "divergeFailed": "创建发散对话失败，请稍后重试",
+      "createFromArticlePrompt": "基于选择的文章进行创作",
       "creationPromptXiaohongshu": "帮我创作一篇小红书图文，内容基于{title}来写",
       "creationPromptMediumLongArticle": "帮我创作一篇中长文，内容基于{title}来写"
     },
@@ -667,6 +669,7 @@
       "addPersona": "添加人设",
       "noPersona": "不带人设",
       "addPersonaPrompt": "帮我添加人设",
+      "newConversationTitle": "新对话",
       "deletePersonaDialog": {
         "close": "关闭",
         "title": "删除人设",

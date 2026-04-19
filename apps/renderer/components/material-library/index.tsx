@@ -71,6 +71,7 @@ const ALLOWED_EXTENSIONS = new Set([
   ".mp4", ".webm", ".ogg",
   ".pdf", ".doc", ".docx", ".txt", ".md", ".xls", ".xlsx",
 ]);
+const MAX_UPLOAD_CONCURRENCY = 3;
 
 function isAllowedFile(file: File): boolean {
   const ext = "." + (file.name.split(".").pop() ?? "").toLowerCase();
@@ -100,6 +101,32 @@ function mapMediaResponseToMaterial(m: mediaApi.MediaResponse): Material {
         ? m.url
         : undefined,
   };
+}
+
+async function uploadFilesWithConcurrency(
+  files: File[],
+  concurrency = MAX_UPLOAD_CONCURRENCY,
+) {
+  const uploadedIds: string[] = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < files.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      const res = await mediaApi.uploadMedia(files[currentIndex]);
+      uploadedIds[currentIndex] = res.id;
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(concurrency, files.length) },
+      () => worker(),
+    ),
+  );
+
+  return uploadedIds;
 }
 
 export function MaterialLibrary() {
@@ -207,24 +234,6 @@ export function MaterialLibrary() {
   const isInitialLoading =
     !hasLoadedOnce && (groupsQuery.isLoading || materialsQuery.isLoading);
 
-  const fetchGroups = React.useCallback(async () => {
-    try {
-      await groupsQuery.refetch();
-    } catch (e) {
-      console.error("Failed to fetch media groups:", e);
-      toast.error(getApiErrorMessage(e, t("common.error")));
-    }
-  }, [groupsQuery, t]);
-
-  const refreshData = React.useCallback(async () => {
-    try {
-      await Promise.all([groupsQuery.refetch(), materialsQuery.refetch()]);
-    } catch (e) {
-      console.error("Failed to refresh material data:", e);
-      toast.error(getApiErrorMessage(e, t("common.error")));
-    }
-  }, [groupsQuery, materialsQuery, t]);
-
   const invalidateMaterialLibraryQueries = React.useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["material-library"] });
   }, [queryClient]);
@@ -236,7 +245,6 @@ export function MaterialLibrary() {
       await mediaGroupsApi.createMediaGroup(name);
       setNewGroupName("");
       await invalidateMaterialLibraryQueries();
-      await fetchGroups();
     } catch (e) {
       console.error("Failed to create group:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -269,7 +277,6 @@ export function MaterialLibrary() {
       setEditingGroupId(null);
       setEditingGroupName("");
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to rename media group:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -278,7 +285,6 @@ export function MaterialLibrary() {
     editingGroupId,
     editingGroupName,
     invalidateMaterialLibraryQueries,
-    refreshData,
     t,
   ]);
 
@@ -294,7 +300,6 @@ export function MaterialLibrary() {
     try {
       await mediaGroupsApi.deleteMediaGroup(numId);
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to delete group:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -361,7 +366,6 @@ export function MaterialLibrary() {
       );
       setSelectedIds(new Set());
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to move media:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -375,7 +379,6 @@ export function MaterialLibrary() {
       await mediaApi.deleteMedia(ids);
       setSelectedIds(new Set());
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to delete media:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -392,7 +395,6 @@ export function MaterialLibrary() {
       });
       setEditingMaterial((prev) => (prev?.id === id ? null : prev));
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to delete media:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -420,7 +422,6 @@ export function MaterialLibrary() {
         group_ids: updates.groupId === "ungrouped" ? [] : groupIds,
       });
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to update media:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));
@@ -438,11 +439,7 @@ export function MaterialLibrary() {
     const targetGroupId =
       groupFilter === "all" || groupFilter === "ungrouped" ? null : groupFilter;
     try {
-      const uploadedIds: string[] = [];
-      for (const file of validFiles) {
-        const res = await mediaApi.uploadMedia(file);
-        uploadedIds.push(res.id);
-      }
+      const uploadedIds = await uploadFilesWithConcurrency(validFiles);
       if (
         targetGroupId &&
         uploadedIds.length > 0 &&
@@ -454,7 +451,6 @@ export function MaterialLibrary() {
         );
       }
       await invalidateMaterialLibraryQueries();
-      await refreshData();
     } catch (e) {
       console.error("Failed to upload media:", e);
       toast.error(getApiErrorMessage(e, t("common.error")));

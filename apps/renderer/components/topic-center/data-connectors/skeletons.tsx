@@ -89,31 +89,6 @@ export function CompactCenteredState({
   );
 }
 
-export function ProviderListSkeleton() {
-  return (
-    <div>
-      <Skeleton className="mb-3 h-4 w-12 rounded-md" aria-hidden />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div
-            key={`provider-skeleton-${index}`}
-            className="rounded-xl border border-border p-4"
-          >
-            <div className="flex items-start gap-3">
-              <Skeleton className="size-10 shrink-0 rounded-lg" />
-              <div className="min-w-0 flex-1">
-                <Skeleton className="h-5 w-28" />
-                <Skeleton className="mt-2 h-4 w-full" />
-                <Skeleton className="mt-2 h-4 w-2/3" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function BoardItemsSkeleton() {
   return (
     <div

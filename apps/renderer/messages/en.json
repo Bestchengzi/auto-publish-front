@@ -410,8 +410,10 @@
   "topicCenter": {
     "actions": {
       "secondaryCreation": "Brainstorm",
+      "newConversationTitle": "New Conversation",
       "divergePromptPrefix": "Help me brainstorm this topic: ",
       "divergeFailed": "Failed to start a diverge conversation. Please try again.",
+      "createFromArticlePrompt": "Help me create content based on the selected article.",
       "creationPromptXiaohongshu": "Help me write a Xiaohongshu post based on {title}.",
       "creationPromptMediumLongArticle": "Help me write a medium-length article based on {title}."
     },
@@ -667,6 +669,7 @@
       "addPersona": "Add Persona",
       "noPersona": "No persona",
       "addPersonaPrompt": "Help me add a persona",
+      "newConversationTitle": "New Conversation",
       "deletePersonaDialog": {
         "close": "Close",
         "title": "Delete Persona",

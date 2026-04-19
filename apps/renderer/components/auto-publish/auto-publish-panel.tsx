@@ -67,6 +67,7 @@ function taskRowToUpdateBody(
     timezone: row.timezone,
     schedule_text: row.schedule_text?.trim() || row.schedule?.expression || "",
     publish_targets: row.publish_targets,
+    topic_source_bindings: row.topic_source_bindings,
     thinking_enabled: row.thinking_enabled,
     is_plan_mode: row.is_plan_mode,
     reasoning_effort: row.reasoning_effort,

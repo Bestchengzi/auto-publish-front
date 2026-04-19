@@ -267,7 +267,7 @@ export function TopicCenterHotRankPanel() {
       try {
         const threadId = await createThread({ metadata: {} });
         const now = new Date().toISOString();
-        const optimisticTitle = "新对话";
+        const optimisticTitle = tTopicCenter("actions.newConversationTitle");
         const optimisticThread = {
           thread_id: threadId,
           created_at: now,

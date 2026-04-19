@@ -6,11 +6,11 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
-  type QueryKey,
 } from "@tanstack/react-query";
 import { CircleAlertIcon, MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 import {
   DropdownMenu,
@@ -79,6 +79,7 @@ import {
   type PublishRecordGroupResponse,
 } from "@/lib/api/publish";
 import { createPageList } from "@/lib/pagination";
+import { getApiErrorMessage } from "@/lib/request";
 
 const SUPPORTED_PLATFORM_IDS: PlatformId[] = [
   "toutiao",
@@ -92,13 +93,13 @@ const SUPPORTED_PLATFORM_IDS: PlatformId[] = [
   "baijiahao",
 ];
 const PAGE_SIZE = 20;
+const FETCH_PAGE_SIZE = 100;
 
-type PublishRecordsPageData = {
+type PublishRecordsData = {
   items: Work[];
-  total: number;
-  page: number;
-  pageSize: number;
 };
+
+type WorkStatusFilter = Exclude<PublishStatus, "publishing"> | "all";
 
 function isPlatformId(value: string): value is PlatformId {
   return SUPPORTED_PLATFORM_IDS.includes(value as PlatformId);
@@ -226,6 +227,31 @@ function mapGroupToWork(group: PublishRecordGroupResponse): Work {
   };
 }
 
+async function listAllUserPublishRecords(): Promise<PublishRecordsData> {
+  const items: Work[] = [];
+  let page = 1;
+
+  while (true) {
+    const res = await listUserPublishRecordGroups({
+      page,
+      pageSize: FETCH_PAGE_SIZE,
+    });
+    items.push(...res.items.map(mapGroupToWork));
+
+    if (
+      res.items.length === 0 ||
+      items.length >= res.total ||
+      res.items.length < FETCH_PAGE_SIZE
+    ) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return { items };
+}
+
 /** 固定宽度 + 省略；仅在被截断时悬停显示全文 */
 function WorksLibraryTitleCell({ title }: { title: string }) {
   const textRef = React.useRef<HTMLSpanElement>(null);
@@ -278,6 +304,7 @@ function WorksLibraryTitleCell({ title }: { title: string }) {
 
 export function WorksLibrary() {
   const t = useTranslations("worksLibrary");
+  const tGlobal = useTranslations();
   const queryClient = useQueryClient();
 
   const platforms = React.useMemo(
@@ -289,7 +316,7 @@ export function WorksLibrary() {
   const [queryInput, setQueryInput] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [platformFilter, setPlatformFilter] = React.useState<PlatformId | "all">("all");
-  const [statusFilter, setStatusFilter] = React.useState<PublishStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = React.useState<WorkStatusFilter>("all");
 
   const updateQuery = React.useMemo(() => debounce((next: string) => setQuery(next), 300), []);
   React.useEffect(() => () => updateQuery.cancel(), [updateQuery]);
@@ -298,20 +325,9 @@ export function WorksLibrary() {
     setPage(1);
   }, [query, platformFilter, statusFilter]);
 
-  const publishRecordsQuery = useQuery<PublishRecordsPageData>({
-    queryKey: ["works-library", "publish-records", page, PAGE_SIZE] as QueryKey,
-    queryFn: async () => {
-      const res = await listUserPublishRecordGroups({
-        page,
-        pageSize: PAGE_SIZE,
-      });
-      return {
-        items: res.items.map(mapGroupToWork),
-        total: res.total,
-        page: res.page,
-        pageSize: res.page_size,
-      };
-    },
+  const publishRecordsQuery = useQuery<PublishRecordsData>({
+    queryKey: ["works-library", "publish-records", "all"],
+    queryFn: listAllUserPublishRecords,
     placeholderData: (previousData) => previousData,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
@@ -340,21 +356,6 @@ export function WorksLibrary() {
     return list.filter((item) => !hiddenWorkIds.has(item.id));
   }, [hiddenWorkIds, publishRecordsQuery.data]);
 
-  const listMeta = publishRecordsQuery.data;
-  const totalCount = listMeta?.total ?? 0;
-  const pageSize = listMeta?.pageSize ?? PAGE_SIZE;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const showPagination = !isInitialLoading && totalCount > 0;
-  const pageItems = React.useMemo(
-    () => createPageList(page, totalPages),
-    [page, totalPages],
-  );
-
-  React.useEffect(() => {
-    if (!listMeta) return;
-    if (page > totalPages) setPage(totalPages);
-  }, [listMeta, page, totalPages]);
-
   const filteredWorks = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     return works.filter((w) => {
@@ -367,19 +368,38 @@ export function WorksLibrary() {
     });
   }, [works, query, platformFilter, statusFilter]);
 
+  const totalCount = filteredWorks.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const showPagination = !isInitialLoading && totalCount > 0;
+  const pageItems = React.useMemo(
+    () => createPageList(page, totalPages),
+    [page, totalPages],
+  );
+  const visibleWorks = React.useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredWorks.slice(start, start + PAGE_SIZE);
+  }, [filteredWorks, page]);
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
 
   React.useEffect(() => {
     setSelectedIds((prev) => {
-      const allowed = new Set(filteredWorks.map((w) => w.id));
+      const allowed = new Set(visibleWorks.map((w) => w.id));
       const next = new Set<string>();
       for (const id of prev) if (allowed.has(id)) next.add(id);
       return next;
     });
-  }, [filteredWorks]);
+  }, [visibleWorks]);
 
-  const allSelected = filteredWorks.length > 0 && selectedIds.size === filteredWorks.length;
-  const someSelected = selectedIds.size > 0 && !allSelected;
+  const allSelected =
+    visibleWorks.length > 0 &&
+    visibleWorks.every((work) => selectedIds.has(work.id));
+  const someSelected =
+    visibleWorks.some((work) => selectedIds.has(work.id)) && !allSelected;
 
   function toggleOne(id: string, next: boolean) {
     setSelectedIds((prev) => {
@@ -391,7 +411,7 @@ export function WorksLibrary() {
   }
 
   function toggleAll(next: boolean) {
-    setSelectedIds(next ? new Set(filteredWorks.map((w) => w.id)) : new Set());
+    setSelectedIds(next ? new Set(visibleWorks.map((w) => w.id)) : new Set());
   }
 
   function deleteSelected() {
@@ -408,8 +428,8 @@ export function WorksLibrary() {
         });
       },
       onError: (error) => {
-        // 保持弹窗打开，方便用户重试；同时在控制台给出错误细节
         console.error("Failed to delete publish records:", error);
+        toast.error(getApiErrorMessage(error, tGlobal("common.error")));
       },
     });
   }
@@ -426,6 +446,7 @@ export function WorksLibrary() {
       },
       onError: (error) => {
         console.error("Failed to delete publish record:", error);
+        toast.error(getApiErrorMessage(error, tGlobal("common.error")));
       },
     });
   }
@@ -529,7 +550,7 @@ export function WorksLibrary() {
             <Select
               value={statusFilter}
               onValueChange={(v) =>
-                setStatusFilter(v as PublishStatus | "all")
+                setStatusFilter(v as WorkStatusFilter)
               }
             >
               <SelectTrigger className="gap-1.5" size="default">
@@ -541,9 +562,7 @@ export function WorksLibrary() {
                     ? t("filters.all")
                     : statusFilter === "success"
                       ? t("status.success")
-                      : statusFilter === "failed"
-                        ? t("status.failed")
-                        : t("status.publishing")}
+                      : t("status.failed")}
                 </span>
                 <SelectValue className="sr-only" />
               </SelectTrigger>
@@ -553,9 +572,6 @@ export function WorksLibrary() {
                   <SelectItem value="all">{t("filters.all")}</SelectItem>
                   <SelectItem value="success">{t("status.success")}</SelectItem>
                   <SelectItem value="failed">{t("status.failed")}</SelectItem>
-                  <SelectItem value="publishing">
-                    {t("status.publishing")}
-                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -573,7 +589,7 @@ export function WorksLibrary() {
                 showMoveToGroup={false}
               />
               <div className="flex min-h-0 flex-1 flex-col">
-              {filteredWorks.length > 0 ? (
+              {visibleWorks.length > 0 ? (
                 <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
                   <Table bodyScroll className="min-w-[1020px] table-fixed">
                     <TableHeader
@@ -619,7 +635,7 @@ export function WorksLibrary() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredWorks.map((w) => {
+                      {visibleWorks.map((w) => {
                         const checked = selectedIds.has(w.id);
                         return (
                           <TableRow key={w.id} className="hover:bg-muted/30">
@@ -786,7 +802,7 @@ export function WorksLibrary() {
                     <div className="order-last w-full text-center text-xs text-muted-foreground sm:order-first sm:w-auto sm:text-left">
                       {t("pagination.summary", {
                         total: totalCount,
-                        pageSize,
+                        pageSize: PAGE_SIZE,
                       })}
                     </div>
                     <PaginationContent className="order-first sm:order-last">
