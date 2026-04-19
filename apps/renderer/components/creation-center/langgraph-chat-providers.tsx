@@ -3,6 +3,7 @@
 import "katex/dist/katex.min.css";
 // import "streamdown/styles.css";
 
+import { PublishFlowProvider } from "@/components/publish";
 import { PromptInputProvider } from "@/components/langgraph/ai-elements/prompt-input";
 import { ArtifactsProvider } from "@/components/langgraph/workspace/artifacts";
 import { SubtasksProvider } from "@/lib/langgraph/core/tasks/context";
@@ -19,7 +20,9 @@ export function LanggraphChatProviders({
   return (
     <SubtasksProvider>
       <ArtifactsProvider>
-        <PromptInputProvider>{children}</PromptInputProvider>
+        <PublishFlowProvider>
+          <PromptInputProvider>{children}</PromptInputProvider>
+        </PublishFlowProvider>
       </ArtifactsProvider>
     </SubtasksProvider>
   );

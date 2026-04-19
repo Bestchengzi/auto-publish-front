@@ -6,6 +6,16 @@
  */
 import { applyStreamingProxyClientHints } from "@/lib/api/streaming-fetch-headers"
 import { clearAuthStorage, getAuthorizationHeaderValue } from "@/lib/auth/session"
+import { defaultLocale, locales, type AppLocale } from "@/i18n/config"
+import enMessages from "@/messages/en.json"
+import zhCNMessages from "@/messages/zh-CN.json"
+import { createTranslator } from "next-intl"
+import { toast } from "sonner"
+
+const HTTP_ERROR_MESSAGES: Record<AppLocale, (typeof zhCNMessages)> = {
+  "zh-CN": zhCNMessages,
+  en: enMessages,
+}
 
 let unauthorizedRedirecting = false
 
@@ -98,32 +108,64 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+function resolveAppLocaleFromPath(): AppLocale {
+  if (typeof window === "undefined") return defaultLocale
+  const segment = getLocaleFromPathname(window.location.pathname)
+  return locales.includes(segment as AppLocale) ? (segment as AppLocale) : defaultLocale
+}
+
+function toastHttpErrorIfClient(message: string): void {
+  if (typeof window === "undefined") return
+  toast.error(message)
+}
+
 async function handleResponseError(response: Response): Promise<never> {
   const status = response.status
-  let errorMessage = "Request failed"
+  let errorMessage: string | null = null
   try {
     const errorData = await response.json()
-    errorMessage =
-      parseErrorMessageFromBody(errorData) ?? errorMessage
+    errorMessage = parseErrorMessageFromBody(errorData)
   } catch {
-    errorMessage = response.statusText || errorMessage
+    errorMessage = response.statusText || null
   }
 
+  const locale = resolveAppLocaleFromPath()
+  const t = createTranslator({
+    locale,
+    messages: HTTP_ERROR_MESSAGES[locale],
+    namespace: "request",
+  })
+
   switch (status) {
-    case 401:
+    case 401: {
       // 全局兜底：任何接口 401 都回到新对话页并弹登录（由 AuthRouteGuard 处理弹窗）
       if (typeof window !== "undefined") {
-        redirectToLoginNewChat()
+        // redirectToLoginNewChat()
       }
-      throw new Error("未授权，请重新登录")
-    case 403:
-      throw new Error(errorMessage || "无权限访问")
-    case 404:
-      throw new Error(errorMessage || "请求的资源不存在")
-    case 500:
-      throw new Error(errorMessage || "服务器错误")
-    default:
-      throw new Error(errorMessage)
+      const msg = t("http.unauthorized")
+      toastHttpErrorIfClient(msg)
+      throw new Error(msg)
+    }
+    case 403: {
+      const msg = errorMessage || t("http.forbidden")
+      toastHttpErrorIfClient(msg)
+      throw new Error(msg)
+    }
+    case 404: {
+      const msg = errorMessage || t("http.notFound")
+      toastHttpErrorIfClient(msg)
+      throw new Error(msg)
+    }
+    case 500: {
+      const msg = errorMessage || t("http.serverError")
+      toastHttpErrorIfClient(msg)
+      throw new Error(msg)
+    }
+    default: {
+      const msg = errorMessage || t("http.requestFailed")
+      toastHttpErrorIfClient(msg)
+      throw new Error(msg)
+    }
   }
 }
 

@@ -3,6 +3,15 @@
     "error": "出错了",
     "groupNameRequired": "请输入分组名称"
   },
+  "request": {
+    "http": {
+      "unauthorized": "未授权，请重新登录",
+      "forbidden": "无权限访问",
+      "notFound": "请求的资源不存在",
+      "serverError": "服务器错误",
+      "requestFailed": "请求失败"
+    }
+  },
   "app": {
     "name": "可达AI",
     "metaDescription": "可达AI是对话式 AI 内容创作与多平台发布工具，支持人设驱动写作、智能配图、手动发布与定时自动发布。"
@@ -929,6 +938,163 @@
       "heading2": "二级标题",
       "heading3": "三级标题",
       "heading4": "四级标题"
+    },
+    "chatBox": {
+      "artifacts": {
+        "emptyTitle": "未选择文件",
+        "emptyDescription": "选择一个文件以查看详情",
+        "listTitle": "会话文件",
+        "closeAria": "关闭文件侧栏"
+      },
+      "labels": {
+        "publishAccount": "发布账号",
+        "title": "标题",
+        "runAds": "投放广告"
+      },
+      "errors": {
+        "selectField": "请选择{label}",
+        "inputField": "请输入{label}",
+        "titleToutiaoLength": "标题需为2-30个字",
+        "titleRednoteLength": "标题最多20个字",
+        "titleZhihuLength": "标题最多100个字",
+        "titleWechatLength": "标题最多64个字",
+        "toutiaoCoverSingle": "请选择一张展示封面",
+        "toutiaoCoverThree": "请选择三张展示封面"
+      },
+      "fields": {
+        "article_id": "Article Id",
+        "description": "Description",
+        "tags": "Tags",
+        "categories": "Categories",
+        "cover_image": "添加封面",
+        "article_type": "Article Type",
+        "read_type": "Read Type",
+        "creation_statement": "Creation Statement",
+        "scheduled_at": "Scheduled At",
+        "scheduled_time": "Scheduled Time",
+        "abstract": "摘要",
+        "cover_layout": "展示封面",
+        "cover_images": "封面",
+        "feed_cat": "分类",
+        "activity_list": "活动投稿",
+        "declare_aigc": "声明AIGC",
+        "auto_tts": "AI配音",
+        "creative_method": "创作方式",
+        "original_announce": "原创声明",
+        "event_spec": "事件来源说明",
+        "settings": "设置",
+        "cover_mode": "展示封面",
+        "enable_ad": "投放广告",
+        "first_publish": "声明首发",
+        "sync_to_weitoutiao": "同时发布微头条",
+        "work_statement": "作品声明",
+        "info_source": "信息来源",
+        "source_author_uid": "站内作者UID",
+        "privacy": "可见范围",
+        "note_copyable": "允许正文复制",
+        "original": "原创",
+        "enable_comment": "开启留言",
+        "claim_source": "创作来源",
+        "platform_recommend": "平台推荐"
+      },
+      "platforms": {
+        "short": {
+          "toutiao": "头条号",
+          "csdn": "CSDN",
+          "baijiahao": "百家号",
+          "rednote": "小红书",
+          "xiaohongshu": "小红书",
+          "zhihu": "知乎",
+          "wechat_mp": "公众号",
+          "douyin": "抖音"
+        },
+        "picker": {
+          "toutiao": "今日头条",
+          "rednote": "小红书",
+          "wechat_mp": "微信公众号",
+          "zhixunbao": "知讯宝",
+          "zhihu": "知乎",
+          "csdn": "CSDN",
+          "baijiahao": "百家号"
+        }
+      },
+      "rednotePrivacy": {
+        "PUBLIC": "公开可见",
+        "PRIVATE": "仅自己可见",
+        "PARTIALLY_VISIBLE": "仅互关好友可见"
+      },
+      "wechatClaimSource": {
+        "noDeclaration": "无需声明",
+        "aiGenerated": "内容由AI生成",
+        "officialMedia": "素材来源官方媒体/网络新闻",
+        "fictionEntertainment": "内容剧情演绎，仅供娱乐",
+        "personalOpinion": "个人观点，仅供参考",
+        "healthShare": "健康医疗分享，仅供参考",
+        "investmentView": "投资观点，仅供参考"
+      },
+      "toutiaoWorkStatement": {
+        "fromWeb": "取材网络",
+        "personalView": "个人观点，仅供参考",
+        "citeAi": "引用AI",
+        "fictionStory": "虚构演绎，故事经历",
+        "investmentView": "投资观点，仅供参考",
+        "healthShare": "健康医疗分享，仅供参考"
+      },
+      "publishResult": {
+        "close": "关闭",
+        "title": "发布结果",
+        "successFailed": "成功 {success}，失败 {failed}",
+        "totalAccounts": "（共 {total} 个账号）",
+        "failedBadge": "发布失败",
+        "allSucceeded": "全部账号发布成功",
+        "noFailureDetails": "暂无失败明细",
+        "dismiss": "知道了"
+      },
+      "publishPreview": {
+        "publishing": "发布中…",
+        "backToChat": "返回对话",
+        "previewTitle": "发布预览",
+        "panelTitle": "发布面板配置",
+        "startPublish": "开始发布",
+        "noPlatformsPrefix": "暂无待发布平台，",
+        "addPlatform": "添加平台",
+        "addPlatformAria": "添加平台",
+        "closePlatformAria": "关闭{platform}",
+        "accountRequired": "发布账号",
+        "accountPlaceholder": "请选择发布账号",
+        "accountSearchPlaceholder": "搜索账号…",
+        "titleRequired": "标题",
+        "titlePlaceholder": "请输入标题",
+        "coverAlt": "封面{index}",
+        "zhihuCoverAlt": "封面",
+        "replaceCover": "替换",
+        "deleteCover": "删除",
+        "coverHint": "优质的封面有利于推荐，格式支持 JPG、JPEG、PNG",
+        "toutiaoCoverSingle": "单图",
+        "toutiaoCoverThree": "三图",
+        "toutiaoCoverNone": "无封面",
+        "toutiaoAdEnable": "投放广告赚收益",
+        "toutiaoAdDisable": "不投放广告",
+        "toutiaoFirstPublish": "头条首发",
+        "toutiaoSyncWeitoutiao": "发布得更多收益",
+        "platformPickerClose": "关闭",
+        "platformPickerTitle": "选择平台",
+        "platformPickerDescription": "选择要添加发布的平台"
+      },
+      "toasts": {
+        "coverMax": "当前封面数量已达上限",
+        "selectableCoverMax": "可选择封面数量已达上限",
+        "pickImageFiles": "请选择图片文件",
+        "uploadNoUrl": "上传成功，但未获取到图片地址",
+        "uploadFailed": "上传失败",
+        "selectAccount": "请选择{platform}发布账号",
+        "enterTitle": "请输入{platform}标题",
+        "toutiaoPickCoverMode": "请选择头条号展示封面",
+        "toutiaoPickAd": "请选择头条号投放广告",
+        "bodyMaxChars": "{platform}正文最多1000字",
+        "parseResultFailed": "发布结果格式异常，请稍后重试",
+        "publishFailed": "发布失败"
+      }
     }
   },
   "marketing": {

@@ -1,13 +1,18 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
+import { LayoutGridIcon, Loader2Icon } from "lucide-react";
 
+import { Avatar } from "@/components/account-management/avatar";
+import { StatusPill } from "@/components/account-management/status-pill";
+import { useAccountSelection } from "@/components/account-management/use-account-selection";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -15,16 +20,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LayoutGridIcon, Loader2Icon } from "lucide-react";
-import { Avatar } from "@/components/account-management/avatar";
-import { PlatformLogo } from "@/components/account-management/platform-logo";
-import { StatusPill } from "@/components/account-management/status-pill";
-import { useAccountSelection } from "@/components/account-management/use-account-selection";
-
-import * as accountsApi from "@/lib/api/accounts";
 import * as accountGroupsApi from "@/lib/api/account-groups";
-import { getPlatformsWithNames, type PlatformId } from "@/lib/platforms";
+import * as accountsApi from "@/lib/api/accounts";
 import { cn } from "@/lib/utils";
+
+import { getPublishAccountPlatformOptions } from "../platforms/registry";
 
 type PublishAccountsDrawerProps = {
   open: boolean;
@@ -37,7 +37,7 @@ type FilterGroupId = "all" | "ungrouped" | string;
 type PublishAccount = {
   id: string;
   name: string;
-  platformId: PlatformId;
+  platformId: string;
   status: "online" | "offline";
   avatar: string | null | undefined;
   avatarSeed: string;
@@ -46,7 +46,7 @@ type PublishAccount = {
 
 function getAccountGroupName(account: PublishAccount): string {
   if (account.groups.length === 0) return "--";
-  return account.groups.map((g) => g.name).join(", ");
+  return account.groups.map((group) => group.name).join(", ");
 }
 
 export function PublishAccountsDrawer({
@@ -57,8 +57,8 @@ export function PublishAccountsDrawer({
   const t = useTranslations();
   const pathname = usePathname();
   const locale = React.useMemo(() => {
-    const first = pathname?.split("/").filter(Boolean)[0];
-    return first || "zh-CN";
+    const firstPathSegment = pathname?.split("/").filter(Boolean)[0];
+    return firstPathSegment || "zh-CN";
   }, [pathname]);
   const accountManagementUrl = React.useMemo(
     () => `/${locale}/account`,
@@ -70,13 +70,13 @@ export function PublishAccountsDrawer({
   }, [accountManagementUrl]);
 
   const platformOptions = React.useMemo(
-    () => getPlatformsWithNames((id) => t(`account.platforms.${id}`)),
-    [t],
+    () => getPublishAccountPlatformOptions(),
+    [],
   );
 
-  const [platformFilterId, setPlatformFilterId] = React.useState<
-    PlatformId | "all"
-  >("all");
+  const [platformFilterId, setPlatformFilterId] = React.useState<string | "all">(
+    "all",
+  );
   const [groupFilterId, setGroupFilterId] =
     React.useState<FilterGroupId>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -104,11 +104,12 @@ export function PublishAccountsDrawer({
   const groups = React.useMemo(() => {
     const items = groupsAgg?.items ?? [];
     const list = items
-      .filter((i) => i.group_id != null)
-      .map((i) => ({
-        id: String(i.group_id),
-        name: i.group_name,
+      .filter((item) => item.group_id != null)
+      .map((item) => ({
+        id: String(item.group_id),
+        name: item.group_name,
       }));
+
     return [
       { id: "all" as const, name: t("account.groups.allGroups") },
       { id: "ungrouped" as const, name: t("account.groups.ungrouped") },
@@ -118,43 +119,45 @@ export function PublishAccountsDrawer({
 
   const accounts = React.useMemo<PublishAccount[]>(() => {
     const items = accountsRes?.items ?? [];
-    return items.map((a) => ({
-      id: a.id,
-      name: a.nickname || a.account,
-      platformId: a.platform as PlatformId,
-      status: a.status as "online" | "offline",
-      avatar: a.avatar,
-      avatarSeed: a.id,
-      groups: (a.groups ?? []).map((g) => ({ id: g.id, name: g.name })),
+    return items.map((account) => ({
+      id: account.id,
+      name: account.nickname || account.account,
+      platformId: account.platform,
+      status: account.status as "online" | "offline",
+      avatar: account.avatar,
+      avatarSeed: account.id,
+      groups: (account.groups ?? []).map((group) => ({
+        id: group.id,
+        name: group.name,
+      })),
     }));
   }, [accountsRes]);
 
   const filteredAccounts = React.useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     const groupIdNumber =
       groupFilterId !== "all" && groupFilterId !== "ungrouped"
         ? Number.parseInt(groupFilterId, 10)
         : null;
 
-    return accounts.filter((a) => {
-      if (platformFilterId !== "all" && a.platformId !== platformFilterId)
+    return accounts.filter((account) => {
+      if (platformFilterId !== "all" && account.platformId !== platformFilterId) {
         return false;
+      }
 
       if (groupFilterId === "ungrouped") {
-        if (a.groups.length !== 0) return false;
+        if (account.groups.length !== 0) return false;
       } else if (groupFilterId !== "all") {
         if (groupIdNumber == null || Number.isNaN(groupIdNumber)) return false;
-        if (!a.groups.some((g) => g.id === groupIdNumber)) return false;
+        if (!account.groups.some((group) => group.id === groupIdNumber)) {
+          return false;
+        }
       }
 
-      if (q) {
-        const haystack = `${a.name}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-
-      return true;
+      if (!query) return true;
+      return account.name.toLowerCase().includes(query);
     });
-  }, [accounts, groupFilterId, searchQuery, platformFilterId]);
+  }, [accounts, groupFilterId, platformFilterId, searchQuery]);
 
   const {
     selectedIds,
@@ -165,7 +168,6 @@ export function PublishAccountsDrawer({
     toggleAll,
   } = useAccountSelection(filteredAccounts, { selectionUniverse: accounts });
 
-  // Reset filters and selection when the drawer opens.
   React.useEffect(() => {
     if (!open) return;
     setPlatformFilterId("all");
@@ -174,7 +176,11 @@ export function PublishAccountsDrawer({
     setSelectedIds(new Set());
   }, [open, setSelectedIds]);
 
-  const isLoading = isLoadingGroups || isLoadingAccounts || isFetchingGroups || isFetchingAccounts;
+  const isLoading =
+    isLoadingGroups ||
+    isLoadingAccounts ||
+    isFetchingGroups ||
+    isFetchingAccounts;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -190,9 +196,8 @@ export function PublishAccountsDrawer({
             <SheetTitle>{t("account.table.selectOne")}</SheetTitle>
           </SheetHeader>
 
-          <div className="flex flex-1 min-h-0 overflow-hidden">
-            {/* Left filters */}
-            <div className="w-[280px] shrink-0 border-r border-border p-4 overflow-auto">
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <div className="w-[280px] shrink-0 overflow-auto border-r border-border p-4">
               <div className="text-sm font-medium text-foreground">
                 {t("account.filters.platform")}
               </div>
@@ -213,14 +218,16 @@ export function PublishAccountsDrawer({
                     <span className="flex h-[22px] w-[22px] items-center justify-center">
                       <LayoutGridIcon className="size-5" aria-hidden />
                     </span>
-                    <span className="truncate">{t("account.filters.allPlatforms")}</span>
+                    <span className="truncate">
+                      {t("account.filters.allPlatforms")}
+                    </span>
                   </Button>
 
-                  {platformOptions.map((p) => {
-                    const active = platformFilterId === p.id;
+                  {platformOptions.map((platformOption) => {
+                    const active = platformFilterId === platformOption.id;
                     return (
                       <Button
-                        key={p.id}
+                        key={platformOption.id}
                         type="button"
                         variant="ghost"
                         className={cn(
@@ -229,12 +236,18 @@ export function PublishAccountsDrawer({
                             ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                             : "text-foreground/80 hover:bg-muted hover:text-foreground",
                         )}
-                        onClick={() => setPlatformFilterId(p.id)}
+                        onClick={() => setPlatformFilterId(platformOption.id)}
                       >
                         <span className="flex h-[22px] w-[22px] items-center justify-center">
-                          <PlatformLogo platformId={p.id} size={22} />
+                          <Image
+                            src={platformOption.logoPath}
+                            alt={platformOption.name}
+                            width={22}
+                            height={22}
+                            className="size-[22px] rounded-sm object-contain"
+                          />
                         </span>
-                        <span className="truncate">{p.name}</span>
+                        <span className="truncate">{platformOption.name}</span>
                       </Button>
                     );
                   })}
@@ -247,11 +260,11 @@ export function PublishAccountsDrawer({
 
               <div className="mt-3 rounded-xl border border-border bg-muted/10 p-3">
                 <div className="flex flex-col gap-1">
-                  {groups.map((g) => {
-                    const active = groupFilterId === g.id;
+                  {groups.map((group) => {
+                    const active = groupFilterId === group.id;
                     return (
                       <Button
-                        key={g.id}
+                        key={group.id}
                         type="button"
                         variant="ghost"
                         className={cn(
@@ -260,9 +273,9 @@ export function PublishAccountsDrawer({
                             ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                             : "text-foreground/80 hover:bg-muted hover:text-foreground",
                         )}
-                        onClick={() => setGroupFilterId(g.id)}
+                        onClick={() => setGroupFilterId(group.id)}
                       >
-                        <span className="truncate">{g.name}</span>
+                        <span className="truncate">{group.name}</span>
                       </Button>
                     );
                   })}
@@ -270,25 +283,24 @@ export function PublishAccountsDrawer({
               </div>
             </div>
 
-            {/* Right accounts */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="p-4 border-b border-border">
-                <div className="w-full flex items-center gap-3">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="border-b border-border p-4">
+                <div className="flex w-full items-center gap-3">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={someSelected}
-                    onCheckedChange={(v) => toggleAll(Boolean(v))}
+                    onCheckedChange={(checked) => toggleAll(Boolean(checked))}
                     aria-label={t("account.table.selectAll")}
                   />
-                  <div className="shrink-0 flex flex-col leading-tight">
+                  <div className="shrink-0 leading-tight">
                     <div className="text-sm font-medium">
                       {t("account.table.selectAll")}
                     </div>
                   </div>
-                  <div className="shrink-0 w-[320px] ml-auto">
+                  <div className="ml-auto w-[320px] shrink-0">
                     <Input
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder={t("account.search.placeholder")}
                       aria-label={t("account.search.ariaLabel")}
                     />
@@ -296,17 +308,17 @@ export function PublishAccountsDrawer({
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <div className="overflow-auto h-full p-4">
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="h-full overflow-auto p-4">
                   {isLoading ? (
-                    <div className="h-full flex items-center justify-center">
+                    <div className="flex h-full items-center justify-center">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2Icon className="size-4 animate-spin text-primary" />
                         <span>加载中...</span>
                       </div>
                     </div>
                   ) : filteredAccounts.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-center">
+                    <div className="flex h-full items-center justify-center text-center">
                       <div className="px-4">
                         <div className="text-base font-medium text-foreground">
                           {t("account.emptyTitle")}
@@ -325,51 +337,51 @@ export function PublishAccountsDrawer({
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full grid grid-cols-2 gap-3">
-                      {filteredAccounts.map((a) => {
-                        const checked = selectedIds.has(a.id);
-                        const groupName = getAccountGroupName(a);
+                    <div className="grid w-full grid-cols-2 gap-3">
+                      {filteredAccounts.map((account) => {
+                        const checked = selectedIds.has(account.id);
+                        const groupName = getAccountGroupName(account);
                         return (
                           <div
-                            key={a.id}
+                            key={account.id}
                             className={cn(
-                              "cursor-pointer flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm",
+                              "flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm",
                               checked && "border-primary/50",
                             )}
-                            onClick={() => toggleOne(a.id, !checked)}
+                            onClick={() => toggleOne(account.id, !checked)}
                           >
                             <div
                               className="flex items-center justify-center"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(event) => event.stopPropagation()}
                             >
                               <Checkbox
                                 checked={checked}
-                                onCheckedChange={(v) =>
-                                  toggleOne(a.id, Boolean(v))
+                                onCheckedChange={(nextValue) =>
+                                  toggleOne(account.id, Boolean(nextValue))
                                 }
-                                aria-label={a.name}
+                                aria-label={account.name}
                               />
                             </div>
                             <Avatar
-                              seed={a.avatarSeed}
-                              name={a.name}
-                              src={a.avatar}
+                              seed={account.avatarSeed}
+                              name={account.name}
+                              src={account.avatar}
                               className="size-10 text-sm"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
                                   <div className="truncate text-sm font-medium">
-                                    {a.name}
+                                    {account.name}
                                   </div>
                                 </div>
                                 <StatusPill
-                                  status={a.status}
+                                  status={account.status}
                                   onlineLabel="在线"
                                   offlineLabel="离线"
                                 />
                               </div>
-                              <div className="mt-1 text-xs text-muted-foreground truncate">
+                              <div className="mt-1 truncate text-xs text-muted-foreground">
                                 {groupName}
                               </div>
                             </div>
@@ -383,7 +395,7 @@ export function PublishAccountsDrawer({
             </div>
           </div>
 
-          <SheetFooter className="px-6 py-4 flex items-center justify-between gap-3">
+          <SheetFooter className="flex items-center justify-between gap-3 px-6 py-4">
             <div className="text-sm font-medium text-muted-foreground">
               {t("account.bulk.selectedCount", { count: selectedIds.size })}
             </div>
@@ -412,4 +424,3 @@ export function PublishAccountsDrawer({
     </Sheet>
   );
 }
-

@@ -1,0 +1,220 @@
+/**
+ * Artifact TipTap 文档编辑器：围栏代码块、行内 code、以及 CodeBlockLowlight 的 hljs 分词颜色。
+ * 全部限定在 .artifact-prosemirror-editor，避免影响对话区 Streamdown。
+ */
+
+/* —— 围栏代码块 pre —— */
+.artifact-prosemirror-editor .ProseMirror pre {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--muted) 40%, transparent);
+  padding: 0.75rem 1rem;
+}
+
+.dark .artifact-prosemirror-editor .ProseMirror pre {
+  background: color-mix(in oklch, var(--muted) 25%, var(--background));
+}
+
+/* —— 行内 code（pre 内的 code 在下一节覆盖） —— */
+.artifact-prosemirror-editor .ProseMirror code {
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+/* —— 围栏块内 code —— */
+.artifact-prosemirror-editor .ProseMirror pre > code {
+  display: block;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: #24292e;
+}
+
+.dark .artifact-prosemirror-editor .ProseMirror pre > code {
+  color: #c9d1d9;
+}
+
+/* —— GitHub Light token —— */
+.artifact-prosemirror-editor .hljs-doctag,
+.artifact-prosemirror-editor .hljs-keyword,
+.artifact-prosemirror-editor .hljs-meta .hljs-keyword,
+.artifact-prosemirror-editor .hljs-template-tag,
+.artifact-prosemirror-editor .hljs-template-variable,
+.artifact-prosemirror-editor .hljs-type,
+.artifact-prosemirror-editor .hljs-variable.language_ {
+  color: #d73a49;
+}
+
+.artifact-prosemirror-editor .hljs-title,
+.artifact-prosemirror-editor .hljs-title.class_,
+.artifact-prosemirror-editor .hljs-title.class_.inherited__,
+.artifact-prosemirror-editor .hljs-title.function_ {
+  color: #6f42c1;
+}
+
+.artifact-prosemirror-editor .hljs-attr,
+.artifact-prosemirror-editor .hljs-attribute,
+.artifact-prosemirror-editor .hljs-literal,
+.artifact-prosemirror-editor .hljs-meta,
+.artifact-prosemirror-editor .hljs-number,
+.artifact-prosemirror-editor .hljs-operator,
+.artifact-prosemirror-editor .hljs-variable,
+.artifact-prosemirror-editor .hljs-selector-attr,
+.artifact-prosemirror-editor .hljs-selector-class,
+.artifact-prosemirror-editor .hljs-selector-id {
+  color: #005cc5;
+}
+
+.artifact-prosemirror-editor .hljs-regexp,
+.artifact-prosemirror-editor .hljs-string,
+.artifact-prosemirror-editor .hljs-meta .hljs-string {
+  color: #032f62;
+}
+
+.artifact-prosemirror-editor .hljs-built_in,
+.artifact-prosemirror-editor .hljs-symbol {
+  color: #e36209;
+}
+
+.artifact-prosemirror-editor .hljs-comment,
+.artifact-prosemirror-editor .hljs-code,
+.artifact-prosemirror-editor .hljs-formula {
+  color: #6a737d;
+}
+
+.artifact-prosemirror-editor .hljs-name,
+.artifact-prosemirror-editor .hljs-quote,
+.artifact-prosemirror-editor .hljs-selector-tag,
+.artifact-prosemirror-editor .hljs-selector-pseudo {
+  color: #22863a;
+}
+
+.artifact-prosemirror-editor .hljs-subst {
+  color: #24292e;
+}
+
+.artifact-prosemirror-editor .hljs-section {
+  color: #005cc5;
+  font-weight: bold;
+}
+
+.artifact-prosemirror-editor .hljs-bullet {
+  color: #735c0f;
+}
+
+.artifact-prosemirror-editor .hljs-emphasis {
+  color: #24292e;
+  font-style: italic;
+}
+
+.artifact-prosemirror-editor .hljs-strong {
+  color: #24292e;
+  font-weight: bold;
+}
+
+.artifact-prosemirror-editor .hljs-addition {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+
+.artifact-prosemirror-editor .hljs-deletion {
+  color: #b31d28;
+  background-color: #ffeef0;
+}
+
+/* —— GitHub Dark（.dark） —— */
+.dark .artifact-prosemirror-editor .hljs-doctag,
+.dark .artifact-prosemirror-editor .hljs-keyword,
+.dark .artifact-prosemirror-editor .hljs-meta .hljs-keyword,
+.dark .artifact-prosemirror-editor .hljs-template-tag,
+.dark .artifact-prosemirror-editor .hljs-template-variable,
+.dark .artifact-prosemirror-editor .hljs-type,
+.dark .artifact-prosemirror-editor .hljs-variable.language_ {
+  color: #ff7b72;
+}
+
+.dark .artifact-prosemirror-editor .hljs-title,
+.dark .artifact-prosemirror-editor .hljs-title.class_,
+.dark .artifact-prosemirror-editor .hljs-title.class_.inherited__,
+.dark .artifact-prosemirror-editor .hljs-title.function_ {
+  color: #d2a8ff;
+}
+
+.dark .artifact-prosemirror-editor .hljs-attr,
+.dark .artifact-prosemirror-editor .hljs-attribute,
+.dark .artifact-prosemirror-editor .hljs-literal,
+.dark .artifact-prosemirror-editor .hljs-meta,
+.dark .artifact-prosemirror-editor .hljs-number,
+.dark .artifact-prosemirror-editor .hljs-operator,
+.dark .artifact-prosemirror-editor .hljs-variable,
+.dark .artifact-prosemirror-editor .hljs-selector-attr,
+.dark .artifact-prosemirror-editor .hljs-selector-class,
+.dark .artifact-prosemirror-editor .hljs-selector-id {
+  color: #79c0ff;
+}
+
+.dark .artifact-prosemirror-editor .hljs-regexp,
+.dark .artifact-prosemirror-editor .hljs-string,
+.dark .artifact-prosemirror-editor .hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
+
+.dark .artifact-prosemirror-editor .hljs-built_in,
+.dark .artifact-prosemirror-editor .hljs-symbol {
+  color: #ffa657;
+}
+
+.dark .artifact-prosemirror-editor .hljs-comment,
+.dark .artifact-prosemirror-editor .hljs-code,
+.dark .artifact-prosemirror-editor .hljs-formula {
+  color: #8b949e;
+}
+
+.dark .artifact-prosemirror-editor .hljs-name,
+.dark .artifact-prosemirror-editor .hljs-quote,
+.dark .artifact-prosemirror-editor .hljs-selector-tag,
+.dark .artifact-prosemirror-editor .hljs-selector-pseudo {
+  color: #7ee787;
+}
+
+.dark .artifact-prosemirror-editor .hljs-subst {
+  color: #c9d1d9;
+}
+
+.dark .artifact-prosemirror-editor .hljs-section {
+  color: #1f6feb;
+  font-weight: bold;
+}
+
+.dark .artifact-prosemirror-editor .hljs-bullet {
+  color: #f2cc60;
+}
+
+.dark .artifact-prosemirror-editor .hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic;
+}
+
+.dark .artifact-prosemirror-editor .hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+
+.dark .artifact-prosemirror-editor .hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+
+.dark .artifact-prosemirror-editor .hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c;
+}

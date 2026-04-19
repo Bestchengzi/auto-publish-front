@@ -26,7 +26,7 @@ alwaysApply: true
   - `app/**/page.tsx` 仅做编排（composition），不要塞大量逻辑
   - 复杂 UI 拆到同目录 `components/*`
   - 逻辑抽到 `hooks/*`，纯函数到 `lib/*`
-- 文件超过 600 行必须拆分（强制）。
+- 文件超过 1000 行必须拆分（强制）。
 
 ## 样式与设计一致性
 

@@ -22,6 +22,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import StarterKit from "@tiptap/starter-kit";
 import Color from "@tiptap/extension-color";
 import TextAlign from "@tiptap/extension-text-align";
@@ -54,10 +55,10 @@ import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
 import { getUploadPreviewUrl, uploadFiles } from "@/lib/langgraph/core/uploads/api";
 import { getFileName } from "@/lib/langgraph/core/utils/files";
+import { artifactCodeLowlight } from "@/lib/langgraph/workspace/artifacts/artifact-code-lowlight";
 import { getApiErrorMessage, request } from "@/lib/request";
 import { cn } from "@/lib/utils";
-import { buildPublishEditPayload } from "@/lib/api/publish";
-import type { PublishEditResponse } from "@/lib/api/publish";
+import { usePublishFlow } from "@/components/publish";
 import { useArtifacts } from "./context";
 import { useThread } from "../messages/context";
 import { createArtifactTurndownService } from "./artifact-editor-turndown";
@@ -77,13 +78,11 @@ import {
   isSelectionInMandatoryTitle,
   mandatoryTitlePlaceholderForNode,
 } from "./mandatory-title-extension";
-import { PublishAccountsDrawer } from "./publish-accounts-drawer";
 
 const ARTIFACT_AUTOSAVE_MS = 2500;
 /** 连续编辑结束后等待该时间，工具栏撤销才可用，并与 history 分组对齐 */
 const UNDO_UI_DEBOUNCE_MS = 500;
 /** 抽屉关闭动画结束后再打开发布面板，避免视觉跳变 */
-const PUBLISH_DRAWER_CLOSE_ANIMATION_MS = 320;
 const IMAGE_PICKER_TAB_UPLOAD = "upload";
 const IMAGE_PICKER_TAB_LIBRARY = "library";
 const IMAGE_PICKER_TAB_PROJECT = "project";
@@ -154,11 +153,6 @@ const ImageWithDeleteKeepsLine = Image.extend({
   },
 });
 
-type PublishEditCacheEntry = {
-  publishEdit: PublishEditResponse;
-  markdownSnapshot: string;
-};
-
 export function ArtifactFileDetail({
   className,
   filepath: filepathFromProps,
@@ -171,8 +165,9 @@ export function ArtifactFileDetail({
   const queryClient = useQueryClient();
   const { t } = useI18n();
   const { thread } = useThread();
+  const { beginArtifactPublish, isPreparingPublishPreview } = usePublishFlow();
   const { context: localContext } = useLocalSettings()[0];
-  const { setOpen, openPublishPreview, selectionVersion } = useArtifacts();
+  const { setOpen, selectionVersion } = useArtifacts();
   const isWriteFile = useMemo(() => {
     return filepathFromProps.startsWith("write-file:");
   }, [filepathFromProps]);
@@ -254,25 +249,6 @@ export function ArtifactFileDetail({
   const [openAlignPanel, setOpenAlignPanel] = useState(false);
   const [openBlockTypePanel, setOpenBlockTypePanel] = useState(false);
   const [openLinkPanel, setOpenLinkPanel] = useState(false);
-  const [publishAccountsOpen, setPublishAccountsOpen] = useState(false);
-  const [publishAccountIdsByArtifact, setPublishAccountIdsByArtifact] = useState<
-    Record<string, string[]>
-  >({});
-  const [publishEditCacheBySelection, setPublishEditCacheBySelection] = useState<
-    Record<string, PublishEditCacheEntry>
-  >({});
-  const publishAccountCacheKey = `${threadId}\u001f${filepathFromProps}`;
-  const selectedPublishAccountIds =
-    publishAccountIdsByArtifact[publishAccountCacheKey] ?? [];
-  const buildPublishEditCacheKey = useCallback(
-    (accountIds: string[]) => {
-      const normalizedIds = [...accountIds].sort().join(",");
-      return `${threadId}\u001f${filepathFromProps}\u001f${normalizedIds}`;
-    },
-    [filepathFromProps, threadId],
-  );
-  const [isPreparingPublishPreview, setIsPreparingPublishPreview] =
-    useState(false);
   const [isSavingPersona, setIsSavingPersona] = useState(false);
   const [slashMenuOpen, setSlashMenuOpen] = useState(false);
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 });
@@ -333,6 +309,11 @@ export function ArtifactFileDetail({
       StarterKit.configure({
         heading: { levels: [1, 2, 3, 4] },
         undoRedo: { newGroupDelay: UNDO_UI_DEBOUNCE_MS },
+        codeBlock: false,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight: artifactCodeLowlight,
+        defaultLanguage: "plaintext",
       }),
       MandatoryTitleExtension,
       Placeholder.configure({
@@ -839,60 +820,6 @@ export function ArtifactFileDetail({
     return () => clearTimeout(id);
   }, [canPersist, displayContent, editorMarkdown, persistArtifact]);
 
-  const openPublishPreviewForAccounts = useCallback(
-    async (accountIds: string[]) => {
-      if (accountIds.length === 0) return;
-      if (isPreparingPublishPreview) return;
-      const cacheKey = buildPublishEditCacheKey(accountIds);
-      const markdownSnapshot = editorMarkdownRef.current;
-      const cachedEntry = publishEditCacheBySelection[cacheKey];
-      if (cachedEntry && cachedEntry.markdownSnapshot === markdownSnapshot) {
-        openPublishPreview({
-          title: getFileName(filepath),
-          contentHtml: editor?.getHTML() ?? "",
-          selectedAccountIds: accountIds,
-          publishEdit: cachedEntry.publishEdit,
-        });
-        return;
-      }
-      setIsPreparingPublishPreview(true);
-      try {
-        const publishEdit = await buildPublishEditPayload({
-          threadId,
-          artifacts: filepathFromProps,
-          accountIds,
-        });
-        setPublishEditCacheBySelection((prev) => ({
-          ...prev,
-          [cacheKey]: {
-            publishEdit,
-            markdownSnapshot,
-          },
-        }));
-        openPublishPreview({
-          title: getFileName(filepath),
-          contentHtml: editor?.getHTML() ?? "",
-          selectedAccountIds: accountIds,
-          publishEdit,
-        });
-      } catch (error) {
-        toast.error(getApiErrorMessage(error, "加载发布配置失败"));
-      } finally {
-        setIsPreparingPublishPreview(false);
-      }
-    },
-    [
-      editor,
-      filepath,
-      filepathFromProps,
-      buildPublishEditCacheKey,
-      isPreparingPublishPreview,
-      openPublishPreview,
-      publishEditCacheBySelection,
-      threadId,
-    ],
-  );
-
   const buildAgentContext = useCallback((): AgentThreadContext => {
     return {
       ...localContext,
@@ -1042,11 +969,13 @@ export function ArtifactFileDetail({
                     void handlePersonaSave();
                     return;
                   }
-                  if (selectedPublishAccountIds.length > 0) {
-                    void openPublishPreviewForAccounts(selectedPublishAccountIds);
-                    return;
-                  }
-                  setPublishAccountsOpen(true);
+                  void beginArtifactPublish({
+                    threadId,
+                    artifactPath: filepathFromProps,
+                    title: getFileName(filepath),
+                    contentHtml: editor?.getHTML() ?? "",
+                    markdownSnapshot: editorMarkdownRef.current,
+                  });
                 }}
               >
                 {isPersonaMarkdown ? t.common.savePersona : t.common.publish}
@@ -1298,19 +1227,6 @@ export function ArtifactFileDetail({
                   : imageSearchCandidates[0] ?? "",
           )
         }
-      />
-      <PublishAccountsDrawer
-        open={publishAccountsOpen}
-        onOpenChange={setPublishAccountsOpen}
-        onConfirm={(ids) => {
-          setPublishAccountIdsByArtifact((prev) => ({
-            ...prev,
-            [publishAccountCacheKey]: ids,
-          }));
-          setTimeout(() => {
-            void openPublishPreviewForAccounts(ids);
-          }, PUBLISH_DRAWER_CLOSE_ANIMATION_MS);
-        }}
       />
     </>
   );
