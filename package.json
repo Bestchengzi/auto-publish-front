@@ -3,8 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/renderer",
-    "apps/desktop",
-    "packages/*"
+    "apps/desktop"
   ],
   "scripts": {
     "free:port": "kill-port 13200",

@@ -140,7 +140,7 @@ async function handleResponseError(response: Response): Promise<never> {
     case 401: {
       // 全局兜底：任何接口 401 都回到新对话页并弹登录（由 AuthRouteGuard 处理弹窗）
       if (typeof window !== "undefined") {
-        // redirectToLoginNewChat()
+        redirectToLoginNewChat()
       }
       const msg = t("http.unauthorized")
       toastHttpErrorIfClient(msg)
