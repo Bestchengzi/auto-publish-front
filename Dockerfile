@@ -3,7 +3,7 @@
 ARG DEPS_IMAGE=swr.cn-east-3.myhuaweicloud.com/beeize-test/auto-publish-front:deps
 FROM ${DEPS_IMAGE} AS deps
 
-FROM node:20-alpine AS builder
+FROM node:22.14.0-alpine AS builder
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 RUN --mount=type=cache,target=/app/apps/renderer/.next/cache \
     npm -w apps/renderer exec next build
 
-FROM node:20-alpine AS runner
+FROM node:22.14.0-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
