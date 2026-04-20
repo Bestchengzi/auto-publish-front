@@ -27,6 +27,8 @@ COPY package.json package-lock.json ./
 COPY .npmrc ./.npmrc
 COPY apps/renderer ./apps/renderer
 
+RUN npm install
+
 RUN --mount=type=cache,target=/app/apps/renderer/.next/cache \
     npm -w apps/renderer exec next build
 
