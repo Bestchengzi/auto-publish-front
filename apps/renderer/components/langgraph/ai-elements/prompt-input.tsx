@@ -298,54 +298,56 @@ export function PromptInputAttachment({
 
   return (
     <PromptInputHoverCard>
-      <HoverCardTrigger asChild>
-        <div
-          className={cn(
-            "group border-border hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 relative flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-1.5 text-sm font-medium transition-all select-none",
-            className,
-          )}
-          key={data.id}
-          {...props}
-        >
-          <div className="relative size-5 shrink-0">
-            <div className="bg-background absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded transition-opacity group-hover:opacity-0">
-              {isImage ? (
-                <Image
-                  alt={filename || "attachment"}
-                  className="size-5 object-cover"
-                  height={20}
-                  src={data.url}
-                  unoptimized
-                  width={20}
-                />
-              ) : (
-                <div className="text-muted-foreground flex size-5 items-center justify-center">
-                  <PaperclipIcon className="size-3" />
-                </div>
-              )}
+      <PromptInputHoverCardTrigger
+        render={
+          <div
+            className={cn(
+              "group border-border hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 relative flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-1.5 text-sm font-medium transition-all select-none",
+              className,
+            )}
+            key={data.id}
+            {...props}
+          >
+            <div className="relative size-5 shrink-0">
+              <div className="bg-background absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded transition-opacity group-hover:opacity-0">
+                {isImage ? (
+                  <Image
+                    alt={filename || "attachment"}
+                    className="size-5 object-cover"
+                    height={20}
+                    src={data.url}
+                    unoptimized
+                    width={20}
+                  />
+                ) : (
+                  <div className="text-muted-foreground flex size-5 items-center justify-center">
+                    <PaperclipIcon className="size-3" />
+                  </div>
+                )}
+              </div>
+              <Button
+                aria-label="Remove attachment"
+                className="absolute inset-0 size-5 cursor-pointer rounded p-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>svg]:size-2.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  attachments.remove(data.id);
+                }}
+                type="button"
+                variant="ghost"
+              >
+                <XIcon />
+                <span className="sr-only">Remove</span>
+              </Button>
             </div>
-            <Button
-              aria-label="Remove attachment"
-              className="absolute inset-0 size-5 cursor-pointer rounded p-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 [&>svg]:size-2.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                attachments.remove(data.id);
-              }}
-              type="button"
-              variant="ghost"
-            >
-              <XIcon />
-              <span className="sr-only">Remove</span>
-            </Button>
-          </div>
 
-          <span className="flex-1 truncate">{attachmentLabel}</span>
-        </div>
-      </HoverCardTrigger>
-      <PromptInputHoverCardContent className="w-auto p-2">
-        <div className="w-auto space-y-3">
+            <span className="flex-1 truncate">{attachmentLabel}</span>
+          </div>
+        }
+      />
+      <PromptInputHoverCardContent className="w-[min(24rem,calc(100vw-2rem))] p-2">
+        <div className="w-full space-y-3">
           {isImage && (
-            <div className="flex max-h-96 w-96 items-center justify-center overflow-hidden rounded-md border">
+            <div className="flex max-h-96 w-full items-center justify-center overflow-hidden rounded-md border">
               <Image
                 alt={filename || "attachment preview"}
                 className="max-h-full max-w-full object-contain"
@@ -1279,21 +1281,21 @@ export const PromptInputSelectValue = ({
 
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
 
-export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+export const PromptInputHoverCard = (props: PromptInputHoverCardProps) => (
+  <HoverCard {...props} />
 );
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<
   typeof HoverCardTrigger
 >;
 
-export const PromptInputHoverCardTrigger = (
-  props: PromptInputHoverCardTriggerProps,
-) => <HoverCardTrigger {...props} />;
+export const PromptInputHoverCardTrigger = ({
+  delay = 0,
+  closeDelay = 0,
+  ...props
+}: PromptInputHoverCardTriggerProps) => (
+  <HoverCardTrigger delay={delay} closeDelay={closeDelay} {...props} />
+);
 
 export type PromptInputHoverCardContentProps = ComponentProps<
   typeof HoverCardContent

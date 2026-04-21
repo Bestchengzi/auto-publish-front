@@ -1,5 +1,5 @@
 {
-  "name": "desktop",
+  "name": "keduckAI",
   "version": "0.1.2",
   "private": true,
   "type": "module",
@@ -21,7 +21,6 @@
   "devDependencies": {
     "electron": "^35.0.0",
     "electron-builder": "^26.0.12",
-    "png2icons": "^2.0.1",
     "rcedit": "^5.0.2",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2"

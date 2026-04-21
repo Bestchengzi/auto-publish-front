@@ -162,7 +162,7 @@ export function MaterialEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         closeLabel={closeLabel}
-        className="max-w-4xl w-full min-w-[800px] p-0 gap-0 overflow-hidden"
+        className="w-[min(calc(100vw-2rem),56rem)] max-w-4xl p-0 gap-0 overflow-hidden"
         showCloseButton={true}
       >
         <DialogHeader className="px-6 pt-4 pb-1 pr-12">

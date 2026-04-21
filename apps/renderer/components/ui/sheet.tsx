@@ -31,7 +31,7 @@ interface SheetContentProps extends React.ComponentProps<typeof DrawerPopup> {
   showCloseButton?: boolean;
   closeLabel?: string;
   /**
-   * 控制抽屉最大宽度（仅影响 SheetContent 的 DrawerViewport）。
+   * 控制抽屉最大宽度（作用于真正的 DrawerPopup 面板）。
    * 不传时保持默认 max-w-[400px] 行为。
    */
   maxWidth?: string;
@@ -59,23 +59,22 @@ function SheetContent({
       />
       <DrawerViewport
         className={cn(
-          "fixed inset-y-0 z-50 w-full max-w-[400px] overflow-hidden",
-          isRight ? "right-0" : "left-0",
+          "fixed inset-0 z-50 overflow-hidden",
         )}
-        style={maxWidth ? ({ maxWidth } as React.CSSProperties) : undefined}
       >
         {/* Base UI：data-base-ui-swipe-ignore 使视口不把手势交给滑轨关闭（见 DrawerViewport isSwipeIgnoredTarget） */}
         <DrawerPopup
           data-slot="sheet-content"
           data-base-ui-swipe-ignore=""
           className={cn(
-            "flex h-full flex-col border-border bg-background shadow-xl outline-none",
+            "absolute inset-y-0 w-full max-w-[400px] flex h-full flex-col border-border bg-background shadow-xl outline-none",
             "transition-transform duration-300 ease-out",
             // Swipe offset must not override enter/exit slide (both set translate on the same axis).
             "data-[swipe-direction=right]:translate-x-[var(--drawer-swipe-movement-x,0)]",
             "data-[swipe-direction=left]:translate-x-[var(--drawer-swipe-movement-x,0)]",
             "data-[starting-style]:!translate-x-full data-[ending-style]:!translate-x-full",
             "[&[data-swipe-direction=left]]:data-[starting-style]:!-translate-x-full [&[data-swipe-direction=left]]:data-[ending-style]:!-translate-x-full",
+            isRight ? "right-0" : "left-0",
             isRight && "border-l",
             !isRight && "border-r",
             className,
@@ -83,6 +82,7 @@ function SheetContent({
           style={
             {
               "--drawer-swipe-movement-x": "0px",
+              ...(maxWidth ? { maxWidth } : {}),
             } as React.CSSProperties
           }
           {...props}

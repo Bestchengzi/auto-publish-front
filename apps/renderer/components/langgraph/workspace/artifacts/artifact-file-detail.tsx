@@ -374,12 +374,14 @@ export function ArtifactFileDetail({
 
         const { selection } = editor.state;
         const currentBlock = selection.$from.parent;
+        const inMandatoryTitle = isSelectionInMandatoryTitle(editor);
         const inSlashTriggerBlock =
           currentBlock.type.name === "paragraph" ||
           (currentBlock.type.name === "heading" &&
             [1, 2, 3, 4].includes(Number(currentBlock.attrs.level)));
         const slashTriggerReady =
           selection.empty &&
+          !inMandatoryTitle &&
           inSlashTriggerBlock &&
           currentBlock.textContent === "/" &&
           selection.$from.parentOffset === 1;
@@ -532,6 +534,7 @@ export function ArtifactFileDetail({
     if (!editor) return false;
     const { selection } = editor.state;
     if (!selection.empty) return false;
+    if (isSelectionInMandatoryTitle(editor)) return false;
     const currentBlock = selection.$from.parent;
     const inSlashTriggerBlock =
       currentBlock.type.name === "paragraph" ||

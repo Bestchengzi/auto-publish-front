@@ -8,5 +8,4 @@ COPY .npmrc ./.npmrc
 COPY apps/renderer/package.json apps/renderer/package.json
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --prefer-offline --no-audit --progress=false
-
+    npm ci --workspace apps/renderer --include-workspace-root=false --prefer-offline --no-audit --progress=false

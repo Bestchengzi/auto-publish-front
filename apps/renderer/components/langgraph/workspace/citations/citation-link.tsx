@@ -25,25 +25,29 @@ export function CitationLink({
   const displayText = (!isGenericText && childrenText) ?? domain;
 
   return (
-    <HoverCard closeDelay={0} openDelay={0}>
-      <HoverCardTrigger asChild>
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center"
-          onClick={(e) => e.stopPropagation()}
-          {...props}
-        >
-          <Badge
-            variant="secondary"
-            className="hover:bg-secondary/80 mx-0.5 cursor-pointer gap-1 rounded-full px-2 py-0.5 text-xs font-normal"
+    <HoverCard>
+      <HoverCardTrigger
+        delay={0}
+        closeDelay={0}
+        render={
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center"
+            onClick={(e) => e.stopPropagation()}
+            {...props}
           >
-            {displayText}
-            <ExternalLinkIcon className="size-3" />
-          </Badge>
-        </a>
-      </HoverCardTrigger>
+            <Badge
+              variant="secondary"
+              className="hover:bg-secondary/80 mx-0.5 cursor-pointer gap-1 rounded-full px-2 py-0.5 text-xs font-normal"
+            >
+              {displayText}
+              <ExternalLinkIcon className="size-3" />
+            </Badge>
+          </a>
+        }
+      />
       <HoverCardContent className={cn("relative w-80 p-0", props.className)}>
         <div className="p-3">
           <div className="space-y-1">

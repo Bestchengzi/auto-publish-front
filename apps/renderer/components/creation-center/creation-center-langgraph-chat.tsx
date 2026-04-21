@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TodoList } from "@/components/langgraph/workspace/todo-list";
 import { useArtifacts } from "@/components/langgraph/workspace/artifacts";
 import { resolveArtifactURL } from "@/lib/langgraph/core/artifacts/utils";
@@ -348,22 +349,44 @@ export function CreationCenterLanggraphChat() {
                             : "h-36 pb-3",
                         )}
                       >
-                        <div className="w-full overflow-y-auto pt-1">
-                          <ul className="grid grid-cols-2 gap-2">
-                            {artifacts.map((filepath) => {
-                              const filename = getFileName(filepath);
-                              if (isImageArtifact(filepath)) {
+                        <ScrollArea className="h-full w-full">
+                          <div className="pr-4 pt-1">
+                            <ul className="grid grid-cols-2 gap-2">
+                              {artifacts.map((filepath) => {
+                                const filename = getFileName(filepath);
+                                if (isImageArtifact(filepath)) {
+                                  return (
+                                    <li key={filepath}>
+                                      <button
+                                        type="button"
+                                        className="hover:bg-muted/50 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-left transition-colors"
+                                        onClick={() =>
+                                          setPreviewImage({
+                                            src: resolveArtifactURL(filepath, threadId),
+                                            alt: filename,
+                                          })
+                                        }
+                                      >
+                                        {getFileIcon(
+                                          filepath,
+                                          "text-primary size-4 shrink-0",
+                                        )}
+                                        <span className="truncate text-sm text-foreground">
+                                          {filename}
+                                        </span>
+                                      </button>
+                                    </li>
+                                  );
+                                }
                                 return (
                                   <li key={filepath}>
                                     <button
                                       type="button"
                                       className="hover:bg-muted/50 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-left transition-colors"
-                                      onClick={() =>
-                                        setPreviewImage({
-                                          src: resolveArtifactURL(filepath, threadId),
-                                          alt: filename,
-                                        })
-                                      }
+                                      onClick={() => {
+                                        selectArtifact(filepath);
+                                        setArtifactsOpen(true);
+                                      }}
                                     >
                                       {getFileIcon(
                                         filepath,
@@ -375,30 +398,10 @@ export function CreationCenterLanggraphChat() {
                                     </button>
                                   </li>
                                 );
-                              }
-                              return (
-                                <li key={filepath}>
-                                  <button
-                                    type="button"
-                                    className="hover:bg-muted/50 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-left transition-colors"
-                                    onClick={() => {
-                                      selectArtifact(filepath);
-                                      setArtifactsOpen(true);
-                                    }}
-                                  >
-                                    {getFileIcon(
-                                      filepath,
-                                      "text-primary size-4 shrink-0",
-                                    )}
-                                    <span className="truncate text-sm text-foreground">
-                                      {filename}
-                                    </span>
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
+                              })}
+                            </ul>
+                          </div>
+                        </ScrollArea>
                       </main>
                     </div>
                   </div>

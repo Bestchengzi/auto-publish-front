@@ -201,10 +201,10 @@ function MessageContent_({
       <AIElementMessageContent className={className}>
         <Task defaultOpen={false}>
           <TaskTrigger title="">
-            <div className="text-muted-foreground flex w-full cursor-default items-center gap-2 text-sm select-none">
+            <>
               <Loader className="size-4" />
               <span>{contentToDisplay}</span>
-            </div>
+            </>
           </TaskTrigger>
         </Task>
       </AIElementMessageContent>

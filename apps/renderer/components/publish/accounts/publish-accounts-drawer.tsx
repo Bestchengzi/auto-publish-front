@@ -369,8 +369,8 @@ export function PublishAccountsDrawer({
                               className="size-10 text-sm"
                             />
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <div className="min-w-0 flex-1">
                                   <div className="truncate text-sm font-medium">
                                     {account.name}
                                   </div>
