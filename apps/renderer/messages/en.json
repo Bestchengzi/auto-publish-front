@@ -772,7 +772,8 @@
       "undo": "Undo",
       "redo": "Redo",
       "artifacts": "Artifacts",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "saveFailed": "Failed to save document. Please try again."
     },
     "clipboard": {
       "copyToClipboard": "Copy to clipboard",
@@ -929,6 +930,7 @@
       "confirm": "Confirm"
     },
     "slashMenu": {
+      "titlePlaceholder": "Enter title...",
       "placeholder": "Type \"/\" to insert images or content",
       "sectionCommon": "Common",
       "sectionBasic": "Basic",

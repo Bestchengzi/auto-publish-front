@@ -772,7 +772,8 @@
       "undo": "撤销",
       "redo": "重做",
       "artifacts": "文件",
-      "saving": "正在保存…"
+      "saving": "正在保存…",
+      "saveFailed": "保存文档失败，请稍后重试"
     },
     "clipboard": {
       "copyToClipboard": "复制到剪贴板",
@@ -929,6 +930,7 @@
       "confirm": "确认"
     },
     "slashMenu": {
+      "titlePlaceholder": "输入标题...",
       "placeholder": "按“/”插入图片或内容",
       "sectionCommon": "常用",
       "sectionBasic": "基础",

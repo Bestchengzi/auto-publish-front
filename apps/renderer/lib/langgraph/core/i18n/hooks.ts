@@ -46,6 +46,7 @@ type LanggraphMessages = {
     redo: string;
     artifacts: string;
     saving: string;
+    saveFailed: string;
   };
   clipboard: {
     copyToClipboard: string;
@@ -157,6 +158,7 @@ type LanggraphMessages = {
     replaceCover: string;
   };
   slashMenu: {
+    titlePlaceholder: string;
     placeholder: string;
     sectionCommon: string;
     sectionBasic: string;

@@ -27,6 +27,12 @@ import StarterKit from "@tiptap/starter-kit";
 import Color from "@tiptap/extension-color";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
@@ -319,7 +325,11 @@ export function ArtifactFileDetail({
       Placeholder.configure({
         showOnlyCurrent: false,
         placeholder: ({ editor, node, pos }) => {
-          const titlePlaceholder = mandatoryTitlePlaceholderForNode(editor, node);
+          const titlePlaceholder = mandatoryTitlePlaceholderForNode(
+            editor,
+            node,
+            t.slashMenu.titlePlaceholder,
+          );
           if (titlePlaceholder) return titlePlaceholder;
           const { selection } = editor.state;
           if (!selection.empty) return "";
@@ -341,6 +351,12 @@ export function ArtifactFileDetail({
       TextStyle,
       Color,
       HighlightWithSelectionMix.configure({ multicolor: true }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Link.configure({
         openOnClick: false,
         autolink: true,
@@ -351,7 +367,7 @@ export function ArtifactFileDetail({
         allowBase64: true,
       }),
     ],
-    [t.slashMenu.placeholder],
+    [t.slashMenu.placeholder, t.slashMenu.titlePlaceholder],
   );
 
   const editor = useEditor(
@@ -800,7 +816,7 @@ export function ArtifactFileDetail({
       }
     } catch (error) {
       console.error("Failed to save markdown artifact:", error);
-      toast.error("Failed to save document");
+      toast.error(t.common.saveFailed);
     } finally {
       isSavingRef.current = false;
     }

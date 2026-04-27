@@ -12,6 +12,13 @@ function elementHasTextAlignStyle(el: HTMLElement): boolean {
   return t === "center" || t === "right" || t === "justify" || t === "left";
 }
 
+function escapeMarkdownTableCell(content: string): string {
+  return content
+    .replace(/\r?\n+/g, "<br>")
+    .replace(/\|/g, "\\|")
+    .trim();
+}
+
 export function createArtifactTurndownService(): TurndownService {
   const td = new TurndownService({
     headingStyle: "atx",
@@ -79,6 +86,41 @@ export function createArtifactTurndownService(): TurndownService {
         .trim();
       const body = codeElement.textContent ?? "";
       return `\n\n\`\`\`${language ?? ""}\n${body}\n\`\`\`\n\n`;
+    },
+  });
+
+  td.addRule("artifactMarkdownTable", {
+    filter(node) {
+      return node.nodeName === "TABLE";
+    },
+    replacement(_content, node) {
+      const rows = Array.from((node as HTMLElement).querySelectorAll("tr"))
+        .map((row) =>
+          Array.from(row.querySelectorAll("th,td")).map((cell) => {
+            const markdown = td.turndown(cell.innerHTML);
+            return escapeMarkdownTableCell(markdown);
+          }),
+        )
+        .filter((row) => row.length > 0);
+
+      if (rows.length === 0) return "\n\n";
+
+      const columnCount = Math.max(...rows.map((row) => row.length));
+      const normalizeRow = (row: string[]) =>
+        Array.from({ length: columnCount }, (_, index) => row[index] ?? "");
+      const header = normalizeRow(rows[0]);
+      const bodyRows = rows.slice(1).map(normalizeRow);
+      const separator = Array.from({ length: columnCount }, () => "---");
+      const stringifyRow = (row: string[]) => `| ${row.join(" | ")} |`;
+
+      return [
+        "",
+        stringifyRow(header),
+        stringifyRow(separator),
+        ...bodyRows.map(stringifyRow),
+        "",
+        "",
+      ].join("\n");
     },
   });
 

@@ -20,7 +20,19 @@ const REMOVED_TOUTIAO_FIELD_IDS = new Set([
   "position",
   "collection_id",
   "sync_to_weitoutiao",
+  "pgc_feed_covers",
 ]);
+
+function getToutiaoPgcFeedCovers(platformData: {
+  platform_options?: Record<string, unknown>;
+}): string[] {
+  const rawCovers = platformData.platform_options?.['pgc_feed_covers'];
+  if (!Array.isArray(rawCovers)) return [];
+
+  return rawCovers
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+}
 
 export const toutiaoPlatformModule: PublishPlatformModule = {
   ids: ["toutiao"],
@@ -32,7 +44,9 @@ export const toutiaoPlatformModule: PublishPlatformModule = {
       return getTitleFieldError("toutiao", value);
     }
     if (fieldKey === FIELD_ID_COVER_MODE) {
-      return typeof value === "string" && value ? "" : getMissingFieldError(fieldKey);
+      return typeof value === "string" && value
+        ? ""
+        : getMissingFieldError(fieldKey);
     }
     if (fieldKey === FIELD_ID_ENABLE_AD) {
       return typeof value === "boolean" ? "" : getMissingFieldError(fieldKey);
@@ -40,11 +54,13 @@ export const toutiaoPlatformModule: PublishPlatformModule = {
     return "";
   },
   getTitleMaxLength: () => 30,
-  getInitialFormValues: ({ orderedOptions, title, contentImageUrls }) => {
+  getInitialFormValues: ({ platformData, orderedOptions, title }) => {
     const defaults: Record<string, unknown> = {
       [FIELD_ID_TITLE]: title,
     };
-    const defaultCoverMode = getDefaultToutiaoCoverMode(contentImageUrls.length);
+    const defaultCoverMode = getDefaultToutiaoCoverMode(
+      getToutiaoPgcFeedCovers(platformData).length,
+    );
 
     for (const option of orderedOptions) {
       defaults[option.key] =
@@ -53,7 +69,8 @@ export const toutiaoPlatformModule: PublishPlatformModule = {
 
     return defaults;
   },
-  getInitialCoverImages: ({ contentImageUrls }) => contentImageUrls.slice(0, 3),
+  getInitialCoverImages: ({ platformData }) =>
+    getToutiaoPgcFeedCovers(platformData).slice(0, 3),
   getCoverSlotCount: (formValues) => {
     const coverMode = (formValues[FIELD_ID_COVER_MODE] as string) || "single";
     if (coverMode === "none") return 0;
