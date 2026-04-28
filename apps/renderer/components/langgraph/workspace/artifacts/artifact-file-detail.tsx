@@ -826,6 +826,7 @@ export function ArtifactFileDetail({
     filepath,
     queryClient,
     selectionVersion,
+    t.common.saveFailed,
     threadId,
   ]);
 
