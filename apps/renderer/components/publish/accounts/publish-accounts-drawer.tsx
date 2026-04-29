@@ -30,6 +30,7 @@ type PublishAccountsDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm?: (selectedAccountIds: string[]) => void;
+  allowedPlatformIds?: string[] | null;
 };
 
 type FilterGroupId = "all" | "ungrouped" | string;
@@ -53,6 +54,7 @@ export function PublishAccountsDrawer({
   open,
   onOpenChange,
   onConfirm,
+  allowedPlatformIds,
 }: PublishAccountsDrawerProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -73,6 +75,22 @@ export function PublishAccountsDrawer({
     () => getPublishAccountPlatformOptions(),
     [],
   );
+  const allowedPlatformIdSet = React.useMemo(
+    () =>
+      allowedPlatformIds && allowedPlatformIds.length > 0
+        ? new Set(allowedPlatformIds)
+        : null,
+    [allowedPlatformIds],
+  );
+  const availablePlatformOptions = React.useMemo(
+    () =>
+      allowedPlatformIdSet
+        ? platformOptions.filter((item) => allowedPlatformIdSet.has(item.id))
+        : platformOptions,
+    [allowedPlatformIdSet, platformOptions],
+  );
+  const showAllPlatformsFilter =
+    !allowedPlatformIdSet || availablePlatformOptions.length > 1;
 
   const [platformFilterId, setPlatformFilterId] = React.useState<string | "all">(
     "all",
@@ -119,19 +137,24 @@ export function PublishAccountsDrawer({
 
   const accounts = React.useMemo<PublishAccount[]>(() => {
     const items = accountsRes?.items ?? [];
-    return items.map((account) => ({
-      id: account.id,
-      name: account.nickname || account.account,
-      platformId: account.platform,
-      status: account.status as "online" | "offline",
-      avatar: account.avatar,
-      avatarSeed: account.id,
-      groups: (account.groups ?? []).map((group) => ({
-        id: group.id,
-        name: group.name,
-      })),
-    }));
-  }, [accountsRes]);
+    return items
+      .filter(
+        (account) =>
+          !allowedPlatformIdSet || allowedPlatformIdSet.has(account.platform),
+      )
+      .map((account) => ({
+        id: account.id,
+        name: account.nickname || account.account,
+        platformId: account.platform,
+        status: account.status as "online" | "offline",
+        avatar: account.avatar,
+        avatarSeed: account.id,
+        groups: (account.groups ?? []).map((group) => ({
+          id: group.id,
+          name: group.name,
+        })),
+      }));
+  }, [accountsRes, allowedPlatformIdSet]);
 
   const filteredAccounts = React.useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -170,11 +193,23 @@ export function PublishAccountsDrawer({
 
   React.useEffect(() => {
     if (!open) return;
-    setPlatformFilterId("all");
+    setPlatformFilterId(
+      showAllPlatformsFilter ? "all" : (availablePlatformOptions[0]?.id ?? "all"),
+    );
     setGroupFilterId("all");
     setSearchQuery("");
     setSelectedIds(new Set());
-  }, [open, setSelectedIds]);
+  }, [availablePlatformOptions, open, setSelectedIds, showAllPlatformsFilter]);
+
+  React.useEffect(() => {
+    if (platformFilterId === "all") return;
+    if (availablePlatformOptions.some((item) => item.id === platformFilterId)) {
+      return;
+    }
+    setPlatformFilterId(
+      showAllPlatformsFilter ? "all" : (availablePlatformOptions[0]?.id ?? "all"),
+    );
+  }, [availablePlatformOptions, platformFilterId, showAllPlatformsFilter]);
 
   const isLoading =
     isLoadingGroups ||
@@ -204,26 +239,28 @@ export function PublishAccountsDrawer({
 
               <div className="mt-3 rounded-xl border border-border bg-muted/20 p-3">
                 <div className="flex flex-col gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className={cn(
-                      "h-9 w-full justify-start gap-2 rounded-lg px-2 text-sm",
-                      platformFilterId === "all"
-                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
-                        : "text-foreground/80 hover:bg-muted hover:text-foreground",
-                    )}
-                    onClick={() => setPlatformFilterId("all")}
-                  >
-                    <span className="flex h-[22px] w-[22px] items-center justify-center">
-                      <LayoutGridIcon className="size-5" aria-hidden />
-                    </span>
-                    <span className="truncate">
-                      {t("account.filters.allPlatforms")}
-                    </span>
-                  </Button>
+                  {showAllPlatformsFilter ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className={cn(
+                        "h-9 w-full justify-start gap-2 rounded-lg px-2 text-sm",
+                        platformFilterId === "all"
+                          ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                          : "text-foreground/80 hover:bg-muted hover:text-foreground",
+                      )}
+                      onClick={() => setPlatformFilterId("all")}
+                    >
+                      <span className="flex h-[22px] w-[22px] items-center justify-center">
+                        <LayoutGridIcon className="size-5" aria-hidden />
+                      </span>
+                      <span className="truncate">
+                        {t("account.filters.allPlatforms")}
+                      </span>
+                    </Button>
+                  ) : null}
 
-                  {platformOptions.map((platformOption) => {
+                  {availablePlatformOptions.map((platformOption) => {
                     const active = platformFilterId === platformOption.id;
                     return (
                       <Button

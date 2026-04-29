@@ -8,6 +8,7 @@ export function PublishFlowUi() {
   const {
     confirmPublishAccounts,
     publishAccountsOpen,
+    publishAccountsAllowedPlatformIds,
     publishPreview,
     closePublishPreview,
     setPublishAccountsOpen,
@@ -19,6 +20,7 @@ export function PublishFlowUi() {
         open={publishAccountsOpen}
         onOpenChange={setPublishAccountsOpen}
         onConfirm={confirmPublishAccounts}
+        allowedPlatformIds={publishAccountsAllowedPlatformIds}
       />
       <PublishOverlay
         publishPreview={publishPreview}

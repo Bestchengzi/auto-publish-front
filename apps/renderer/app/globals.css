@@ -376,23 +376,79 @@
 
 
 /* Artifact 首行空 H1：TipTap Placeholder；用 absolute，勿 float+height:0（会裁切大标题） */
-/* Publish preview content tweaks (Toutiao-like) */
-.publish-preview-typography h1,
-.publish-preview-typography h2 {
-  font-weight: 700 !important;
+/* Publish preview: mobile platform article style. */
+.publish-preview-typography {
+  color: #222;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.78;
+  letter-spacing: 0;
+  word-break: break-word;
 }
-.publish-preview-typography img {
-  margin-top: 12px !important;
-  margin-bottom: 12px !important;
+.publish-preview-typography h1 {
+  margin: 0 0 20px !important;
+  color: #111;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+.publish-preview-typography h2 {
+  margin: 26px 0 10px !important;
+  color: #111;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+}
+.publish-preview-typography h3,
+.publish-preview-typography h4 {
+  margin: 22px 0 8px !important;
+  color: #111;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  line-height: 1.5 !important;
 }
 .publish-preview-typography p {
-  margin-top: 8px !important;
+  margin: 0 0 16px !important;
 }
-.publish-preview-typography :is(h1, h2, h3, h4) {
-  margin-top: 10px !important;
+.publish-preview-typography a {
+  color: #0b5f9c;
+  text-decoration: none;
 }
-.publish-preview-typography :is(h1, h2, h3, h4):first-child {
-  margin-top: 0 !important;
+.publish-preview-typography strong,
+.publish-preview-typography b {
+  color: #111;
+  font-weight: 700;
+}
+.publish-preview-typography img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 22px 0 !important;
+  border-radius: 8px;
+}
+.publish-preview-typography blockquote {
+  margin: 20px 0 !important;
+  padding: 10px 12px !important;
+  border-left: 4px solid #ff7a1a;
+  border-radius: 6px;
+  background: #fff7ed;
+  color: #4b5563;
+}
+.publish-preview-typography ul,
+.publish-preview-typography ol {
+  margin: 0 0 16px !important;
+  padding-left: 1.25em !important;
+}
+.publish-preview-typography li {
+  margin: 6px 0 !important;
+}
+.publish-preview-typography hr {
+  margin: 24px 0 !important;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}
+.publish-preview-typography :last-child {
+  margin-bottom: 0 !important;
 }
 
 .artifact-prosemirror-editor .ProseMirror > h1.is-empty:first-child {

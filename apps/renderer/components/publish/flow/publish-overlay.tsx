@@ -72,6 +72,7 @@ const COVER_PICKER_TAB_UPLOAD = "upload";
 const COVER_PICKER_TAB_LIBRARY = "library";
 const COVER_PICKER_TAB_PROJECT = "project";
 const COVER_PICKER_TAB_SEARCH = "search";
+const HTML_PUBLISH_PLATFORM_ID = "wechat_mp";
 
 type PublishPanelDraftSnapshot = {
   activePublishPlatform: string;
@@ -105,6 +106,42 @@ type ImageSearchResponse = {
 
 function publishDraftKey(threadId: string, artifactPath: string) {
   return `${threadId}\u001f${artifactPath}`;
+}
+
+function isHtmlArtifactPath(artifactPath: string) {
+  const normalizedPath = artifactPath.toLowerCase().split(/[?#]/)[0] ?? "";
+  return normalizedPath.endsWith(".html") || normalizedPath.endsWith(".htm");
+}
+
+function withHiddenPreviewScrollbars(html: string) {
+  const readonlyHtml = html
+    .replace(/\scontenteditable(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "")
+    .replace(/\sspellcheck(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "");
+  const style = `
+    <style id="publish-preview-scrollbar-style">
+      :where(*) {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      :where(*)::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+      }
+    </style>
+  `;
+  if (/<\/head\s*>/i.test(readonlyHtml)) {
+    return readonlyHtml.replace(/<\/head\s*>/i, `${style}</head>`);
+  }
+  return `${style}${readonlyHtml}`;
+}
+
+function getPlatformPublishTitle(platformData: PublishEditPlatform) {
+  const optionTitle = platformData.platform_options?.title;
+  if (typeof optionTitle === "string" && optionTitle.trim()) {
+    return optionTitle.trim();
+  }
+  return extractTitleFromMarkdown(platformData.content);
 }
 
 export function PublishOverlay({
@@ -183,6 +220,17 @@ export function PublishOverlay({
   const [addedPlatformDataById, setAddedPlatformDataById] = useState<
     Record<string, PublishEditPlatform>
   >({});
+  const isHtmlPublishPreview = useMemo(
+    () => isHtmlArtifactPath(publishPreview?.artifactPath ?? ""),
+    [publishPreview?.artifactPath],
+  );
+  const htmlPreviewSrcDoc = useMemo(
+    () =>
+      publishPreview && isHtmlPublishPreview
+        ? withHiddenPreviewScrollbars(publishPreview.contentHtml)
+        : "",
+    [isHtmlPublishPreview, publishPreview],
+  );
   const publishFailedDetails = useMemo(
     () =>
       publishResultSummary?.details.filter(
@@ -329,7 +377,11 @@ export function PublishOverlay({
     () => new Set(visiblePublishPlatformEntries.map(([platformKey]) => platformKey)),
     [visiblePublishPlatformEntries],
   );
-  const pickerPlatforms = useMemo(() => getPublishPlatformPickerItems(), []);
+  const pickerPlatforms = useMemo(() => {
+    const items = getPublishPlatformPickerItems();
+    if (!isHtmlPublishPreview) return items;
+    return items.filter((item) => item.id === HTML_PUBLISH_PLATFORM_ID);
+  }, [isHtmlPublishPreview]);
   const addPlatformDialogCopy = useMemo(() => getAddPlatformDialogCopy(), []);
 
   const { data: allAccountsRes } = useQuery({
@@ -366,7 +418,7 @@ export function PublishOverlay({
   }, [activePublishPlatform, allAccountsRes]);
   const publishTitle = useMemo(() => {
     if (!activePlatformData) return "";
-    return extractTitleFromMarkdown(activePlatformData.content);
+    return getPlatformPublishTitle(activePlatformData);
   }, [activePlatformData]);
   const orderedPlatformOptions = useMemo(() => {
     if (!activePublishPlatform || !activePlatformData) return [];
@@ -856,7 +908,7 @@ export function PublishOverlay({
     for (const [platformKey, platformData] of visiblePublishPlatformEntries) {
       const orderedOptions = getOrderedPlatformOptions(platformKey, platformData);
       const rawFormValues = formValuesByPlatform[platformKey];
-      const defaultTitle = extractTitleFromMarkdown(platformData.content);
+      const defaultTitle = getPlatformPublishTitle(platformData);
       const contentImageUrls = extractImageUrlsFromContent(platformData.content).slice(
         0,
         3,
@@ -1055,15 +1107,29 @@ export function PublishOverlay({
               <h2 className="mb-5 text-lg font-semibold text-foreground">
                 发布预览
               </h2>
-              <div className="w-[312px] rounded-[36px] border border-border bg-card p-4 shadow-lg">
+              <div className="w-[352px] rounded-[36px] border border-border bg-card p-4 shadow-lg">
                 <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-muted-foreground/20" />
-                <div className="publish-preview-scrollbar-none h-[640px] overflow-auto rounded-3xl border border-border bg-background px-4 py-5">
-                  <div
-                    className="publish-preview-typography prose prose-sm max-w-none break-words"
-                    dangerouslySetInnerHTML={{
-                      __html: publishPreview.contentHtml,
-                    }}
-                  />
+                <div
+                  className={cn(
+                    "publish-preview-scrollbar-none h-[640px] overflow-auto rounded-3xl border border-border bg-background",
+                    isHtmlPublishPreview ? "p-0" : "px-4 py-5",
+                  )}
+                >
+                  {isHtmlPublishPreview ? (
+                    <iframe
+                      className="block size-full border-0 bg-background"
+                      sandbox="allow-same-origin"
+                      srcDoc={htmlPreviewSrcDoc}
+                      title={publishPreview.title}
+                    />
+                  ) : (
+                    <div
+                      className="publish-preview-typography max-w-none break-words"
+                      dangerouslySetInnerHTML={{
+                        __html: publishPreview.contentHtml,
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>

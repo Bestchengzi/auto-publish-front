@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   getPersonaBuilderClarificationArgs,
+  parseClarificationQuestions,
   type PersonaBuilderClarificationArgs,
 } from "@/lib/langgraph/core/messages/utils";
 import { cn } from "@/lib/utils";
@@ -52,9 +53,10 @@ function normalizeForMatch(s: string) {
 function parseQuestionsFromToolArgs(
   args: PersonaBuilderClarificationArgs,
 ): PersonaBuilderQuestion[] {
-  if (!Array.isArray(args.questions)) return [];
+  const questions = parseClarificationQuestions(args.questions);
+  if (questions.length === 0) return [];
 
-  const parsed = (args.questions as PersonaBuilderToolQuestion[])
+  const parsed = (questions as PersonaBuilderToolQuestion[])
     .map((item, idx) => {
       const question =
         typeof item?.question === "string" ? item.question.trim() : "";
@@ -72,23 +74,23 @@ function parseQuestionsFromToolArgs(
 
 function parseSelectionMarkerFromThreadText(
   threadMessagesText: string,
+  questions: PersonaBuilderQuestion[],
 ): PersonaBuilderSelection | null {
-  function splitQuestionAnswerLine(
+  function answerForQuestionLine(
     line: string,
-  ): { question: string; answer: string } | null {
+    question: string,
+  ): string | null {
     const raw = line.replace(/^- /, "").trim();
     if (!raw) return null;
 
-    // Use the LAST separator because question text itself may contain `：` (e.g. examples).
-    const sepIdxCN = raw.lastIndexOf("：");
-    const sepIdxEN = raw.lastIndexOf(":");
-    const sepIdx = Math.max(sepIdxCN, sepIdxEN);
-    if (sepIdx <= 0 || sepIdx >= raw.length - 1) return null;
+    const q = question.trim();
+    if (!q || !raw.startsWith(q)) return null;
 
-    const question = raw.slice(0, sepIdx).trim();
-    const answer = raw.slice(sepIdx + 1).trim();
-    if (!question || !answer) return null;
-    return { question, answer };
+    const rest = raw.slice(q.length).trimStart();
+    if (!rest.startsWith("：") && !rest.startsWith(":")) return null;
+
+    const answer = rest.slice(1).trim();
+    return answer || null;
   }
 
   const start = threadMessagesText.indexOf(MARKER_START);
@@ -106,12 +108,13 @@ function parseSelectionMarkerFromThreadText(
   const out: PersonaBuilderSelection = { qa: {} };
   for (const line of lines) {
     // persona_builder marker intentionally omits `补充说明` line.
-    const pair = splitQuestionAnswerLine(line);
-    if (!pair) continue;
-    const q = normalizeForMatch(pair.question);
-    const a = pair.answer;
-    if (!q || !a) continue;
-    out.qa[q] = a;
+    for (const question of questions) {
+      const answer = answerForQuestionLine(line, question.question);
+      if (!answer) continue;
+      const key = normalizeForMatch(question.question);
+      if (key) out.qa[key] = answer;
+      break;
+    }
   }
   return out;
 }
@@ -147,6 +150,7 @@ function resolveDefaultAnswers(
 function getFollowupAfterClarification(
   messages: Message[],
   clarificationMessageId: string,
+  questions: PersonaBuilderQuestion[],
 ): { locked: boolean; marker: PersonaBuilderSelection | null } {
   const idx = messages.findIndex((m) => m.id === clarificationMessageId);
   if (idx === -1) return { locked: false, marker: null };
@@ -160,7 +164,7 @@ function getFollowupAfterClarification(
     locked = true;
     const txt = textOfMessage(m);
     if (!marker && txt) {
-      const parsed = parseSelectionMarkerFromThreadText(txt);
+      const parsed = parseSelectionMarkerFromThreadText(txt, questions);
       if (parsed) {
         marker = parsed;
       }
@@ -189,8 +193,9 @@ export function PersonaBuilderSelector({
     return getFollowupAfterClarification(
       thread.messages ?? [],
       clarificationMessage.id ?? "",
+      questions,
     );
-  }, [thread.messages, clarificationMessage.id]);
+  }, [thread.messages, clarificationMessage.id, questions]);
 
   const resolvedAnswers = useMemo(() => {
     return resolveDefaultAnswers(questions, followup.marker);

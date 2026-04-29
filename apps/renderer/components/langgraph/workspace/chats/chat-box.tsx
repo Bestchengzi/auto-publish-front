@@ -10,6 +10,7 @@ import {
   extractPresentFilesFromMessage,
   hasPresentFiles,
 } from "@/lib/langgraph/core/messages/utils";
+import { isDisplayableArtifactFile } from "@/lib/langgraph/core/utils/files";
 import { cn } from "@/lib/utils";
 
 import { ArtifactFileDetail, ArtifactFileList, useArtifacts } from "../artifacts";
@@ -40,31 +41,28 @@ function ChatBox({
     selectedArtifact,
   } = useArtifacts();
 
-  const markdownArtifacts = useMemo(
+  const displayableArtifacts = useMemo(
     () =>
-      (thread.values.artifacts ?? []).filter((file) =>
-        file.toLowerCase().endsWith(".md"),
-      ),
+      (thread.values.artifacts ?? []).filter(isDisplayableArtifactFile),
     [thread.values.artifacts],
   );
 
-  const latestPresentedMarkdownArtifact = useMemo(() => {
+  const latestPresentedDisplayableArtifact = useMemo(() => {
     for (let index = thread.messages.length - 1; index >= 0; index -= 1) {
       const message = thread.messages[index];
       if (!message || !hasPresentFiles(message)) {
         continue;
       }
 
-      const markdownFiles = extractPresentFilesFromMessage(message).filter(
-        (file) => file.toLowerCase().endsWith(".md"),
-      );
-      if (markdownFiles.length === 0) {
+      const displayableFiles =
+        extractPresentFilesFromMessage(message).filter(isDisplayableArtifactFile);
+      if (displayableFiles.length === 0) {
         continue;
       }
 
       return {
         messageId: String(message.id ?? `present-files-${index}`),
-        filepath: markdownFiles[0]!,
+        filepath: displayableFiles[0]!,
       };
     }
 
@@ -79,8 +77,8 @@ function ChatBox({
       deselect();
     }
 
-    setArtifacts(markdownArtifacts);
-  }, [deselect, markdownArtifacts, setArtifacts, threadId]);
+    setArtifacts(displayableArtifacts);
+  }, [deselect, displayableArtifacts, setArtifacts, threadId]);
 
   useEffect(() => {
     if (!presentFilesHydratedRef.current) {
@@ -88,27 +86,27 @@ function ChatBox({
         return;
       }
       lastAutoOpenedPresentFilesIdRef.current =
-        latestPresentedMarkdownArtifact?.messageId ?? null;
+        latestPresentedDisplayableArtifact?.messageId ?? null;
       presentFilesHydratedRef.current = true;
       return;
     }
 
-    if (!latestPresentedMarkdownArtifact) {
+    if (!latestPresentedDisplayableArtifact) {
       return;
     }
     if (
-      latestPresentedMarkdownArtifact.messageId ===
+      latestPresentedDisplayableArtifact.messageId ===
       lastAutoOpenedPresentFilesIdRef.current
     ) {
       return;
     }
 
     lastAutoOpenedPresentFilesIdRef.current =
-      latestPresentedMarkdownArtifact.messageId;
-    selectArtifact(latestPresentedMarkdownArtifact.filepath);
+      latestPresentedDisplayableArtifact.messageId;
+    selectArtifact(latestPresentedDisplayableArtifact.filepath);
     setArtifactsOpen(true);
   }, [
-    latestPresentedMarkdownArtifact,
+    latestPresentedDisplayableArtifact,
     selectArtifact,
     setArtifactsOpen,
     thread.isThreadLoading,
@@ -164,7 +162,7 @@ function ChatBox({
                     <XIcon />
                   </Button>
                 </div>
-                {markdownArtifacts.length === 0 ? (
+                {displayableArtifacts.length === 0 ? (
                   <ConversationEmptyState
                     icon={<FilesIcon />}
                     title="No artifact selected"
@@ -178,7 +176,7 @@ function ChatBox({
                     <main className="min-h-0 grow">
                       <ArtifactFileList
                         className="max-w-(--container-width-sm) p-4 pt-12"
-                        files={markdownArtifacts}
+                        files={displayableArtifacts}
                         threadId={threadId}
                       />
                     </main>

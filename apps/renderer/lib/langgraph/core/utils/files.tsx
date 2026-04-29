@@ -151,6 +151,16 @@ export function getFileExtension(filepath: string) {
   return filepath.split(".").pop()!.toLocaleLowerCase();
 }
 
+export function isDisplayableArtifactFile(filepath: string) {
+  const extension = getFileExtension(filepath);
+  return (
+    extension === "md" ||
+    extension === "markdown" ||
+    extension === "html" ||
+    extension === "htm"
+  );
+}
+
 export function checkCodeFile(
   filepath: string,
 ):
@@ -179,6 +189,9 @@ export function getFileExtensionDisplayName(filepath: string) {
       return "Word";
     case "md":
       return "Markdown";
+    case "html":
+    case "htm":
+      return "HTML";
     case "txt":
       return "Text";
     case "ppt":
@@ -199,6 +212,7 @@ export function getFileIcon(filepath: string, className?: string) {
     case "skill":
       return <FileCogIcon className={className} />;
     case "html":
+    case "htm":
       return <CompassIcon className={className} />;
     case "txt":
     case "md":

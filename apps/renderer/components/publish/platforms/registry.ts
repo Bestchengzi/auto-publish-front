@@ -2,6 +2,8 @@ import type { PickerPlatformItem } from "@/components/common/platform-picker-dia
 import type { PublishEditPlatform } from "@/lib/api/publish";
 
 import { CN_PUBLISH_PLATFORM_CATALOG } from "./catalogs/cn";
+import { baijiahaoPlatformModule } from "./modules/baijiahao-platform-module";
+import { csdnPlatformModule } from "./modules/csdn-platform-module";
 import { genericPlatformModule } from "./modules/generic-platform-module";
 import { rednotePlatformModule } from "./modules/rednote-platform-module";
 import { toutiaoPlatformModule } from "./modules/toutiao-platform-module";
@@ -30,6 +32,8 @@ const platformModules = [
   toutiaoPlatformModule,
   rednotePlatformModule,
   zhihuPlatformModule,
+  csdnPlatformModule,
+  baijiahaoPlatformModule,
   wechatMpPlatformModule,
 ];
 

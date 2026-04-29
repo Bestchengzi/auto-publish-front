@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import {
   getTopicIdeationClarificationArgs,
+  parseClarificationQuestions,
   type TopicIdeationClarificationArgs,
   type TopicIdeationClarificationQuestion,
   type TopicIdeationClarificationSuggestion,
@@ -101,9 +102,10 @@ function OverflowTooltipText({
 function parseTopicIdeationQuestions(
   args: TopicIdeationClarificationArgs,
 ): IdeationQuestion[] {
-  if (!Array.isArray(args.questions)) return [];
+  const questions = parseClarificationQuestions(args.questions);
+  if (questions.length === 0) return [];
 
-  return (args.questions as TopicIdeationClarificationQuestion[]).flatMap(
+  return (questions as TopicIdeationClarificationQuestion[]).flatMap(
     (question, questionIdx) => {
       const questionText =
         typeof question?.question === "string" ? question.question.trim() : "";

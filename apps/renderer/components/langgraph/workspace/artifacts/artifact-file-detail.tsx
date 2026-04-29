@@ -60,7 +60,10 @@ import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import type { AgentThreadContext } from "@/lib/langgraph/core/threads";
 import { getUploadPreviewUrl, uploadFiles } from "@/lib/langgraph/core/uploads/api";
-import { getFileName } from "@/lib/langgraph/core/utils/files";
+import {
+  getFileExtension,
+  getFileName,
+} from "@/lib/langgraph/core/utils/files";
 import { artifactCodeLowlight } from "@/lib/langgraph/workspace/artifacts/artifact-code-lowlight";
 import { getApiErrorMessage, request } from "@/lib/request";
 import { cn } from "@/lib/utils";
@@ -243,6 +246,12 @@ export function ArtifactFileDetail({
 
   const displayContent = isWriteFile ? writeFilePreviewContent : (content ?? "");
   const artifactFileName = useMemo(() => getFileName(filepath), [filepath]);
+  const artifactFileExtension = useMemo(
+    () => getFileExtension(artifactFileName),
+    [artifactFileName],
+  );
+  const isHtmlArtifact =
+    artifactFileExtension === "html" || artifactFileExtension === "htm";
   const isPersonaMarkdown = useMemo(() => {
     const lower = artifactFileName.toLowerCase();
     return lower.endsWith(".md") && lower.startsWith("persona");
@@ -284,13 +293,18 @@ export function ArtifactFileDetail({
   /** 用户编辑后须空闲 UNDO_UI_DEBOUNCE_MS，撤销按钮才可用（撤销/重做本身不计入） */
   const [undoIdleReady, setUndoIdleReady] = useState(true);
   const [editorMarkdown, setEditorMarkdown] = useState(() =>
-    ensureMandatoryTitleMarkdown(displayContent),
+    isHtmlArtifact ? displayContent : ensureMandatoryTitleMarkdown(displayContent),
   );
+  const [htmlContent, setHtmlContent] = useState(displayContent);
   const turndownRef = useRef(createArtifactTurndownService());
   const editorMarkdownRef = useRef(editorMarkdown);
+  const htmlContentRef = useRef(displayContent);
+  const htmlDirtyRef = useRef(false);
   const displayContentRef = useRef(displayContent);
   const undoIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorViewportRef = useRef<HTMLDivElement | null>(null);
+  const htmlPreviewFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const cleanupHtmlPreviewListenersRef = useRef<(() => void) | null>(null);
   const imageUploadInputRef = useRef<HTMLInputElement | null>(null);
   const pendingImageInsertPosRef = useRef<number | null>(null);
 
@@ -307,8 +321,17 @@ export function ArtifactFileDetail({
   }, [displayContent]);
 
   useEffect(() => {
-    setEditorMarkdown(ensureMandatoryTitleMarkdown(displayContent));
-  }, [displayContent]);
+    if (!isHtmlArtifact) return;
+    setHtmlContent(displayContent);
+    htmlContentRef.current = displayContent;
+    htmlDirtyRef.current = false;
+  }, [displayContent, isHtmlArtifact]);
+
+  useEffect(() => {
+    setEditorMarkdown(
+      isHtmlArtifact ? displayContent : ensureMandatoryTitleMarkdown(displayContent),
+    );
+  }, [displayContent, isHtmlArtifact]);
 
   const editorExtensions = useMemo(
     () => [
@@ -374,7 +397,7 @@ export function ArtifactFileDetail({
     {
       extensions: editorExtensions,
       content: "",
-      editable: !isWriteFile,
+      editable: !isWriteFile && !isHtmlArtifact,
       immediatelyRender: false,
       editorProps: {
         attributes: {
@@ -463,8 +486,8 @@ export function ArtifactFileDetail({
 
   useEffect(() => {
     if (!editor) return;
-    editor.setEditable(!isWriteFile);
-  }, [editor, isWriteFile]);
+    editor.setEditable(!isWriteFile && !isHtmlArtifact);
+  }, [editor, isHtmlArtifact, isWriteFile]);
 
   useEffect(() => {
     setUserHasEdited(false);
@@ -520,6 +543,7 @@ export function ArtifactFileDetail({
 
   useEffect(() => {
     if (!editor) return;
+    if (isHtmlArtifact) return;
     const hydrate = async () => {
       const normalizedMd = ensureMandatoryTitleMarkdown(displayContent ?? "");
       try {
@@ -544,7 +568,7 @@ export function ArtifactFileDetail({
       editorMarkdownRef.current = normalizedMd;
     };
     void hydrate();
-  }, [editor, displayContent]);
+  }, [editor, displayContent, isHtmlArtifact]);
 
   const removeSlashTrigger = useCallback(() => {
     if (!editor) return false;
@@ -674,7 +698,8 @@ export function ArtifactFileDetail({
     });
   }, []);
 
-  const canPersist = !isWriteFile && !!threadId;
+  const canPersist = !isWriteFile && !isHtmlArtifact && !!threadId;
+  const canPersistHtml = !isWriteFile && isHtmlArtifact && !!threadId;
   const currentTextColor =
     (editor?.getAttributes("textStyle").color as string | undefined) ??
     "#111827";
@@ -787,6 +812,81 @@ export function ArtifactFileDetail({
     closeAllFloatingPanels();
   }, [editor, linkInputValue, closeAllFloatingPanels]);
 
+  const readHtmlPreviewContent = useCallback(() => {
+    const frameDocument = htmlPreviewFrameRef.current?.contentDocument;
+    return frameDocument?.documentElement?.outerHTML ?? "";
+  }, []);
+
+  const syncHtmlContentFromPreview = useCallback(() => {
+    const nextContent = readHtmlPreviewContent();
+    if (!nextContent) return;
+    htmlContentRef.current = nextContent;
+    setHtmlContent(nextContent);
+  }, [readHtmlPreviewContent]);
+
+  const applyHtmlPreviewStyles = useCallback(() => {
+    const frame = htmlPreviewFrameRef.current;
+    const frameDocument = frame?.contentDocument;
+    if (!frameDocument) return;
+
+    const rootStyle = window.getComputedStyle(document.documentElement);
+    const bodyStyle = window.getComputedStyle(document.body);
+    const fontFamily =
+      bodyStyle.fontFamily ||
+      rootStyle.fontFamily ||
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+    frameDocument.getElementById("keduck-html-preview-style")?.remove();
+    const style = frameDocument.createElement("style");
+    style.id = "keduck-html-preview-style";
+    style.textContent = `
+      :root {
+        color-scheme: light;
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklch, currentColor 28%, transparent) transparent;
+      }
+      html {
+        min-height: 100%;
+        font-family: ${fontFamily} !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      body {
+        min-height: 100%;
+        font-family: inherit !important;
+      }
+      body :where(*:not(code):not(pre):not(kbd):not(samp)) {
+        font-family: inherit !important;
+      }
+      :where(*) {
+        scrollbar-width: thin;
+        scrollbar-color: color-mix(in oklch, currentColor 28%, transparent) transparent;
+      }
+      :where(*)::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      :where(*)::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      :where(*)::-webkit-scrollbar-button {
+        width: 0;
+        height: 0;
+        display: none;
+      }
+      :where(*)::-webkit-scrollbar-thumb {
+        background-color: color-mix(in oklch, currentColor 28%, transparent);
+        border-radius: 9999px;
+        border: 3px solid transparent;
+        background-clip: content-box;
+      }
+      :where(*)::-webkit-scrollbar-thumb:hover {
+        background-color: color-mix(in oklch, currentColor 40%, transparent);
+      }
+    `;
+    frameDocument.head.appendChild(style);
+  }, []);
+
   const persistArtifact = useCallback(async () => {
     if (!canPersist) return;
     if (isSavingRef.current) {
@@ -839,6 +939,89 @@ export function ArtifactFileDetail({
     }, ARTIFACT_AUTOSAVE_MS);
     return () => clearTimeout(id);
   }, [canPersist, displayContent, editorMarkdown, persistArtifact]);
+
+  const persistHtmlArtifact = useCallback(async () => {
+    if (!canPersistHtml) return;
+    if (isSavingRef.current) {
+      window.setTimeout(() => {
+        void persistHtmlArtifact();
+      }, 400);
+      return;
+    }
+    const contentToSave = htmlContentRef.current;
+    if (!htmlDirtyRef.current || contentToSave === displayContentRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
+    try {
+      const response = await fetch(urlOfArtifact({ filepath, threadId }), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: contentToSave }),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to save HTML document: ${response.status}`);
+      }
+      if (htmlContentRef.current === contentToSave) {
+        htmlDirtyRef.current = false;
+        queryClient.setQueryData(
+          ["artifact", filepathFromProps, threadId, selectionVersion],
+          contentToSave,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to save HTML artifact:", error);
+      toast.error(t.common.saveFailed);
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [
+    canPersistHtml,
+    filepathFromProps,
+    filepath,
+    queryClient,
+    selectionVersion,
+    t.common.saveFailed,
+    threadId,
+  ]);
+
+  useEffect(() => {
+    if (!canPersistHtml) return;
+    if (!htmlDirtyRef.current || htmlContent === displayContent) return;
+
+    const id = setTimeout(() => {
+      void persistHtmlArtifact();
+    }, ARTIFACT_AUTOSAVE_MS);
+    return () => clearTimeout(id);
+  }, [canPersistHtml, displayContent, htmlContent, persistHtmlArtifact]);
+
+  const handleHtmlPreviewLoad = useCallback(() => {
+    applyHtmlPreviewStyles();
+
+    const frameDocument = htmlPreviewFrameRef.current?.contentDocument;
+    if (!frameDocument) return;
+
+    cleanupHtmlPreviewListenersRef.current?.();
+    frameDocument.body.contentEditable = "true";
+    frameDocument.body.spellcheck = false;
+
+    const handleInput = () => {
+      htmlDirtyRef.current = true;
+      syncHtmlContentFromPreview();
+    };
+
+    frameDocument.addEventListener("input", handleInput);
+    cleanupHtmlPreviewListenersRef.current = () => {
+      frameDocument.removeEventListener("input", handleInput);
+    };
+  }, [applyHtmlPreviewStyles, syncHtmlContentFromPreview]);
+
+  useEffect(() => {
+    return () => {
+      cleanupHtmlPreviewListenersRef.current?.();
+    };
+  }, []);
 
   const buildAgentContext = useCallback((): AgentThreadContext => {
     return {
@@ -902,7 +1085,7 @@ export function ArtifactFileDetail({
         <div className="min-w-0 grow" />
         <div className="flex items-center gap-2">
           <ArtifactActions className="gap-3">
-            {!isWriteFile && (
+            {!isWriteFile && !isHtmlArtifact && (
               <>
                 <ArtifactAction
                   icon={Undo2Icon}
@@ -936,7 +1119,9 @@ export function ArtifactFileDetail({
               disabled={!displayContent}
               onClick={async () => {
                 try {
-                  const text = displayContent ?? "";
+                  const text = isHtmlArtifact
+                    ? htmlContentRef.current
+                    : (displayContent ?? "");
                   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
                     await navigator.clipboard.writeText(text);
                   } else {
@@ -993,8 +1178,12 @@ export function ArtifactFileDetail({
                     threadId,
                     artifactPath: filepathFromProps,
                     title: getFileName(filepath),
-                    contentHtml: editor?.getHTML() ?? "",
-                    markdownSnapshot: editorMarkdownRef.current,
+                    contentHtml: isHtmlArtifact
+                      ? htmlContentRef.current
+                      : (editor?.getHTML() ?? ""),
+                    markdownSnapshot: isHtmlArtifact
+                      ? htmlContentRef.current
+                      : editorMarkdownRef.current,
                   });
                 }}
               >
@@ -1010,8 +1199,17 @@ export function ArtifactFileDetail({
           </ArtifactActions>
         </div>
       </ArtifactHeader>
-      <ArtifactContent className="p-0">
-        {editor && (
+      <ArtifactContent className={cn("p-0", isHtmlArtifact && "overflow-hidden")}>
+        {isHtmlArtifact ? (
+          <iframe
+            ref={htmlPreviewFrameRef}
+            className="block size-full border-0 bg-background"
+            onLoad={handleHtmlPreviewLoad}
+            sandbox="allow-same-origin"
+            srcDoc={displayContent}
+            title={artifactFileName}
+          />
+        ) : editor ? (
           <div ref={editorViewportRef} className="relative overflow-auto px-16 py-8">
             <ArtifactLinkHoverPopover linkHover={linkHover} />
             <ArtifactEditorBubbleToolbar
@@ -1101,7 +1299,7 @@ export function ArtifactFileDetail({
               </div>
             )}
           </div>
-        )}
+        ) : null}
       </ArtifactContent>
       {isSavingPersona && (
         <div

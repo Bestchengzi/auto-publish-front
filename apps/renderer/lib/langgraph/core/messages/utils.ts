@@ -30,6 +30,26 @@ export type PersonaBuilderClarificationArgs = {
   questions?: unknown;
 };
 
+export function parseClarificationQuestions(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (Array.isArray(parsed)) return parsed;
+    if (typeof parsed === "string") {
+      return parseClarificationQuestions(parsed);
+    }
+  } catch {
+    return [];
+  }
+
+  return [];
+}
+
 interface GenericMessageGroup<T = string> {
   type: T;
   id: string | undefined;
@@ -370,19 +390,17 @@ export function getPersonaBuilderClarificationArgs(
     return { ...args, clarification_type: "persona_builder" };
   }
 
-  // Heuristic:
-  // persona_builder 的 questions item 只有 `question`，通常没有 `options`。
-  if (Array.isArray(args.questions) && args.questions.length > 0) {
-    const isPersonaBuilderByShape = (args.questions as unknown[]).every(
-      (item) => {
-        const q = item as { question?: unknown; options?: unknown } | null;
-        return (
-          !!q &&
-          typeof q.question === "string" &&
-          !Array.isArray(q.options)
-        );
-      },
-    );
+  // Heuristic: persona_builder question items usually have `question` only.
+  const questions = parseClarificationQuestions(args.questions);
+  if (questions.length > 0) {
+    const isPersonaBuilderByShape = questions.every((item) => {
+      const q = item as { question?: unknown; options?: unknown } | null;
+      return (
+        !!q &&
+        typeof q.question === "string" &&
+        !Array.isArray(q.options)
+      );
+    });
 
     if (isPersonaBuilderByShape) {
       return { ...args, clarification_type: "persona_builder" };

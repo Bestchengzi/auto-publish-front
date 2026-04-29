@@ -198,7 +198,26 @@ export function getTitleMaxLengthByPlatform(
   if (platform === "rednote" || platform === "xiaohongshu") return 20;
   if (platform === "zhihu") return 100;
   if (platform === "wechat_mp") return 64;
+  if (platform === "baijiahao") return 64;
   return undefined;
+}
+
+const TITLE_ERROR_PLATFORM_LABELS: Record<string, string> = {
+  toutiao: "头条号",
+  rednote: "小红书",
+  xiaohongshu: "小红书",
+  zhihu: "知乎",
+  wechat_mp: "公众号",
+  csdn: "CSDN",
+  baijiahao: "百家号",
+};
+
+function getPlatformTitleRequiredError(platformKey: string): string {
+  const platformLabel = TITLE_ERROR_PLATFORM_LABELS[platformKey];
+  if (!platformLabel) {
+    return getMissingFieldError(FIELD_ID_TITLE);
+  }
+  return `请输入${platformLabel}标题`;
 }
 
 export function getTitleFieldError(
@@ -207,13 +226,16 @@ export function getTitleFieldError(
 ): string {
   const textValue = typeof value === "string" ? value.trim() : "";
   if (!textValue) {
-    return getMissingFieldError(FIELD_ID_TITLE);
+    return getPlatformTitleRequiredError(platformKey);
   }
 
   const maxLength = getTitleMaxLengthByPlatform(platformKey);
   const length = [...textValue].length;
   if (platformKey === "toutiao" && (length < 2 || length > 30)) {
     return "标题需为 2-30 个字";
+  }
+  if (platformKey === "baijiahao" && (length < 2 || length > 64)) {
+    return "标题需为 2-64 个字";
   }
   if (
     (platformKey === "rednote" || platformKey === "xiaohongshu") &&

@@ -8,6 +8,7 @@ import { CheckIcon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getMissingInfoClarificationArgs,
+  parseClarificationQuestions,
   type MissingInfoClarificationArgs,
 } from "@/lib/langgraph/core/messages/utils";
 import { cn } from "@/lib/utils";
@@ -63,9 +64,10 @@ function normalizeForMatch(s: string) {
 function parseQuestionsFromToolArgs(
   args: MissingInfoClarificationArgs,
 ): ClarificationQuestion[] {
-  if (!Array.isArray(args.questions)) return [];
+  const questions = parseClarificationQuestions(args.questions);
+  if (questions.length === 0) return [];
 
-  const parsed = (args.questions as ClarificationToolQuestion[])
+  const parsed = (questions as ClarificationToolQuestion[])
     .map((item, idx) => {
       const title = typeof item?.question === "string" ? item.question.trim() : "";
       if (!title) return null;
@@ -97,24 +99,23 @@ function parseQuestionsFromToolArgs(
 
 function parseSelectionMarkerFromThreadText(
   threadMessagesText: string,
+  questions: ClarificationQuestion[],
 ): ClarificationSelection | null {
-  function splitQuestionAnswerLine(
+  function answerForQuestionLine(
     line: string,
-  ): { question: string; answer: string } | null {
+    question: string,
+  ): string | null {
     const raw = line.replace(/^- /, "").trim();
     if (!raw) return null;
 
-    // Use the LAST separator because question text itself may include `：`
-    // (for example, "您的可用在线账号有：头条号、百家号、知乎、CSDN").
-    const sepIdxCN = raw.lastIndexOf("：");
-    const sepIdxEN = raw.lastIndexOf(":");
-    const sepIdx = Math.max(sepIdxCN, sepIdxEN);
-    if (sepIdx <= 0 || sepIdx >= raw.length - 1) return null;
+    const q = question.trim();
+    if (!q || !raw.startsWith(q)) return null;
 
-    const question = raw.slice(0, sepIdx).trim();
-    const answer = raw.slice(sepIdx + 1).trim();
-    if (!question || !answer) return null;
-    return { question, answer };
+    const rest = raw.slice(q.length).trimStart();
+    if (!rest.startsWith("：") && !rest.startsWith(":")) return null;
+
+    const answer = rest.slice(1).trim();
+    return answer || null;
   }
 
   const start = threadMessagesText.indexOf(MARKER_START);
@@ -138,12 +139,13 @@ function parseSelectionMarkerFromThreadText(
       continue;
     }
 
-    const pair = splitQuestionAnswerLine(line);
-    if (!pair) continue;
-    const q = normalizeForMatch(pair.question);
-    const a = pair.answer;
-    if (!q || !a) continue;
-    out.qa[q] = a;
+    for (const question of questions) {
+      const answer = answerForQuestionLine(line, question.title);
+      if (!answer) continue;
+      const key = normalizeForMatch(question.title);
+      if (key) out.qa[key] = answer;
+      break;
+    }
   }
   return out;
 }
@@ -207,6 +209,7 @@ function resolveDefaultSelection(
 function getFollowupAfterClarification(
   messages: Message[],
   clarificationMessageId: string,
+  questions: ClarificationQuestion[],
 ): { locked: boolean; marker: ClarificationSelection | null } {
   const idx = messages.findIndex((m) => m.id === clarificationMessageId);
   if (idx === -1) return { locked: false, marker: null };
@@ -219,7 +222,7 @@ function getFollowupAfterClarification(
     locked = true;
     const txt = textOfMessage(m);
     if (!marker && txt?.includes(MARKER_START)) {
-      marker = parseSelectionMarkerFromThreadText(txt);
+      marker = parseSelectionMarkerFromThreadText(txt, questions);
     }
   }
   return { locked, marker };
@@ -234,15 +237,6 @@ export function ClarificationSelector({
 }: ClarificationSelectorProps) {
   const { context: localContext } = useLocalSettings()[0];
 
-  const followup = useMemo(
-    () =>
-      getFollowupAfterClarification(
-        thread.messages ?? [],
-        clarificationMessage.id ?? "",
-      ),
-    [thread.messages, clarificationMessage.id],
-  );
-
   const { questions, preface } = useMemo(() => {
     const args = getMissingInfoClarificationArgs(clarificationMessage);
     if (!args) return { questions: [] as ClarificationQuestion[], preface: "" };
@@ -251,6 +245,16 @@ export function ClarificationSelector({
       preface: typeof args.context === "string" ? args.context.trim() : "",
     };
   }, [clarificationMessage]);
+
+  const followup = useMemo(
+    () =>
+      getFollowupAfterClarification(
+        thread.messages ?? [],
+        clarificationMessage.id ?? "",
+        questions,
+      ),
+    [thread.messages, clarificationMessage.id, questions],
+  );
 
   const resolved = useMemo(
     () => resolveDefaultSelection(questions, followup.marker),

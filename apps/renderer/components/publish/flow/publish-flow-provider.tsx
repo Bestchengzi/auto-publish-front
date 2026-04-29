@@ -20,6 +20,7 @@ import type {
 } from "./types";
 
 const PUBLISH_DRAWER_CLOSE_ANIMATION_MS = 320;
+const HTML_PUBLISH_ACCOUNT_PLATFORM_IDS = ["wechat_mp"];
 
 type PublishFlowContextValue = {
   beginArtifactPublish: (params: BeginArtifactPublishParams) => Promise<void>;
@@ -27,6 +28,7 @@ type PublishFlowContextValue = {
   publishPreview: PublishPreviewPayload | null;
   closePublishPreview: () => void;
   publishAccountsOpen: boolean;
+  publishAccountsAllowedPlatformIds: string[] | null;
   setPublishAccountsOpen: (open: boolean) => void;
   confirmPublishAccounts: (selectedAccountIds: string[]) => void;
 };
@@ -46,6 +48,11 @@ function getPublishEditCacheKey(
 ) {
   const normalizedIds = [...accountIds].sort().join(",");
   return `${threadId}\u001f${artifactPath}\u001f${normalizedIds}`;
+}
+
+function isHtmlArtifactPath(artifactPath: string) {
+  const normalizedPath = artifactPath.toLowerCase().split(/[?#]/)[0] ?? "";
+  return normalizedPath.endsWith(".html") || normalizedPath.endsWith(".htm");
 }
 
 export function PublishFlowProvider({
@@ -70,8 +77,8 @@ export function PublishFlowProvider({
       params: BeginArtifactPublishParams,
       selectedAccountIds: string[],
     ) => {
-      if (selectedAccountIds.length === 0) return;
-      if (isPreparingPublishPreview) return;
+      if (selectedAccountIds.length === 0) return false;
+      if (isPreparingPublishPreview) return false;
 
       const cacheKey = getPublishEditCacheKey(
         params.threadId,
@@ -88,7 +95,7 @@ export function PublishFlowProvider({
           selectedAccountIds,
           publishEdit: cachedEntry.publishEdit,
         });
-        return;
+        return true;
       }
 
       setIsPreparingPublishPreview(true);
@@ -110,8 +117,10 @@ export function PublishFlowProvider({
           selectedAccountIds,
           publishEdit,
         });
+        return true;
       } catch (error) {
         toast.error(getApiErrorMessage(error, "加载发布配置失败"));
+        return false;
       } finally {
         setIsPreparingPublishPreview(false);
       }
@@ -130,7 +139,14 @@ export function PublishFlowProvider({
       setPublishSource(params);
 
       if (selectedAccountIds.length > 0) {
-        await preparePublishPreview(params, selectedAccountIds);
+        const prepared = await preparePublishPreview(params, selectedAccountIds);
+        if (!prepared) {
+          setSelectedAccountIdsByArtifact((previous) => {
+            const next = { ...previous };
+            delete next[artifactKey];
+            return next;
+          });
+        }
         return;
       }
 
@@ -147,16 +163,27 @@ export function PublishFlowProvider({
         publishSource.artifactPath,
       );
 
-      setSelectedAccountIdsByArtifact((previous) => ({
-        ...previous,
-        [artifactKey]: selectedAccountIds,
-      }));
-
       setTimeout(() => {
-        void preparePublishPreview(publishSource, selectedAccountIds);
+        void preparePublishPreview(publishSource, selectedAccountIds).then(
+          (prepared) => {
+            if (!prepared) return;
+            setSelectedAccountIdsByArtifact((previous) => ({
+              ...previous,
+              [artifactKey]: selectedAccountIds,
+            }));
+          },
+        );
       }, PUBLISH_DRAWER_CLOSE_ANIMATION_MS);
     },
     [preparePublishPreview, publishSource],
+  );
+
+  const publishAccountsAllowedPlatformIds = useMemo(
+    () =>
+      publishSource && isHtmlArtifactPath(publishSource.artifactPath)
+        ? HTML_PUBLISH_ACCOUNT_PLATFORM_IDS
+        : null,
+    [publishSource],
   );
 
   const value = useMemo<PublishFlowContextValue>(
@@ -168,6 +195,7 @@ export function PublishFlowProvider({
         setPublishPreview(null);
       },
       publishAccountsOpen,
+      publishAccountsAllowedPlatformIds,
       setPublishAccountsOpen: (open: boolean) => {
         setPublishAccountsOpen(open);
       },
@@ -177,6 +205,7 @@ export function PublishFlowProvider({
       beginArtifactPublish,
       confirmPublishAccounts,
       isPreparingPublishPreview,
+      publishAccountsAllowedPlatformIds,
       publishAccountsOpen,
       publishPreview,
     ],

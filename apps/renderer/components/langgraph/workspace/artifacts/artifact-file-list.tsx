@@ -15,6 +15,7 @@ import {
   getFileExtensionDisplayName,
   getFileIcon,
   getFileName,
+  isDisplayableArtifactFile,
 } from "@/lib/langgraph/core/utils/files";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +32,7 @@ export function ArtifactFileList({
 }) {
   const { t } = useI18n();
   const { select: selectArtifact, setOpen } = useArtifacts();
-  const markdownFiles = files.filter((file) => file.toLowerCase().endsWith(".md"));
+  const displayableFiles = files.filter(isDisplayableArtifactFile);
 
   const handleClick = useCallback(
     (filepath: string) => {
@@ -41,13 +42,13 @@ export function ArtifactFileList({
     [selectArtifact, setOpen],
   );
 
-  if (markdownFiles.length === 0) {
+  if (displayableFiles.length === 0) {
     return null;
   }
 
   return (
     <ul className={cn("flex w-full flex-col gap-4", className)}>
-      {markdownFiles.map((file) => (
+      {displayableFiles.map((file) => (
         <Card
           key={file}
           className="relative cursor-pointer p-3"
