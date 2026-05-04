@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "DeerFlow API Gateway",
-        "description": "\n## DeerFlow API Gateway\n\nAPI Gateway for DeerFlow - A LangGraph-based AI agent backend with sandbox execution capabilities.\n\n### Features\n\n- **Models Management**: Query and retrieve available AI models\n- **MCP Configuration**: Manage Model Context Protocol (MCP) server configurations\n- **Memory Management**: Access and manage global memory data for personalized conversations\n- **Skills Management**: Query and manage skills and their enabled status\n- **Artifacts**: Access, download, and update thread-generated Markdown artifacts\n- **Health Monitoring**: System health check endpoints\n\n### Architecture\n\nLangGraph requests are handled by nginx reverse proxy.\nThis gateway provides custom endpoints for models, MCP configuration, skills, and thread artifacts.\n        ",
+        "description": "\n## DeerFlow API Gateway\n\nAPI Gateway for DeerFlow - A LangGraph-based AI agent backend with sandbox execution capabilities.\n\n### Features\n\n- **Models Management**: Query and retrieve available AI models\n- **MCP Configuration**: Manage Model Context Protocol (MCP) server configurations\n- **Memory Management**: Access and manage global memory data for personalized conversations\n- **Skills Management**: Query and manage skills and their enabled status\n- **Artifacts**: Access, download, and update thread-generated output artifacts\n- **Health Monitoring**: System health check endpoints\n\n### Architecture\n\nLangGraph requests are handled by nginx reverse proxy.\nThis gateway provides custom endpoints for models, MCP configuration, skills, and thread artifacts.\n        ",
         "version": "0.1.0"
     },
     "paths": {
@@ -545,8 +545,8 @@
                 "tags": [
                     "artifacts"
                 ],
-                "summary": "Update Markdown Artifact",
-                "description": "Overwrite an existing Markdown artifact under /mnt/user-data/outputs for a thread.",
+                "summary": "Update Output Artifact",
+                "description": "Overwrite an existing text artifact under /mnt/user-data/outputs for a thread.",
                 "operationId": "update_artifact_api_threads__thread_id__artifacts__path__put",
                 "parameters": [
                     {
@@ -738,6 +738,102 @@
                                     "additionalProperties": true,
                                     "title": "Response Delete Uploaded File Api Threads  Thread Id  Uploads  Filename  Delete"
                                 }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/history": {
+            "get": {
+                "tags": [
+                    "threads"
+                ],
+                "summary": "Get Thread History",
+                "description": "Proxy one thread's LangGraph history through Gateway, redacting protected skill-file read results. Use `view=debug|both` to include a normalized execution timeline and thread runs metadata.",
+                "operationId": "get_thread_history_api_threads__thread_id__history_get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 500,
+                            "minimum": 1,
+                            "default": 100,
+                            "title": "Limit"
+                        }
+                    },
+                    {
+                        "name": "before",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Before"
+                        }
+                    },
+                    {
+                        "name": "view",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "enum": [
+                                "raw",
+                                "debug",
+                                "both"
+                            ],
+                            "type": "string",
+                            "default": "raw",
+                            "title": "View"
+                        }
+                    },
+                    {
+                        "name": "runs_limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 500,
+                            "minimum": 1,
+                            "default": 100,
+                            "title": "Runs Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
                             }
                         }
                     },
@@ -1110,7 +1206,7 @@
                     "publish"
                 ],
                 "summary": "Build Thread Publish Edit Payload",
-                "description": "Read one thread Markdown artifact and return per-platform publish form defaults for the selected accounts.",
+                "description": "Read one thread output artifact and return per-platform publish form defaults for the selected accounts. Markdown artifacts support all publish platforms; HTML artifacts are only accepted for WeChat public accounts.",
                 "operationId": "build_publish_edit_payload_api_threads__thread_id__publish_edit_post",
                 "parameters": [
                     {
@@ -1189,6 +1285,22 @@
                                 }
                             ],
                             "title": "X-Publish-Source"
+                        }
+                    },
+                    {
+                        "name": "X-Allowed-Publish-Account-Ids",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "X-Allowed-Publish-Account-Ids"
                         }
                     }
                 ],
@@ -3865,14 +3977,179 @@
                 }
             }
         },
+        "/api/threads/{thread_id}/image_task": {
+            "post": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "Create Thread Image Generation Task",
+                "operationId": "create_thread_image_task_api_threads__thread_id__image_task_post",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImageTaskCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImageTaskResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "List Thread Image Generation Tasks",
+                "operationId": "list_thread_image_tasks_api_threads__thread_id__image_task_get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImageTaskListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/image_task/{image_task_id}": {
+            "get": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "Get Thread Image Generation Task",
+                "operationId": "get_thread_image_task_api_threads__thread_id__image_task__image_task_id__get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "image_task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Image Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImageTaskResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/wechat/param_qrcode": {
             "get": {
                 "tags": [
                     "wechat"
                 ],
                 "summary": "获取带参数二维码",
-                "description": "创建“带参数”的二维码，scene_str 用 `auto_media_<uuid>` 作为 front-end 扫码 key。",
+                "description": "创建“带参数”的二维码，scene_str 使用 `.env` 配置的扫码前缀作为 front-end 扫码 key。",
                 "operationId": "get_param_qrcode_api_wechat_param_qrcode_get",
+                "parameters": [
+                    {
+                        "name": "invite_code",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "minLength": 6,
+                                    "maxLength": 6
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "可选邀请邀请码",
+                            "title": "Invite Code"
+                        },
+                        "description": "可选邀请邀请码"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -3880,6 +4157,16 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/WechatParamQrcodeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
                                 }
                             }
                         }
@@ -4277,6 +4564,57 @@
                 }
             }
         },
+        "/api/data-connections/{connection_id}/boards/{board_id}": {
+            "delete": {
+                "tags": [
+                    "data_connections"
+                ],
+                "summary": "Delete Connection Board",
+                "operationId": "delete_connection_board_api_data_connections__connection_id__boards__board_id__delete",
+                "parameters": [
+                    {
+                        "name": "connection_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Connection Id"
+                        }
+                    },
+                    {
+                        "name": "board_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Board Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DataConnectionBoardDeleteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/data-connections/{connection_id}/test": {
             "post": {
                 "tags": [
@@ -4653,7 +4991,7 @@
                     },
                     "follower_count": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Follower Count",
                         "default": 0
                     },
@@ -5054,7 +5392,7 @@
                         "anyOf": [
                             {
                                 "type": "integer",
-                                "minimum": 0
+                                "minimum": 0.0
                             },
                             {
                                 "type": "null"
@@ -5405,13 +5743,13 @@
                     "content": {
                         "type": "string",
                         "title": "Content",
-                        "description": "Full Markdown content used to overwrite the existing file.",
+                        "description": "Full text content used to overwrite the existing file.",
                         "default": ""
                     }
                 },
                 "type": "object",
                 "title": "ArtifactUpdateRequest",
-                "description": "Overwrite request for an existing Markdown artifact."
+                "description": "Overwrite request for an existing text artifact."
             },
             "ArtifactUpdateResponse": {
                 "properties": {
@@ -5449,7 +5787,7 @@
                     "size"
                 ],
                 "title": "ArtifactUpdateResponse",
-                "description": "Response returned after a Markdown artifact is overwritten."
+                "description": "Response returned after a text artifact is overwritten."
             },
             "BatchPublishPlatformRequest": {
                 "properties": {
@@ -5483,8 +5821,8 @@
                     },
                     "timeout": {
                         "type": "integer",
-                        "maximum": 600,
-                        "minimum": 1,
+                        "maximum": 600.0,
+                        "minimum": 1.0,
                         "title": "Timeout",
                         "default": 20
                     },
@@ -5552,6 +5890,17 @@
                     "owner_id": {
                         "type": "string",
                         "title": "Owner Id"
+                    },
+                    "invite_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Invite Code"
                     },
                     "balance_points": {
                         "type": "integer",
@@ -5654,7 +6003,7 @@
                     },
                     "required_points": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Required Points"
                     }
                 },
@@ -5735,25 +6084,25 @@
                     },
                     "requested_image_count": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Requested Image Count",
                         "default": 0
                     },
                     "success_image_count": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Success Image Count",
                         "default": 0
                     },
                     "points_per_image": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Points Per Image",
                         "default": 0
                     },
                     "points": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Points",
                         "default": 0
                     },
@@ -5870,17 +6219,17 @@
                 "properties": {
                     "input_per_1k_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Input Per 1K Tokens"
                     },
                     "output_per_1k_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Output Per 1K Tokens"
                     },
                     "cache_read_per_1k_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Cache Read Per 1K Tokens"
                     }
                 },
@@ -5908,7 +6257,7 @@
                     },
                     "points": {
                         "type": "integer",
-                        "exclusiveMinimum": 0,
+                        "exclusiveMinimum": 0.0,
                         "title": "Points",
                         "description": "Recharge points"
                     },
@@ -6308,31 +6657,31 @@
                     },
                     "input_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Input Tokens",
                         "default": 0
                     },
                     "output_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Output Tokens",
                         "default": 0
                     },
                     "cache_read_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Cache Read Tokens",
                         "default": 0
                     },
                     "total_tokens": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Total Tokens",
                         "default": 0
                     },
                     "points": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Points",
                         "description": "Compatibility field; Gateway recalculates points from token usage",
                         "default": 0
@@ -6901,6 +7250,29 @@
                     "board_context"
                 ],
                 "title": "DataConnectionBoardCandidate"
+            },
+            "DataConnectionBoardDeleteResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success"
+                    },
+                    "connection_id": {
+                        "type": "string",
+                        "title": "Connection Id"
+                    },
+                    "board_id": {
+                        "type": "string",
+                        "title": "Board Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success",
+                    "connection_id",
+                    "board_id"
+                ],
+                "title": "DataConnectionBoardDeleteResponse"
             },
             "DataConnectionBoardResponse": {
                 "properties": {
@@ -7948,6 +8320,26 @@
                             }
                         ]
                     },
+                    "douyin": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/HotRankPlatformData"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "kuaishou": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/HotRankPlatformData"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "zhixunbao": {
                         "anyOf": [
                             {
@@ -8047,6 +8439,326 @@
                 },
                 "type": "object",
                 "title": "ImageSearchResultItem"
+            },
+            "ImageTaskCreate": {
+                "properties": {
+                    "prompts": {
+                        "items": {
+                            "$ref": "#/components/schemas/ImageTaskPrompt"
+                        },
+                        "type": "array",
+                        "maxItems": 50,
+                        "minItems": 1,
+                        "title": "Prompts"
+                    },
+                    "size": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Size"
+                    },
+                    "resolution": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Resolution"
+                    },
+                    "input_images": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "maxItems": 20,
+                        "title": "Input Images"
+                    },
+                    "quality": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Quality"
+                    },
+                    "output_format": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 32
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Output Format"
+                    },
+                    "output_compression": {
+                        "anyOf": [
+                            {
+                                "type": "integer",
+                                "maximum": 100.0,
+                                "minimum": 0.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Output Compression"
+                    },
+                    "background": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Background"
+                    },
+                    "watermark": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Watermark"
+                    },
+                    "metadata": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Metadata"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "prompts"
+                ],
+                "title": "ImageTaskCreate"
+            },
+            "ImageTaskItemResponse": {
+                "properties": {
+                    "uid": {
+                        "type": "string",
+                        "title": "Uid"
+                    },
+                    "title": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Title"
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "title": "Prompt"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "queued",
+                            "processing",
+                            "completed",
+                            "failed"
+                        ],
+                        "title": "Status"
+                    },
+                    "upstream_task_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Upstream Task Id"
+                    },
+                    "url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Url"
+                    },
+                    "error": {
+                        "title": "Error"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "uid",
+                    "prompt",
+                    "status",
+                    "upstream_task_id",
+                    "url",
+                    "error",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ImageTaskItemResponse"
+            },
+            "ImageTaskListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/ImageTaskResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total"
+                ],
+                "title": "ImageTaskListResponse"
+            },
+            "ImageTaskPrompt": {
+                "properties": {
+                    "uid": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "title": "Uid"
+                    },
+                    "title": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 256
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Title"
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "maxLength": 8000,
+                        "minLength": 1,
+                        "title": "Prompt"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "uid",
+                    "prompt"
+                ],
+                "title": "ImageTaskPrompt"
+            },
+            "ImageTaskResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "thread_id": {
+                        "type": "string",
+                        "title": "Thread Id"
+                    },
+                    "size": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Size"
+                    },
+                    "resolution": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Resolution"
+                    },
+                    "input_images": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Input Images"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/ImageTaskItemResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "thread_id",
+                    "size",
+                    "resolution",
+                    "input_images",
+                    "created_at",
+                    "updated_at",
+                    "items"
+                ],
+                "title": "ImageTaskResponse"
             },
             "McpConfigResponse": {
                 "properties": {
@@ -9283,8 +9995,8 @@
                     },
                     "timeout": {
                         "type": "integer",
-                        "maximum": 600,
-                        "minimum": 1,
+                        "maximum": 600.0,
+                        "minimum": 1.0,
                         "title": "Timeout",
                         "default": 20
                     },
@@ -9477,6 +10189,23 @@
                         ],
                         "title": "Model Name"
                     },
+                    "thinking_enabled": {
+                        "type": "boolean",
+                        "title": "Thinking Enabled",
+                        "default": false
+                    },
+                    "reasoning_effort": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reasoning Effort"
+                    },
                     "schedule_enabled": {
                         "type": "boolean",
                         "title": "Schedule Enabled",
@@ -9484,7 +10213,7 @@
                     },
                     "jitter_minutes": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Jitter Minutes",
                         "default": 0
                     },
@@ -9500,11 +10229,18 @@
                         "title": "Persona Id"
                     },
                     "image_source": {
-                        "type": "string",
-                        "enum": [
-                            "ai_generate",
-                            "web_search",
-                            "media_library"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "ai_generate",
+                                    "web_search",
+                                    "media_library"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
                         ],
                         "title": "Image Source"
                     },
@@ -9559,7 +10295,6 @@
                             "$ref": "#/components/schemas/ScheduledPublishTopicSourceBinding"
                         },
                         "type": "array",
-                        "minItems": 1,
                         "title": "Topic Source Bindings"
                     }
                 },
@@ -9567,10 +10302,8 @@
                 "required": [
                     "name",
                     "prompt",
-                    "image_source",
                     "timezone",
-                    "publish_targets",
-                    "topic_source_bindings"
+                    "publish_targets"
                 ],
                 "title": "ScheduledPublishTaskCreate"
             },
@@ -9638,6 +10371,21 @@
                         ],
                         "title": "Model Name"
                     },
+                    "thinking_enabled": {
+                        "type": "boolean",
+                        "title": "Thinking Enabled"
+                    },
+                    "reasoning_effort": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reasoning Effort"
+                    },
                     "schedule_enabled": {
                         "type": "boolean",
                         "title": "Schedule Enabled"
@@ -9658,11 +10406,18 @@
                         "title": "Persona Id"
                     },
                     "image_source": {
-                        "type": "string",
-                        "enum": [
-                            "ai_generate",
-                            "web_search",
-                            "media_library"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "ai_generate",
+                                    "web_search",
+                                    "media_library"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
                         ],
                         "title": "Image Source"
                     },
@@ -9743,6 +10498,17 @@
                         ],
                         "title": "Last Run Status"
                     },
+                    "last_run_error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Run Error Message"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -9760,6 +10526,8 @@
                     "name",
                     "prompt",
                     "model_name",
+                    "thinking_enabled",
+                    "reasoning_effort",
                     "schedule_enabled",
                     "jitter_minutes",
                     "persona_id",
@@ -9772,6 +10540,7 @@
                     "next_run_at",
                     "last_run_at",
                     "last_run_status",
+                    "last_run_error_message",
                     "created_at",
                     "updated_at"
                 ],
@@ -9967,13 +10736,30 @@
                         ],
                         "title": "Model Name"
                     },
+                    "thinking_enabled": {
+                        "type": "boolean",
+                        "title": "Thinking Enabled",
+                        "default": false
+                    },
+                    "reasoning_effort": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 64
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reasoning Effort"
+                    },
                     "schedule_enabled": {
                         "type": "boolean",
                         "title": "Schedule Enabled"
                     },
                     "jitter_minutes": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Jitter Minutes",
                         "default": 0
                     },
@@ -9989,11 +10775,18 @@
                         "title": "Persona Id"
                     },
                     "image_source": {
-                        "type": "string",
-                        "enum": [
-                            "ai_generate",
-                            "web_search",
-                            "media_library"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "ai_generate",
+                                    "web_search",
+                                    "media_library"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
                         ],
                         "title": "Image Source"
                     },
@@ -10048,7 +10841,6 @@
                             "$ref": "#/components/schemas/ScheduledPublishTopicSourceBinding"
                         },
                         "type": "array",
-                        "minItems": 1,
                         "title": "Topic Source Bindings"
                     }
                 },
@@ -10057,10 +10849,8 @@
                     "name",
                     "prompt",
                     "schedule_enabled",
-                    "image_source",
                     "timezone",
-                    "publish_targets",
-                    "topic_source_bindings"
+                    "publish_targets"
                 ],
                 "title": "ScheduledPublishTaskUpdate"
             },
@@ -10073,8 +10863,8 @@
                     },
                     "item_limit": {
                         "type": "integer",
-                        "maximum": 100,
-                        "minimum": 1,
+                        "maximum": 100.0,
+                        "minimum": 1.0,
                         "title": "Item Limit",
                         "default": 10
                     },
@@ -10563,20 +11353,20 @@
                 "properties": {
                     "monthly_price_amount": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Monthly Price Amount",
                         "description": "Monthly price in cents"
                     },
                     "monthly_points": {
                         "type": "integer",
-                        "minimum": 0,
+                        "minimum": 0.0,
                         "title": "Monthly Points",
                         "description": "Monthly granted points"
                     },
                     "annual_discount_rate": {
                         "type": "number",
-                        "maximum": 1,
-                        "exclusiveMinimum": 0,
+                        "maximum": 1.0,
+                        "exclusiveMinimum": 0.0,
                         "title": "Annual Discount Rate",
                         "description": "Annual discount rate"
                     },
@@ -10627,8 +11417,8 @@
                     },
                     "n": {
                         "type": "integer",
-                        "maximum": 5,
-                        "minimum": 1,
+                        "maximum": 5.0,
+                        "minimum": 1.0,
                         "title": "N",
                         "description": "Number of suggestions to generate",
                         "default": 3
@@ -10701,11 +11491,79 @@
                 ],
                 "title": "TopicBoardItemsResponse"
             },
+            "TopicBoardListItemResponse": {
+                "properties": {
+                    "board_id": {
+                        "type": "string",
+                        "title": "Board Id"
+                    },
+                    "connection_id": {
+                        "type": "string",
+                        "title": "Connection Id"
+                    },
+                    "provider_key": {
+                        "type": "string",
+                        "title": "Provider Key"
+                    },
+                    "provider_name": {
+                        "type": "string",
+                        "title": "Provider Name"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Title"
+                    },
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description"
+                    },
+                    "icon_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Icon Url"
+                    },
+                    "badge_count": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Badge Count"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "board_id",
+                    "connection_id",
+                    "provider_key",
+                    "provider_name",
+                    "title",
+                    "description",
+                    "icon_url"
+                ],
+                "title": "TopicBoardListItemResponse"
+            },
             "TopicBoardListResponse": {
                 "properties": {
                     "items": {
                         "items": {
-                            "$ref": "#/components/schemas/TopicBoardResponse"
+                            "$ref": "#/components/schemas/TopicBoardListItemResponse"
                         },
                         "type": "array",
                         "title": "Items"
@@ -10804,9 +11662,6 @@
             },
             "TopicDataDetailResponse": {
                 "properties": {
-                    "board": {
-                        "$ref": "#/components/schemas/TopicBoardResponse"
-                    },
                     "item_id": {
                         "type": "string",
                         "title": "Item Id"
@@ -10814,6 +11669,17 @@
                     "title": {
                         "type": "string",
                         "title": "Title"
+                    },
+                    "title_zh": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Title Zh"
                     },
                     "source_name": {
                         "anyOf": [
@@ -10847,6 +11713,17 @@
                             }
                         ],
                         "title": "Content Text"
+                    },
+                    "content_zh": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content Zh"
                     },
                     "image_urls": {
                         "items": {
@@ -10885,7 +11762,6 @@
                 },
                 "type": "object",
                 "required": [
-                    "board",
                     "item_id",
                     "title"
                 ],
@@ -11223,7 +12099,11 @@
         },
         {
             "name": "artifacts",
-            "description": "Access, download, and update thread artifacts and generated Markdown files"
+            "description": "Access, download, and update thread artifacts and generated output files"
+        },
+        {
+            "name": "threads",
+            "description": "Read owner-scoped LangGraph thread history and debug timeline views"
         },
         {
             "name": "uploads",
@@ -11276,6 +12156,10 @@
         {
             "name": "feedback",
             "description": "Collect owner-scoped issue feedback and expose feedback status history"
+        },
+        {
+            "name": "image_tasks",
+            "description": "Submit and inspect thread-scoped asynchronous image generation tasks"
         },
         {
             "name": "hot_rank",

@@ -11,6 +11,11 @@ export type PendingInitialMessage = {
   files: FileUIPart[];
   personaId?: string | null;
   additionalKwargs?: Record<string, unknown>;
+  contextOverrides?: Record<string, unknown>;
+  runOptions?: {
+    assistantId?: string;
+    streamMode?: string[];
+  };
 };
 
 export type StashPendingInitialMessageInput = Omit<PendingInitialMessage, "files"> & {
@@ -32,10 +37,7 @@ export function stashPendingInitialMessage(payload: StashPendingInitialMessageIn
   }
 }
 
-/**
- * 若当前会话与暂存一致，则取出并清除暂存（仅消费一次）。
- */
-export function takePendingInitialMessage(threadId: string): PendingInitialMessage | null {
+function readPendingInitialMessage(threadId: string): PendingInitialMessage | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -49,8 +51,6 @@ export function takePendingInitialMessage(threadId: string): PendingInitialMessa
     if (trimmed.length === 0 && files.length === 0) {
       return null;
     }
-    sessionStorage.removeItem(STORAGE_KEY);
-    pendingFilesByThreadId.delete(threadId);
     const personaId =
       typeof data.personaId === "string" ? data.personaId : null;
     const additionalKwargs =
@@ -59,14 +59,59 @@ export function takePendingInitialMessage(threadId: string): PendingInitialMessa
       !Array.isArray(data.additionalKwargs)
         ? (data.additionalKwargs as Record<string, unknown>)
         : undefined;
+    const contextOverrides =
+      data.contextOverrides &&
+      typeof data.contextOverrides === "object" &&
+      !Array.isArray(data.contextOverrides)
+        ? (data.contextOverrides as Record<string, unknown>)
+        : undefined;
+    const rawRunOptions =
+      data.runOptions &&
+      typeof data.runOptions === "object" &&
+      !Array.isArray(data.runOptions)
+        ? data.runOptions
+        : undefined;
+    const runOptions = rawRunOptions
+      ? {
+          assistantId:
+            typeof rawRunOptions.assistantId === "string"
+              ? rawRunOptions.assistantId
+              : undefined,
+          streamMode: Array.isArray(rawRunOptions.streamMode)
+            ? rawRunOptions.streamMode.filter(
+                (mode): mode is string => typeof mode === "string",
+              )
+            : undefined,
+        }
+      : undefined;
+
     return {
       threadId: data.threadId,
       text: trimmed,
       files,
       personaId,
       additionalKwargs,
+      contextOverrides,
+      runOptions,
     };
   } catch {
     return null;
   }
+}
+
+export function peekPendingInitialMessage(
+  threadId: string,
+): PendingInitialMessage | null {
+  return readPendingInitialMessage(threadId);
+}
+
+/**
+ * 若当前会话与暂存一致，则取出并清除暂存（仅消费一次）。
+ */
+export function takePendingInitialMessage(threadId: string): PendingInitialMessage | null {
+  const pending = readPendingInitialMessage(threadId);
+  if (!pending) return null;
+  sessionStorage.removeItem(STORAGE_KEY);
+  pendingFilesByThreadId.delete(threadId);
+  return pending;
 }

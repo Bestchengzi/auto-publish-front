@@ -24,10 +24,26 @@ export type ToolEndEvent = {
 
 export type ThreadStreamOptions = {
   threadId?: string | null | undefined;
+  assistantId?: string;
   context: LocalSettings["context"];
   onStart?: (threadId: string) => void;
   onFinish?: (state: AgentThreadState) => void;
   onToolEnd?: (event: ToolEndEvent) => void;
+};
+
+type RunStreamMode =
+  | "values"
+  | "messages"
+  | "messages-tuple"
+  | "updates"
+  | "events"
+  | "debug"
+  | "tasks"
+  | "checkpoints"
+  | "custom";
+
+export type ThreadRunOptions = {
+  streamMode?: RunStreamMode[];
 };
 
 function getStreamErrorMessage(error: unknown): string {
@@ -79,6 +95,7 @@ function shouldSilentlyIgnoreStreamError(error: unknown): boolean {
 
 export function useThreadStream({
   threadId,
+  assistantId = "lead_agent",
   context,
   onStart,
   onFinish,
@@ -137,7 +154,7 @@ export function useThreadStream({
 
   const thread = useStream<AgentThreadState>({
     client: getAPIClient(),
-    assistantId: "lead_agent",
+    assistantId,
     threadId: onStreamThreadId,
     reconnectOnMount: true,
     fetchStateHistory: { limit: 1 },
@@ -231,6 +248,7 @@ export function useThreadStream({
       message: PromptInputMessage,
       extraContext?: Record<string, unknown>,
       extraAdditionalKwargs?: Record<string, unknown>,
+      runOptions?: ThreadRunOptions,
     ) => {
       if (sendInFlightRef.current) {
         return;
@@ -394,6 +412,7 @@ export function useThreadStream({
           },
           {
             threadId: threadId,
+            streamMode: runOptions?.streamMode,
             streamSubgraphs: true,
             streamResumable: true,
             config: {

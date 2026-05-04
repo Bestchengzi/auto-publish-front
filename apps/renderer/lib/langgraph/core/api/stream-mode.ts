@@ -66,3 +66,19 @@ export function sanitizeRunStreamOptions<T>(options: T): T {
     streamMode: Array.isArray(streamMode) ? sanitizedModes : sanitizedModes[0],
   };
 }
+
+export function sanitizeRunStreamOptionsForAssistant<T>(
+  options: T,
+  assistantId: string,
+): T {
+  if (assistantId !== "image_cards") {
+    return sanitizeRunStreamOptions(options);
+  }
+  if (typeof options !== "object" || options === null) {
+    return options;
+  }
+  return {
+    ...options,
+    streamMode: ["values", "updates"],
+  };
+}

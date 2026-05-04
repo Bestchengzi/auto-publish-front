@@ -27,7 +27,7 @@ export function AppShellProtectedNavItem({
       }}
       className={
         active
-          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary/10 px-2 text-sm font-medium text-primary"
+          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#f0f2f4] px-2 text-sm font-medium text-foreground hover:bg-[#f0f2f4] dark:bg-muted/60 dark:hover:bg-muted/60"
           : "flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-foreground/80 hover:bg-muted hover:text-foreground"
       }
     >

@@ -8,6 +8,38 @@ import * as accountsApi from "@/lib/api/accounts";
 import * as accountGroupsApi from "@/lib/api/account-groups";
 import type { Account, Group, PlatformId } from "./types";
 
+const ACCOUNT_QUERY_STALE_TIME_MS = 60 * 1000;
+const ACCOUNT_QUERY_TIMEOUT_MS = 15 * 1000;
+
+function createTimeoutSignal(parentSignal: AbortSignal | undefined) {
+  const controller = new AbortController();
+  const cleanupFns: Array<() => void> = [];
+
+  if (parentSignal) {
+    if (parentSignal.aborted) {
+      controller.abort();
+    } else {
+      const abortFromParent = () => controller.abort();
+      parentSignal.addEventListener("abort", abortFromParent, { once: true });
+      cleanupFns.push(() =>
+        parentSignal.removeEventListener("abort", abortFromParent),
+      );
+    }
+  }
+
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, ACCOUNT_QUERY_TIMEOUT_MS);
+  cleanupFns.push(() => clearTimeout(timeoutId));
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      for (const cleanup of cleanupFns) cleanup();
+    },
+  };
+}
+
 function mapAccountResponseToAccount(a: accountsApi.AccountResponse): Account {
   const groupIds = (a.groups ?? []).map((g) => String(g.id));
   const updatedAt = a.last_refreshed_at ?? a.updated_at;
@@ -43,24 +75,36 @@ export function useAccountManagementData({
   const allGroupsLabel = t("account.groups.allGroups");
   const groupsQuery = useQuery({
     queryKey: ["account-management", "groups", allGroupsLabel] as QueryKey,
-    queryFn: async () => {
-      const res = await accountGroupsApi.listAccountGroupsWithCounts();
-      const list: Group[] = [
-        { id: "all", name: allGroupsLabel },
-        { id: "ungrouped", name: t("account.groups.ungrouped") },
-      ];
-      const counts: Record<string, number> = { all: 0, ungrouped: 0 };
-      for (const item of res.items) {
-        counts.all += item.count;
-        if (item.group_id == null) {
-          counts.ungrouped = item.count;
-        } else {
-          list.push({ id: String(item.group_id), name: item.group_name });
-          counts[String(item.group_id)] = item.count;
+    queryFn: async ({ signal }) => {
+      const timeout = createTimeoutSignal(signal);
+      try {
+        const res = await accountGroupsApi.listAccountGroupsWithCounts({
+          signal: timeout.signal,
+        });
+        const list: Group[] = [
+          { id: "all", name: allGroupsLabel },
+          { id: "ungrouped", name: t("account.groups.ungrouped") },
+        ];
+        const counts: Record<string, number> = { all: 0, ungrouped: 0 };
+        for (const item of res.items) {
+          counts.all += item.count;
+          if (item.group_id == null) {
+            counts.ungrouped = item.count;
+          } else {
+            list.push({ id: String(item.group_id), name: item.group_name });
+            counts[String(item.group_id)] = item.count;
+          }
         }
+        return { list, counts };
+      } finally {
+        timeout.cleanup();
       }
-      return { list, counts };
     },
+    placeholderData: (previousData) => previousData,
+    staleTime: ACCOUNT_QUERY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: false,
   });
 
   const accountsQuery = useQuery({
@@ -71,25 +115,39 @@ export function useAccountManagementData({
       platformFilter,
       statusFilter,
     ] as QueryKey,
-    queryFn: async () => {
-      let groupIdParam: number | undefined = undefined;
-      if (groupFilter !== "all" && groupFilter !== "ungrouped") {
-        const n = parseInt(groupFilter, 10);
-        if (!Number.isNaN(n)) groupIdParam = n;
+    queryFn: async ({ signal }) => {
+      const timeout = createTimeoutSignal(signal);
+      try {
+        let groupIdParam: number | undefined = undefined;
+        if (groupFilter !== "all" && groupFilter !== "ungrouped") {
+          const n = parseInt(groupFilter, 10);
+          if (!Number.isNaN(n)) groupIdParam = n;
+        }
+        const res = await accountsApi.listAccounts(
+          {
+            status: statusFilter === "all" ? undefined : statusFilter,
+            platforms: platformFilter === "all" ? undefined : platformFilter,
+            group_id: groupIdParam,
+          },
+          {
+            signal: timeout.signal,
+          },
+        );
+        let items = res.items.map(mapAccountResponseToAccount);
+        if (groupFilter === "ungrouped") {
+          items = items.filter((a) => a.groupIds.length === 0);
+        }
+        return items;
+      } finally {
+        timeout.cleanup();
       }
-      const res = await accountsApi.listAccounts({
-        status: statusFilter === "all" ? undefined : statusFilter,
-        platforms: platformFilter === "all" ? undefined : platformFilter,
-        group_id: groupIdParam,
-      });
-      let items = res.items.map(mapAccountResponseToAccount);
-      if (groupFilter === "ungrouped") {
-        items = items.filter((a) => a.groupIds.length === 0);
-      }
-      return items;
     },
     // Keep previous list during filter refetch to avoid empty-state flicker.
     placeholderData: (previousData) => previousData,
+    staleTime: ACCOUNT_QUERY_STALE_TIME_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: false,
   });
 
   const [groupsOverride, setGroupsOverride] = React.useState<Group[] | null>(null);

@@ -6,7 +6,10 @@ import { applyStreamingProxyClientHints } from "@/lib/api/streaming-fetch-header
 import { getAuthorizationHeaderValue } from "@/lib/auth/session";
 import { getLangGraphBaseURL } from "../config";
 
-import { sanitizeRunStreamOptions } from "./stream-mode";
+import {
+  sanitizeRunStreamOptions,
+  sanitizeRunStreamOptionsForAssistant,
+} from "./stream-mode";
 
 function createCompatibleClient(): LangGraphClient {
   const client = new LangGraphClient({
@@ -31,7 +34,7 @@ function createCompatibleClient(): LangGraphClient {
     originalRunStream(
       threadId as never,
       assistantId,
-      sanitizeRunStreamOptions(payload),
+      sanitizeRunStreamOptionsForAssistant(payload, assistantId),
     )) as typeof client.runs.stream;
 
   const originalJoinStream = client.runs.joinStream.bind(client.runs);

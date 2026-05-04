@@ -451,6 +451,31 @@
   margin-bottom: 0 !important;
 }
 
+.dark .publish-preview-typography {
+  color: #e5e7eb;
+}
+.dark .publish-preview-typography :where(p, li, span, div) {
+  color: #d1d5db !important;
+}
+.dark .publish-preview-typography h1,
+.dark .publish-preview-typography h2,
+.dark .publish-preview-typography h3,
+.dark .publish-preview-typography h4,
+.dark .publish-preview-typography strong,
+.dark .publish-preview-typography b {
+  color: #f8fafc !important;
+}
+.dark .publish-preview-typography a {
+  color: #7dd3fc;
+}
+.dark .publish-preview-typography blockquote {
+  background: color-mix(in oklch, var(--card) 82%, var(--primary) 18%);
+  color: #d1d5db;
+}
+.dark .publish-preview-typography hr {
+  border-top-color: color-mix(in oklch, var(--foreground) 18%, transparent);
+}
+
 .artifact-prosemirror-editor .ProseMirror > h1.is-empty:first-child {
   position: relative;
 }

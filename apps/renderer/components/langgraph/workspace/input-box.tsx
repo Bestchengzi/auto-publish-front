@@ -10,6 +10,7 @@ import {
   PencilIcon,
   PlusIcon,
   RocketIcon,
+  SendIcon,
   Trash2Icon,
   ZapIcon,
   GlobeIcon,
@@ -121,6 +122,7 @@ export function InputBox({
   isNewThread,
   threadId: _threadId,
   initialValue,
+  placeholder,
   onContextChange,
   onSubmit,
   onStop,
@@ -133,6 +135,8 @@ export function InputBox({
   onDeletePersonaRequest,
   onEditPersonaRequest,
   showPersonaManagementActions = false,
+  toolbarVariant = "default",
+  submitLabel,
   ...props
 }: Omit<ComponentProps<typeof PromptInput>, "onSubmit"> & {
   assistantId?: string | null;
@@ -149,6 +153,7 @@ export function InputBox({
   isNewThread?: boolean;
   threadId: string;
   initialValue?: string;
+  placeholder?: string;
   onContextChange?: (
     context: Omit<
       AgentThreadContext,
@@ -169,6 +174,8 @@ export function InputBox({
   onDeletePersonaRequest?: (persona: { id: string; name: string }) => void;
   onEditPersonaRequest?: (persona: { id: string; name: string }) => void;
   showPersonaManagementActions?: boolean;
+  toolbarVariant?: "default" | "attachmentsOnly";
+  submitLabel?: string;
 }) {
   const { t } = useI18n();
   void _threadId;
@@ -304,6 +311,7 @@ export function InputBox({
   const canDeletePersona =
     showPersonaManagementActions && Boolean(onDeletePersonaRequest);
   const hasPersonaManagementActions = canEditPersona || canDeletePersona;
+  const attachmentsOnlyToolbar = toolbarVariant === "attachmentsOnly";
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -456,7 +464,7 @@ export function InputBox({
           <PromptInputTextarea
             className={cn("size-full")}
             disabled={disabled}
-            placeholder={t.inputBox.placeholder}
+            placeholder={placeholder ?? t.inputBox.placeholder}
             autoFocus={autoFocus}
             defaultValue={initialValue}
           />
@@ -473,9 +481,12 @@ export function InputBox({
             </PromptInputActionMenuContent>
           </PromptInputActionMenu> */}
             <AddAttachmentsButton
-              className="px-2!"
+              className={cn("px-2!", attachmentsOnlyToolbar && "gap-1.5!")}
               disabled={disabled || !canUseAuthFeatures}
+              label={attachmentsOnlyToolbar ? "可上传参考图片" : undefined}
             />
+            {!attachmentsOnlyToolbar ? (
+              <>
             <Tooltip
               content={
                 searchEnabled
@@ -907,59 +918,77 @@ export function InputBox({
                 </PromptInputActionMenuContent>
               </PromptInputActionMenu>
             )}
+              </>
+            ) : null}
           </PromptInputTools>
           <PromptInputTools>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex border-0 bg-transparent p-0 shadow-none"
-                render={
-                  <PromptInputButton
-                    disabled={disabled || !canUseAuthFeatures || models.length === 0}
-                  >
-                    <div className="flex min-w-0 flex-col items-start text-left">
-                      <ModelSelectorName className="text-xs font-normal">
-                        {selectedModel?.display_name}
-                      </ModelSelectorName>
-                      {selectedModel?.model && (
-                        <span className="text-muted-foreground w-full truncate text-[10px] leading-none">
-                          {selectedModel.model}
-                        </span>
+            {!attachmentsOnlyToolbar ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="inline-flex border-0 bg-transparent p-0 shadow-none"
+                  render={
+                    <PromptInputButton
+                      disabled={
+                        disabled || !canUseAuthFeatures || models.length === 0
+                      }
+                    >
+                      <div className="flex min-w-0 flex-col items-start text-left">
+                        <ModelSelectorName className="text-xs font-normal">
+                          {selectedModel?.display_name}
+                        </ModelSelectorName>
+                        {selectedModel?.model && (
+                          <span className="text-muted-foreground w-full truncate text-[10px] leading-none">
+                            {selectedModel.model}
+                          </span>
+                        )}
+                      </div>
+                    </PromptInputButton>
+                  }
+                />
+                <DropdownMenuContent align="start" className="w-72">
+                  {models.map((m) => (
+                    <DropdownMenuItem
+                      key={m.name}
+                      onClick={() => handleModelSelect(m.name)}
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <ModelSelectorName className="text-sm">
+                          {m.display_name}
+                        </ModelSelectorName>
+                        {m.model && (
+                          <span className="text-muted-foreground truncate text-sm">
+                            {m.model}
+                          </span>
+                        )}
+                      </div>
+                      {m.name === context.model_name ? (
+                        <CheckIcon className="ml-auto size-4" />
+                      ) : (
+                        <div className="ml-auto size-4" />
                       )}
-                    </div>
-                  </PromptInputButton>
-                }
-              />
-              <DropdownMenuContent align="start" className="w-72">
-                {models.map((m) => (
-                  <DropdownMenuItem
-                    key={m.name}
-                    onClick={() => handleModelSelect(m.name)}
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <ModelSelectorName className="text-sm">
-                        {m.display_name}
-                      </ModelSelectorName>
-                      {m.model && (
-                        <span className="text-muted-foreground truncate text-sm">
-                          {m.model}
-                        </span>
-                      )}
-                    </div>
-                    {m.name === context.model_name ? (
-                      <CheckIcon className="ml-auto size-4" />
-                    ) : (
-                      <div className="ml-auto size-4" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             <PromptInputSubmit
-              className="rounded-full"
+              className={cn(
+                "rounded-full",
+                submitLabel &&
+                  "h-9 px-4 text-sm font-medium [&>svg]:size-3.5",
+              )}
               disabled={submitDisabled}
+              size={submitLabel ? "sm" : "icon-sm"}
               variant="outline"
               status={status}
-            />
+            >
+              {submitLabel ? (
+                <>
+                  <SendIcon className="size-3.5" />
+                  <span>{submitLabel}</span>
+                </>
+              ) : undefined}
+            </PromptInputSubmit>
           </PromptInputTools>
         </PromptInputFooter>
         {/*
@@ -1085,9 +1114,11 @@ function SuggestionList() {
 function AddAttachmentsButton({
   className,
   disabled = false,
+  label,
 }: {
   className?: string;
   disabled?: boolean;
+  label?: string;
 }) {
   const { t } = useI18n();
   const attachments = usePromptInputAttachments();
@@ -1102,6 +1133,7 @@ function AddAttachmentsButton({
         }}
       >
         <PaperclipIcon className="size-3" />
+        {label ? <span className="text-xs font-normal">{label}</span> : null}
       </PromptInputButton>
     </Tooltip>
   );

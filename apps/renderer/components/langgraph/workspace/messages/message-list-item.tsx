@@ -226,6 +226,7 @@ function MessageContent_({
   if (isHuman) {
     const messageResponse = contentToDisplay ? (
       <AIElementMessageResponse
+        className="whitespace-pre-wrap break-words"
         plugins={humanMessagePlugins.plugins}
         remarkPlugins={humanMessagePlugins.remarkPlugins}
         rehypePlugins={humanMessagePlugins.rehypePlugins}

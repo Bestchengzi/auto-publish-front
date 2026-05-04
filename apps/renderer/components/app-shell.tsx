@@ -58,7 +58,7 @@ function NavItem({
       href={href}
       className={
         active
-          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary/10 px-2 text-sm font-medium text-primary"
+          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#f0f2f4] px-2 text-sm font-medium text-foreground hover:bg-[#f0f2f4] dark:bg-muted/60 dark:hover:bg-muted/60"
           : "flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-foreground/80 hover:bg-muted hover:text-foreground"
       }
     >
@@ -84,7 +84,11 @@ export function AppShell({
       <div className="flex min-h-0 flex-1">
         <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border bg-muted/30 text-foreground dark:bg-muted/20">
           <div className="flex h-14 items-center px-4">
-            <div className="flex items-center gap-2.5">
+            <Link
+              href={`/${locale}/creation-center/new`}
+              className="flex cursor-pointer items-center gap-2.5 rounded-md outline-none transition-opacity hover:opacity-85 focus-visible:ring-0"
+              aria-label={t("app.name")}
+            >
               <div className="relative size-9 shrink-0 overflow-hidden rounded-xl bg-muted">
                 <Image
                   src="/logo.png"
@@ -98,7 +102,7 @@ export function AppShell({
               <div className="leading-tight">
                 <div className="text-lg font-semibold">{t("app.name")}</div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden px-3 py-4">

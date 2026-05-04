@@ -114,6 +114,7 @@ export default async function LocaleLayout({
             attribute="class"
             defaultTheme="system"
             enableSystem
+            storageKey="media-auto-publish-theme"
             disableTransitionOnChange
           >
             <NextIntlClientProvider locale={safeLocale} messages={messages}>

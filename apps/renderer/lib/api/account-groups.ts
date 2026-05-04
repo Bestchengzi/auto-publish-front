@@ -21,9 +21,12 @@ export type GroupResponse = {
   updated_at: string;
 };
 
-export async function listAccountGroupsWithCounts(): Promise<GroupAggregateResponse> {
+export async function listAccountGroupsWithCounts(
+  init?: RequestInit,
+): Promise<GroupAggregateResponse> {
   return request<GroupAggregateResponse>(
     apiUrl("/api/account-groups/aggregate"),
+    init,
   );
 }
 

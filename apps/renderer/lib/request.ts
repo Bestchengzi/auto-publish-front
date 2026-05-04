@@ -12,6 +12,26 @@ import zhCNMessages from "@/messages/zh-CN.json"
 import { createTranslator } from "next-intl"
 import { toast } from "sonner"
 
+type RequestOptions = RequestInit & {
+  suppressErrorToast?: boolean
+}
+
+export class ApiRequestError extends Error {
+  status: number
+  data: unknown
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message)
+    this.name = "ApiRequestError"
+    this.status = status
+    this.data = data
+  }
+}
+
+export function getApiErrorData(error: unknown): unknown {
+  return error instanceof ApiRequestError ? error.data : undefined
+}
+
 const HTTP_ERROR_MESSAGES: Record<AppLocale, (typeof zhCNMessages)> = {
   "zh-CN": zhCNMessages,
   en: enMessages,
@@ -108,6 +128,10 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError"
+}
+
 function resolveAppLocaleFromPath(): AppLocale {
   if (typeof window === "undefined") return defaultLocale
   const segment = getLocaleFromPathname(window.location.pathname)
@@ -119,11 +143,15 @@ function toastHttpErrorIfClient(message: string): void {
   toast.error(message)
 }
 
-async function handleResponseError(response: Response): Promise<never> {
+async function handleResponseError(
+  response: Response,
+  options: Pick<RequestOptions, "suppressErrorToast"> = {},
+): Promise<never> {
   const status = response.status
   let errorMessage: string | null = null
+  let errorData: unknown = null
   try {
-    const errorData = await response.json()
+    errorData = await response.json()
     errorMessage = parseErrorMessageFromBody(errorData)
   } catch {
     errorMessage = response.statusText || null
@@ -135,6 +163,11 @@ async function handleResponseError(response: Response): Promise<never> {
     messages: HTTP_ERROR_MESSAGES[locale],
     namespace: "request",
   })
+  const toastError = (message: string) => {
+    if (!options.suppressErrorToast) {
+      toastHttpErrorIfClient(message)
+    }
+  }
 
   switch (status) {
     case 401: {
@@ -143,28 +176,28 @@ async function handleResponseError(response: Response): Promise<never> {
         redirectToLoginNewChat()
       }
       const msg = t("http.unauthorized")
-      toastHttpErrorIfClient(msg)
-      throw new Error(msg)
+      toastError(msg)
+      throw new ApiRequestError(msg, status, errorData)
     }
     case 403: {
       const msg = errorMessage || t("http.forbidden")
-      toastHttpErrorIfClient(msg)
-      throw new Error(msg)
+      toastError(msg)
+      throw new ApiRequestError(msg, status, errorData)
     }
     case 404: {
       const msg = errorMessage || t("http.notFound")
-      toastHttpErrorIfClient(msg)
-      throw new Error(msg)
+      toastError(msg)
+      throw new ApiRequestError(msg, status, errorData)
     }
     case 500: {
       const msg = errorMessage || t("http.serverError")
-      toastHttpErrorIfClient(msg)
-      throw new Error(msg)
+      toastError(msg)
+      throw new ApiRequestError(msg, status, errorData)
     }
     default: {
       const msg = errorMessage || t("http.requestFailed")
-      toastHttpErrorIfClient(msg)
-      throw new Error(msg)
+      toastError(msg)
+      throw new ApiRequestError(msg, status, errorData)
     }
   }
 }
@@ -189,17 +222,18 @@ function authHeadersInit(
  */
 export async function request<T>(
   url: string,
-  options: RequestInit = {},
+  options: RequestOptions = {},
 ): Promise<T> {
   try {
+    const { suppressErrorToast, ...fetchOptions } = options
     const headers = authHeadersInit(options)
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers,
     })
 
     if (!response.ok) {
-      await handleResponseError(response)
+      await handleResponseError(response, { suppressErrorToast })
     }
 
     if (response.status === 204) {
@@ -210,7 +244,7 @@ export async function request<T>(
     if (!text) return undefined as T
     return JSON.parse(text) as T
   } catch (error) {
-    console.error("Request error:", error)
+    if (!isAbortError(error)) console.error("Request error:", error)
     throw error
   }
 }
@@ -221,9 +255,10 @@ export async function request<T>(
 export async function upload<T>(
   url: string,
   formData: FormData,
-  options?: RequestInit,
+  options?: RequestOptions,
 ): Promise<T> {
   try {
+    const { suppressErrorToast, ...fetchOptions } = options ?? {}
     const headers = authHeadersInit({
       ...options,
       body: formData,
@@ -232,14 +267,14 @@ export async function upload<T>(
     headers.delete("Content-Type")
 
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       method: options?.method ?? "POST",
       headers,
       body: formData,
     })
 
     if (!response.ok) {
-      await handleResponseError(response)
+      await handleResponseError(response, { suppressErrorToast })
     }
 
     if (response.status === 204) {
@@ -250,7 +285,7 @@ export async function upload<T>(
     if (!text) return undefined as T
     return JSON.parse(text) as T
   } catch (error) {
-    console.error("Upload error:", error)
+    if (!isAbortError(error)) console.error("Upload error:", error)
     throw error
   }
 }
@@ -352,16 +387,17 @@ export async function streamRequest<T = unknown>(
 /** 二进制下载（默认不为 GET 带 JSON Content-Type） */
 export async function requestBlob(
   url: string,
-  options: RequestInit = {},
+  options: RequestOptions = {},
 ): Promise<Blob> {
+  const { suppressErrorToast, ...fetchOptions } = options
   const headers = authHeadersInit(options)
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
   })
 
   if (!response.ok) {
-    await handleResponseError(response)
+    await handleResponseError(response, { suppressErrorToast })
   }
 
   return response.blob()

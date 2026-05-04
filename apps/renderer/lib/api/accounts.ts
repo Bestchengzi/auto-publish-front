@@ -52,11 +52,14 @@ export type AccountUpdateBody = {
   group_ids?: number[] | null;
 };
 
-export async function listAccounts(params?: {
-  status?: "online" | "offline" | null;
-  platforms?: string | null;
-  group_id?: number | null;
-}): Promise<AccountListResponse> {
+export async function listAccounts(
+  params?: {
+    status?: "online" | "offline" | null;
+    platforms?: string | null;
+    group_id?: number | null;
+  },
+  init?: RequestInit,
+): Promise<AccountListResponse> {
   const search = new URLSearchParams();
   if (params?.status != null) search.set("status", params.status);
   if (params?.platforms != null && params.platforms !== "")
@@ -65,7 +68,7 @@ export async function listAccounts(params?: {
     search.set("group_id", String(params.group_id));
   const qs = search.toString();
   const path = `/api/accounts${qs ? `?${qs}` : ""}`;
-  return request<AccountListResponse>(apiUrl(path));
+  return request<AccountListResponse>(apiUrl(path), init);
 }
 
 export async function createAccount(body: AccountCreateBody): Promise<AccountResponse> {
