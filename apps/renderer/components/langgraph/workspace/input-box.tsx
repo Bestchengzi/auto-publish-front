@@ -312,6 +312,7 @@ export function InputBox({
     showPersonaManagementActions && Boolean(onDeletePersonaRequest);
   const hasPersonaManagementActions = canEditPersona || canDeletePersona;
   const attachmentsOnlyToolbar = toolbarVariant === "attachmentsOnly";
+  const hasAttachments = attachments.files.length > 0;
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -442,6 +443,9 @@ export function InputBox({
         className={cn(
           "bg-background/85 rounded-2xl backdrop-blur-sm transition-all duration-300 ease-out *:data-[slot='input-group']:rounded-2xl",
           className,
+          attachmentsOnlyToolbar &&
+            hasAttachments &&
+            "[&_[name='message']]:min-h-[120px] [&_[name='message']]:pt-2",
         )}
         disabled={disabled}
         globalDrop
@@ -457,7 +461,12 @@ export function InputBox({
           // </div>
           <div></div>
         )}
-        <PromptInputAttachments>
+        <PromptInputAttachments
+          className={cn(
+            "relative z-10",
+            attachmentsOnlyToolbar && "px-6 pt-[58px] pb-2",
+          )}
+        >
           {(attachment) => <PromptInputAttachment data={attachment} />}
         </PromptInputAttachments>
         <PromptInputBody className="absolute top-0 right-0 left-0 z-3">

@@ -51,6 +51,7 @@ export async function createThreadImageTask(
   body: {
     prompts: ImageTaskPrompt[];
     size?: string | null;
+    input_images?: string[];
   },
 ): Promise<ImageTaskResponse> {
   return request<ImageTaskResponse>(

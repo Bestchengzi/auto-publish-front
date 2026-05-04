@@ -13,7 +13,7 @@ import type { FileInMessage } from "../messages/utils";
 import type { LocalSettings } from "../settings";
 import { useUpdateSubtask } from "../tasks/context";
 import type { UploadedFileInfo } from "../uploads";
-import { uploadFiles } from "../uploads";
+import { getUploadPreviewUrl, uploadFiles } from "../uploads";
 
 import type { AgentThread, AgentThreadState } from "./types";
 
@@ -45,6 +45,48 @@ type RunStreamMode =
 export type ThreadRunOptions = {
   streamMode?: RunStreamMode[];
 };
+
+const IMAGE_FILE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "gif",
+  "bmp",
+  "svg",
+  "tiff",
+  "ico",
+  "heic",
+]);
+
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === "string" && item.trim().length > 0,
+      )
+    : [];
+}
+
+function isImageExtension(extension: string | undefined): boolean {
+  return IMAGE_FILE_EXTENSIONS.has(
+    (extension || "")
+      .replace(/^\./, "")
+      .toLowerCase(),
+  );
+}
+
+function isUploadedImageFile(file: UploadedFileInfo): boolean {
+  return isImageExtension(file.extension || file.filename.split(".").pop());
+}
+
+function isPromptInputImageFile(
+  file: NonNullable<PromptInputMessage["files"]>[number] | undefined,
+): boolean {
+  if (!file) return false;
+  if (file.mediaType?.startsWith("image/")) return true;
+  return isImageExtension(file.filename?.split(".").pop());
+}
 
 function getStreamErrorMessage(error: unknown): string {
   if (typeof error === "string" && error.trim()) {
@@ -390,6 +432,21 @@ export function useThreadStream({
             status: "uploaded" as const,
           }),
         );
+        const uploadedInputImages = uploadedFileInfo
+          .filter(
+            (info, index) =>
+              isUploadedImageFile(info) ||
+              isPromptInputImageFile(message.files?.[index]),
+          )
+          .map(getUploadPreviewUrl)
+          .filter((url): url is string => Boolean(url));
+        const inputImages = Array.from(
+          new Set([
+            ...readStringArray(context.input_images),
+            ...readStringArray(extraContext?.input_images),
+            ...uploadedInputImages,
+          ]),
+        );
 
         await thread.submit(
           {
@@ -421,6 +478,7 @@ export function useThreadStream({
             context: {
               ...context,
               ...extraContext,
+              ...(inputImages.length > 0 ? { input_images: inputImages } : {}),
               thinking_enabled: context.mode !== "flash",
               is_plan_mode: context.mode === "pro" || context.mode === "ultra",
               subagent_enabled: context.mode === "ultra",

@@ -348,11 +348,13 @@ export function RednoteContentEditor({
   className,
   threadId,
   imageSize,
+  inputImages,
 }: {
   rednoteContent: RednoteContent | null;
   className?: string;
   threadId: string;
   imageSize?: string | null;
+  inputImages?: string[] | null;
 }) {
   const sourceKey = useMemo(
     () => JSON.stringify(rednoteContent ?? null),
@@ -590,6 +592,7 @@ export function RednoteContentEditor({
         const task = await createThreadImageTask(threadId, {
           prompts,
           size: imageSize ?? null,
+          input_images: inputImages ?? [],
         });
         setImageTaskId(task.id);
         setImageHistoriesByUid((current) => {
@@ -627,11 +630,12 @@ export function RednoteContentEditor({
         setImageHistoriesByUid((current) => {
           const next = { ...current };
           for (const prompt of prompts) {
-            next[prompt.uid] = (next[prompt.uid] ?? []).map((item) =>
-              item.taskId === PENDING_IMAGE_TASK_ID
-                ? { ...item, status: "failed" as const }
-                : item,
+            next[prompt.uid] = (next[prompt.uid] ?? []).filter(
+              (item) => item.taskId !== PENDING_IMAGE_TASK_ID,
             );
+            if (next[prompt.uid].length === 0) {
+              delete next[prompt.uid];
+            }
           }
           return next;
         });
@@ -641,6 +645,7 @@ export function RednoteContentEditor({
     },
     [
       imageSize,
+      inputImages,
       isGeneratingImages,
       pollImageTask,
       refreshImageTaskHistory,
@@ -873,20 +878,24 @@ export function RednoteContentEditor({
                 key={index}
                 className="flex min-h-[400px] flex-col rounded-lg border border-border/70 bg-card p-4 shadow-sm"
               >
-                <header className="mb-3 flex items-center gap-2 border-b border-border/70 pb-3">
-                  <span className="text-base font-semibold text-muted-foreground">
-                    P{index + 1}
-                  </span>
-                  <span
-                    className={
-                      index === 0
-                        ? "rounded-md bg-rose-50 px-2 py-0.5 text-base font-semibold text-rose-600 ring-1 ring-rose-200"
-                        : "text-base font-semibold text-foreground"
-                    }
-                  >
-                    {promptTitle}
-                  </span>
-                  <div className="ml-auto flex items-center gap-1">
+                <header className="mb-3 flex min-w-0 items-center gap-2 border-b border-border/70 pb-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="shrink-0 text-base font-semibold text-muted-foreground">
+                      P{index + 1}
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-0 max-w-full truncate",
+                        index === 0
+                          ? "rounded-md bg-rose-50 px-2 py-0.5 text-base font-semibold text-rose-600 ring-1 ring-rose-200"
+                          : "text-base font-semibold text-foreground",
+                      )}
+                      title={promptTitle}
+                    >
+                      {promptTitle}
+                    </span>
+                  </div>
+                  <div className="ml-auto flex shrink-0 items-center gap-1">
                     {history.length > 1 ? (
                       <>
                         <Button

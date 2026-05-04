@@ -116,6 +116,17 @@ function readMetadataSize(
   return typeof size === "string" && size.trim() ? size : undefined;
 }
 
+function readMetadataInputImages(
+  state: { metadata?: Record<string, unknown> | null },
+): string[] | undefined {
+  const inputImages = state.metadata?.input_images;
+  if (!Array.isArray(inputImages)) return undefined;
+  const images = inputImages.filter(
+    (item): item is string => typeof item === "string" && item.trim().length > 0,
+  );
+  return images.length > 0 ? images : undefined;
+}
+
 function hasMeaningfulValue(value: unknown): boolean {
   if (typeof value === "string") return value.trim().length > 0;
   if (Array.isArray(value)) return value.length > 0;
@@ -494,6 +505,10 @@ export function CreationCenterLanggraphChat() {
     () => thread.history.map(readMetadataSize).find(Boolean) ?? null,
     [thread.history],
   );
+  const rednoteInputImages = useMemo(
+    () => thread.history.map(readMetadataInputImages).find(Boolean) ?? null,
+    [thread.history],
+  );
   const showInputBox =
     !isPendingImageCardsThread &&
     typeof historyGraphId === "string" &&
@@ -652,6 +667,7 @@ export function CreationCenterLanggraphChat() {
                       rednoteContent={rednoteContent}
                       threadId={threadId}
                       imageSize={rednoteImageSize}
+                      inputImages={rednoteInputImages}
                     />
                     {!rednoteContent &&
                     (thread.isLoading || thread.isThreadLoading) ? (
