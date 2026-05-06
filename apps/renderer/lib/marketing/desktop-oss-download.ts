@@ -8,7 +8,7 @@ export const DESKTOP_OSS_BASE_URL = "https://open-stack.oss-cn-shanghai.aliyuncs
 const base = DESKTOP_OSS_BASE_URL.replace(/\/$/, "");
 
 export const desktopMarketingDownloadUrls = {
-  windowsExe: `${base}/keduckAI-win-x64.exe`,
-  macIntelDmg: `${base}/keduckAI-mac-x64.dmg`,
-  macAppleSiliconDmg: `${base}/keduckAI-mac-arm64.dmg`,
+  windowsExe: `${base}/KeduckAI-win-x64.exe`,
+  macIntelDmg: `${base}/KeduckAI-mac-x64.dmg`,
+  macAppleSiliconDmg: `${base}/KeduckAI-mac-arm64.dmg`,
 } as const;

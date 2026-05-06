@@ -1,4 +1,4 @@
-appId: com.mediaautopublish.keduckAI
+appId: com.mediaautopublish.KeduckAI
 productName: KeduckAI
 
 directories:
@@ -16,14 +16,14 @@ win:
   target:
     - target: nsis
   # 不含 version：固定 OSS 对象名，发版覆盖上传即可，官网直链无需随版本改
-  artifactName: "keduckAI-${os}-${arch}.${ext}"
+  artifactName: "KeduckAI-${os}-${arch}.${ext}"
 
 mac:
   icon: assets/icons/icon.icns
   target:
     - target: dmg
     - target: zip
-  artifactName: "keduckAI-${os}-${arch}.${ext}"
+  artifactName: "KeduckAI-${os}-${arch}.${ext}"
   category: public.app-category.productivity
 
 linux:
@@ -31,7 +31,7 @@ linux:
   target:
     - target: AppImage
   category: Utility
-  artifactName: "keduckAI-${os}-${arch}.${ext}"
+  artifactName: "KeduckAI-${os}-${arch}.${ext}"
 
 nsis:
   oneClick: false
