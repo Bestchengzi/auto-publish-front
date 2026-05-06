@@ -4120,6 +4120,172 @@
                 }
             }
         },
+        "/api/threads/{thread_id}/image_task/{image_task_id}/download": {
+            "get": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "Download Thread Image Task Archive",
+                "operationId": "download_thread_image_task_api_threads__thread_id__image_task__image_task_id__download_get",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "image_task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Image Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/threads/{thread_id}/image_task/{image_task_id}/visibility": {
+            "patch": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "Update Thread Image Task Visibility",
+                "operationId": "update_thread_image_task_visibility_api_threads__thread_id__image_task__image_task_id__visibility_patch",
+                "parameters": [
+                    {
+                        "name": "thread_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Thread Id"
+                        }
+                    },
+                    {
+                        "name": "image_task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Image Task Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImageTaskVisibilityUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImageTaskResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/image_tasks/public": {
+            "get": {
+                "tags": [
+                    "image_tasks"
+                ],
+                "summary": "List Public Image Tasks",
+                "operationId": "list_global_public_image_tasks_api_image_tasks_public_get",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 20,
+                            "title": "Page Size"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicImageTaskListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/wechat/param_qrcode": {
             "get": {
                 "tags": [
@@ -8760,6 +8926,19 @@
                 ],
                 "title": "ImageTaskResponse"
             },
+            "ImageTaskVisibilityUpdate": {
+                "properties": {
+                    "is_public": {
+                        "type": "boolean",
+                        "title": "Is Public"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "is_public"
+                ],
+                "title": "ImageTaskVisibilityUpdate"
+            },
             "McpConfigResponse": {
                 "properties": {
                     "mcp_servers": {
@@ -9467,6 +9646,89 @@
                     "content"
                 ],
                 "title": "PersonaUpdate"
+            },
+            "PublicImageTaskListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/PublicImageTaskResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "title": "Page"
+                    },
+                    "page_size": {
+                        "type": "integer",
+                        "title": "Page Size"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "page_size"
+                ],
+                "title": "PublicImageTaskListResponse"
+            },
+            "PublicImageTaskResponse": {
+                "properties": {
+                    "title": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Title"
+                    },
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content"
+                    },
+                    "user_input": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Input"
+                    },
+                    "images": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Images"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "title",
+                    "content",
+                    "user_input",
+                    "images"
+                ],
+                "title": "PublicImageTaskResponse"
             },
             "PublishEditAccountResponse": {
                 "properties": {

@@ -31,12 +31,13 @@ import {
   parsePublishThreadResponse,
   publishThreadArticle,
 } from "@/lib/api/publish";
+import { listThreadImageTasks } from "@/lib/api/image-tasks";
 import * as accountsApi from "@/lib/api/accounts";
 import * as mediaApi from "@/lib/api/media";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
 import { getUploadPreviewUrl, uploadFiles } from "@/lib/langgraph/core/uploads/api";
 import { getApiErrorMessage, request } from "@/lib/request";
-import { cn } from "@/lib/utils";
+import { cn, getGenImageUrl } from "@/lib/utils";
 
 import {
   createInitialCoverImages,
@@ -144,6 +145,125 @@ function getPlatformPublishTitle(platformData: PublishEditPlatform) {
   return extractTitleFromMarkdown(platformData.content);
 }
 
+function isRednotePlatformKey(platformKey: string) {
+  return platformKey === "rednote" || platformKey === "xiaohongshu";
+}
+
+function getRednoteOptionImages(platformData: PublishEditPlatform | null) {
+  const rawImages = platformData?.platform_options?.images;
+  if (!Array.isArray(rawImages)) return [];
+
+  return rawImages
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+}
+
+function getRednoteTextContentFromMarkdown(content: string) {
+  return content
+    .replace(/!\[[^\]]*]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, "")
+    .replace(/<img[^>]*src=["'][^"']+["'][^>]*>/gi, "")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("# "))
+    .join("\n")
+    .trim();
+}
+
+function getRednoteImageTaskProjectItems(
+  tasks: Awaited<ReturnType<typeof listThreadImageTasks>>["items"],
+  threadId: string,
+) {
+  const seenUrls = new Set<string>();
+  const items: Array<{ id: string; name: string; url: string }> = [];
+
+  for (const task of tasks) {
+    for (const item of task.items) {
+      if (item.status !== "completed" || !item.url?.trim()) continue;
+      const url = getGenImageUrl(item.url, threadId);
+      if (!url || seenUrls.has(url)) continue;
+      seenUrls.add(url);
+      items.push({
+        id: `${task.id}-${item.uid}-${items.length}`,
+        name: item.title?.trim() || item.prompt?.trim() || `图片${items.length + 1}`,
+        url,
+      });
+    }
+  }
+
+  return items;
+}
+
+function buildRednoteTextMarkdown({
+  title,
+  content,
+}: {
+  title: string;
+  content: string;
+}) {
+  return [title.trim() ? `# ${title.trim()}` : "", content.trim()]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function RednoteImageCardsPreview({
+  images,
+  title,
+  content,
+}: {
+  images: string[];
+  title: string;
+  content: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const safeIndex = Math.min(activeIndex, Math.max(images.length - 1, 0));
+  const activeImage = images[safeIndex] ?? "";
+
+  useEffect(() => {
+    if (activeIndex <= images.length - 1) return;
+    setActiveIndex(0);
+  }, [activeIndex, images.length]);
+
+  return (
+    <div className="flex min-h-full flex-col bg-background">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
+        {activeImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={activeImage}
+            alt={title || `小红书图片 ${safeIndex + 1}`}
+            className="size-full object-cover"
+          />
+        ) : null}
+      </div>
+      {images.length > 1 ? (
+        <div className="flex justify-center gap-1.5 py-3">
+          {images.map((image, index) => (
+            <button
+              key={`${image}-${index}`}
+              type="button"
+              className={cn(
+                "size-2 cursor-pointer rounded-full transition-colors",
+                index === safeIndex ? "bg-[#ff2442]" : "bg-muted-foreground/25",
+              )}
+              aria-label={`查看第 ${index + 1} 张图片`}
+              onClick={() => setActiveIndex(index)}
+            />
+          ))}
+        </div>
+      ) : null}
+      <div className="space-y-3 px-4 pb-5">
+        {title.trim() ? (
+          <h3 className="text-xl font-semibold leading-snug text-foreground">
+            {title.trim()}
+          </h3>
+        ) : null}
+        <p className="whitespace-pre-wrap text-base leading-8 text-foreground">
+          {content}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function PublishOverlay({
   publishPreview,
   closePublishPreview,
@@ -223,6 +343,16 @@ export function PublishOverlay({
   const isHtmlPublishPreview = useMemo(
     () => isHtmlArtifactPath(publishPreview?.artifactPath ?? ""),
     [publishPreview?.artifactPath],
+  );
+  const isRednoteImageCardsPreview =
+    publishPreview?.previewVariant === "rednote-image-cards";
+  const allowedPublishPlatformIdSet = useMemo(
+    () =>
+      publishPreview?.allowedPublishPlatformIds &&
+      publishPreview.allowedPublishPlatformIds.length > 0
+        ? new Set(publishPreview.allowedPublishPlatformIds)
+        : null,
+    [publishPreview?.allowedPublishPlatformIds],
   );
   const htmlPreviewSrcDoc = useMemo(
     () =>
@@ -379,9 +509,12 @@ export function PublishOverlay({
   );
   const pickerPlatforms = useMemo(() => {
     const items = getPublishPlatformPickerItems();
+    if (allowedPublishPlatformIdSet) {
+      return items.filter((item) => allowedPublishPlatformIdSet.has(item.id));
+    }
     if (!isHtmlPublishPreview) return items;
     return items.filter((item) => item.id === HTML_PUBLISH_PLATFORM_ID);
-  }, [isHtmlPublishPreview]);
+  }, [allowedPublishPlatformIdSet, isHtmlPublishPreview]);
   const addPlatformDialogCopy = useMemo(() => getAddPlatformDialogCopy(), []);
 
   const { data: allAccountsRes } = useQuery({
@@ -411,6 +544,29 @@ export function PublishOverlay({
     if (!activePublishPlatform) return null;
     return publishPlatformMap[activePublishPlatform] ?? null;
   }, [activePublishPlatform, publishPlatformMap]);
+  const isActiveRednotePreview =
+    isRednoteImageCardsPreview || isRednotePlatformKey(activePublishPlatform);
+  const rednotePreviewImages = useMemo(() => {
+    if (!activePublishPlatform) {
+      return publishPreview?.rednotePreview?.images ?? [];
+    }
+    return (
+      coverImagesByPlatform[activePublishPlatform] ??
+      publishPreview?.rednotePreview?.images ??
+      getRednoteOptionImages(activePlatformData)
+    );
+  }, [
+    activePlatformData,
+    activePublishPlatform,
+    coverImagesByPlatform,
+    publishPreview?.rednotePreview?.images,
+  ]);
+  const rednotePreviewContent = useMemo(() => {
+    if (publishPreview?.rednotePreview?.content != null) {
+      return publishPreview.rednotePreview.content;
+    }
+    return getRednoteTextContentFromMarkdown(activePlatformData?.content ?? "");
+  }, [activePlatformData?.content, publishPreview?.rednotePreview?.content]);
   const availableAccountsForActivePlatform = useMemo(() => {
     const items = allAccountsRes?.items ?? [];
     const platform = toAccountPlatform(activePublishPlatform);
@@ -476,12 +632,21 @@ export function PublishOverlay({
       queryKey: [
         "publish-panel",
         "cover-project-images",
+        isRednoteImageCardsPreview ? "rednote-image-tasks" : "artifacts",
         publishPreview?.publishEdit.thread_id,
         coverDrawerSession,
       ],
       queryFn: async () => {
+        const threadId = publishPreview?.publishEdit.thread_id;
+        if (!threadId) return [];
+
+        if (isRednoteImageCardsPreview) {
+          const response = await listThreadImageTasks(threadId);
+          return getRednoteImageTaskProjectItems(response.items, threadId);
+        }
+
         const response = await request<ArtifactListResponse>(
-          `${getBackendBaseURL()}/api/threads/${publishPreview?.publishEdit.thread_id}/artifacts/list?file_type=image`,
+          `${getBackendBaseURL()}/api/threads/${threadId}/artifacts/list?file_type=image`,
         );
         return (response.files ?? [])
           .filter((item) => item.file_type === "image")
@@ -909,10 +1074,14 @@ export function PublishOverlay({
       const orderedOptions = getOrderedPlatformOptions(platformKey, platformData);
       const rawFormValues = formValuesByPlatform[platformKey];
       const defaultTitle = getPlatformPublishTitle(platformData);
-      const contentImageUrls = extractImageUrlsFromContent(platformData.content).slice(
-        0,
-        3,
-      );
+      const isRednotePlatform = isRednotePlatformKey(platformKey);
+      const contentImageUrls =
+        isRednotePlatform && getRednoteOptionImages(platformData).length > 0
+          ? getRednoteOptionImages(platformData)
+          : extractImageUrlsFromContent(platformData.content).slice(
+              0,
+              isRednotePlatform ? 18 : 3,
+            );
       const formValues =
         rawFormValues ??
         createInitialFormValues(platformKey, {
@@ -988,7 +1157,15 @@ export function PublishOverlay({
 
       payloadPlatforms[platformKey] = {
         account_ids: accountIds,
-        content: platformData.content,
+        content:
+          isRednotePlatform
+            ? buildRednoteTextMarkdown({
+                title: titleValue,
+                content:
+                  publishPreview?.rednotePreview?.content ??
+                  getRednoteTextContentFromMarkdown(platformData.content),
+              })
+            : platformData.content,
         draft: platformData.draft,
         dry_run: false,
         skip_image_upload: platformData.skip_image_upload,
@@ -1112,10 +1289,22 @@ export function PublishOverlay({
                 <div
                   className={cn(
                     "publish-preview-scrollbar-none h-[640px] overflow-auto rounded-3xl border border-border bg-background",
-                    isHtmlPublishPreview ? "p-0" : "px-4 py-5",
+                    isHtmlPublishPreview || isActiveRednotePreview
+                      ? "p-0"
+                      : "px-4 py-5",
                   )}
                 >
-                  {isHtmlPublishPreview ? (
+                  {isActiveRednotePreview ? (
+                    <RednoteImageCardsPreview
+                      images={rednotePreviewImages}
+                      title={
+                        publishPreview.rednotePreview?.title ??
+                        (activeFormValues[FIELD_ID_TITLE] as string) ??
+                        publishPreview.title
+                      }
+                      content={rednotePreviewContent}
+                    />
+                  ) : isHtmlPublishPreview ? (
                     <iframe
                       className="block size-full border-0 bg-background"
                       sandbox="allow-same-origin"

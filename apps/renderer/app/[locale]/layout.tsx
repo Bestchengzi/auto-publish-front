@@ -42,10 +42,10 @@ export async function generateMetadata({
   const title =
     typeof (messages as { app?: { name?: unknown } }).app?.name === "string"
       ? ((messages as { app?: { name?: string } }).app?.name ??
-        (safeLocale === "en" ? "Keduck AI" : "可达AI"))
+        (safeLocale === "en" ? "KeduckAI" : "KeduckAI"))
       : safeLocale === "en"
-        ? "Keduck AI"
-        : "可达AI";
+        ? "KeduckAI"
+        : "KeduckAI";
 
   const description =
     typeof (messages as { app?: { metaDescription?: unknown } }).app
@@ -53,8 +53,8 @@ export async function generateMetadata({
       ? ((messages as { app?: { metaDescription?: string } }).app
           ?.metaDescription ?? "")
       : safeLocale === "en"
-        ? "Keduck AI is a chat-first AI content creation and multi-platform publishing tool."
-        : "可达AI是对话式 AI 内容创作与多平台发布工具。";
+        ? "KeduckAI is a chat-first AI content creation and multi-platform publishing tool."
+        : "KeduckAI是对话式 AI 内容创作与多平台发布工具。";
 
   return {
     title,

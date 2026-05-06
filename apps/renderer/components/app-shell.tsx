@@ -58,8 +58,8 @@ function NavItem({
       href={href}
       className={
         active
-          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#f0f2f4] px-2 text-sm font-medium text-foreground hover:bg-[#f0f2f4] dark:bg-muted/60 dark:hover:bg-muted/60"
-          : "flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-foreground/80 hover:bg-muted hover:text-foreground"
+          ? "flex h-9 cursor-pointer items-center gap-2 rounded-md bg-gray-200/60 px-2 text-sm font-medium text-gray-900 dark:bg-sidebar-border dark:text-gray-100"
+          : "flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-sidebar-border/50"
       }
     >
       {icon}

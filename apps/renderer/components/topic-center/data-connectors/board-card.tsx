@@ -95,7 +95,7 @@ export function DataConnectorBoardCard({
   });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:shadow-md">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:shadow-md">
       <div className="flex items-center gap-3 px-4 py-3">
         <BoardIcon
           iconUrl={board.icon_url}
@@ -122,7 +122,7 @@ export function DataConnectorBoardCard({
           ) : null}
         </div>
       </div>
-      <div className="border-t border-border px-4 py-3">
+      <div className="flex flex-1 flex-col border-t border-border px-4 py-3">
         {itemsQuery.isPending && itemsQuery.data == null ? (
           <BoardItemsSkeleton />
         ) : null}
@@ -144,7 +144,7 @@ export function DataConnectorBoardCard({
         ) : null}
 
         {!itemsQuery.isPending && !itemsQuery.isError && items.length === 0 ? (
-          <div className="flex min-h-[192px] items-center justify-center text-sm text-muted-foreground">
+          <div className="flex min-h-[192px] flex-1 items-center justify-center text-sm text-muted-foreground">
             {t("dataConnectors.board.empty")}
           </div>
         ) : null}

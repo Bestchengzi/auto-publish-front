@@ -1,4 +1,4 @@
-import { request } from "@/lib/request";
+import { request, requestBlob } from "@/lib/request";
 
 import { apiUrl } from "./config";
 
@@ -38,11 +38,43 @@ export type ImageTaskListResponse = {
   total: number;
 };
 
+export type PublicImageTaskResponse = {
+  title: string | null;
+  content: string | null;
+  user_input: string | null;
+  images: string[];
+};
+
+export type PublicImageTaskListResponse = {
+  items: PublicImageTaskResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+};
+
 export async function listThreadImageTasks(
   threadId: string,
 ): Promise<ImageTaskListResponse> {
   return request<ImageTaskListResponse>(
     apiUrl(`/api/threads/${threadId}/image_task`),
+  );
+}
+
+export async function listPublicImageTasks({
+  page = 1,
+  page_size = 20,
+}: {
+  page?: number;
+  page_size?: number;
+} = {}): Promise<PublicImageTaskListResponse> {
+  const query = new URLSearchParams({
+    page: String(page),
+    page_size: String(page_size),
+  });
+
+  return request<PublicImageTaskListResponse>(
+    apiUrl(`/api/image_tasks/public?${query.toString()}`),
+    { suppressErrorToast: true },
   );
 }
 
@@ -52,6 +84,7 @@ export async function createThreadImageTask(
     prompts: ImageTaskPrompt[];
     size?: string | null;
     input_images?: string[];
+    metadata?: Record<string, unknown>;
   },
 ): Promise<ImageTaskResponse> {
   return request<ImageTaskResponse>(
@@ -70,5 +103,15 @@ export async function getThreadImageTask(
 ): Promise<ImageTaskResponse> {
   return request<ImageTaskResponse>(
     apiUrl(`/api/threads/${threadId}/image_task/${imageTaskId}`),
+  );
+}
+
+export async function downloadThreadImageTask(
+  threadId: string,
+  imageTaskId: string,
+): Promise<Blob> {
+  return requestBlob(
+    apiUrl(`/api/threads/${threadId}/image_task/${imageTaskId}/download`),
+    { suppressErrorToast: true },
   );
 }

@@ -1,5 +1,5 @@
 appId: com.mediaautopublish.keduckAI
-productName: 可达AI
+productName: KeduckAI
 
 directories:
   output: release
@@ -15,14 +15,15 @@ win:
   icon: assets/icons/icon.ico
   target:
     - target: nsis
-  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
+  # 不含 version：固定 OSS 对象名，发版覆盖上传即可，官网直链无需随版本改
+  artifactName: "keduckAI-${os}-${arch}.${ext}"
 
 mac:
   icon: assets/icons/icon.icns
   target:
     - target: dmg
     - target: zip
-  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
+  artifactName: "keduckAI-${os}-${arch}.${ext}"
   category: public.app-category.productivity
 
 linux:
@@ -30,7 +31,7 @@ linux:
   target:
     - target: AppImage
   category: Utility
-  artifactName: "keduckAI-${version}-${os}-${arch}.${ext}"
+  artifactName: "keduckAI-${os}-${arch}.${ext}"
 
 nsis:
   oneClick: false
@@ -38,6 +39,6 @@ nsis:
   allowToChangeInstallationDirectory: true
 
 publish:
-  provider: github
-  owner: "${env.GH_OWNER}"
-  repo: "${env.GH_REPO}"
+  provider: generic
+  # 与手动上传到 OSS 的根路径一致（末尾 / 便于拼接 latest*.yml 与安装包）
+  url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/"

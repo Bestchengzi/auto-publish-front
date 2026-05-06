@@ -13,8 +13,8 @@
     }
   },
   "app": {
-    "name": "可达AI",
-    "metaDescription": "可达AI是对话式 AI 内容创作与多平台发布工具，支持人设驱动写作、智能配图、手动发布与定时自动发布。"
+    "name": "KeduckAI",
+    "metaDescription": "KeduckAI是对话式 AI 内容创作与多平台发布工具，支持人设驱动写作、智能配图、手动发布与定时自动发布。"
   },
   "auth": {
     "loginDialog": {
@@ -83,6 +83,7 @@
       "buyPlan": "购买套餐",
       "earnPoints": "赚取积分",
       "feedback": "用户反馈",
+      "customerService": "联系客服",
       "logout": "退出登录",
       "personal": "个人",
       "account": "账户",
@@ -451,7 +452,7 @@
       "boardsEmptyTitle": "暂无面板数据",
       "boardsEmptyDescription": "当前连接器还没有可展示的榜单面板。",
       "board": {
-        "empty": "暂无榜单内容",
+        "empty": "暂无内容",
         "loadError": "榜单内容加载失败",
         "updateCount": "{count}条更新",
         "createAction": "创作"
@@ -1100,7 +1101,7 @@
     }
   },
   "marketing": {
-    "metaTitle": "可达AI — 对话式 AI 创作与多平台发布",
+    "metaTitle": "KeduckAI — 对话式 AI 创作与多平台发布",
     "metaDescription": "以对话为核心的 AI 内容工作台：创作人设、热点发散、跨平台写作、智能配图与发布一体化。支持对话发布与文档编辑后手动发布，也支持定时计划自动执行创作并发布。",
     "jsonLdDescription": "面向头条、小红书、公众号、知乎、百家号、CSDN 的对话式 AI 创作平台，支持人设驱动写作、热点二次创作、AI/搜图/素材库配图，以及手动与自动发布流程。",
     "navGuide": "使用说明",
@@ -1123,7 +1124,7 @@
     "themeSystem": "跟随系统",
     "langZh": "中文",
     "langEn": "英文",
-    "heroName": "可达AI",
+    "heroName": "KeduckAI",
     "heroTitlePrefix": "一个 ",
     "heroTitleHighlight": "AI 对话创作发布助手",
     "heroTitleSuffix": "平台",
@@ -1145,7 +1146,7 @@
     "spotlightAutomationTitle": "定时计划自动执行",
     "spotlightAutomationDesc": "填写任务名称、提示词、发布账号和定时说明后，系统按计划自动创作并发布，适合日更与栏目化运营。",
     "audienceTitle": "适合谁用？需要稳定内容产出的团队与个人",
-    "audienceSubtitle": "无论你是做内容、做增长还是做运营，可达AI都能成为你更稳的创作与发布搭档。",
+    "audienceSubtitle": "无论你是做内容、做增长还是做运营，KeduckAI都能成为你更稳的创作与发布搭档。",
     "audience1Title": "创始人 / 高管",
     "audience1Desc": "快速生成对外观点、公告解读与行业评论，兼顾表达一致性与发布效率。",
     "audience2Title": "内容 / 新媒体团队",
@@ -1154,7 +1155,7 @@
     "audience3Desc": "结合用户声音与市场趋势做内容实验，为版本迭代与增长策略提供支撑。",
     "audience4Title": "个人创作者",
     "audience4Desc": "把零散灵感沉淀成稳定栏目，用更低成本持续发布并打造个人品牌。",
-    "chooseTitle": "为什么选择可达AI",
+    "chooseTitle": "为什么选择KeduckAI",
     "choosePoint1Title": "上手快，执行稳",
     "choosePoint1Desc": "对话即可开工，从想法到发布链路清晰，团队协作也更顺畅。",
     "choosePoint2Title": "可控发布与数据安全",

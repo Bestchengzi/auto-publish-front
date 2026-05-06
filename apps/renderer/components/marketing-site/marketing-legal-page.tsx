@@ -14,7 +14,7 @@ const TERMS_ZH: Section[] = [
   {
     title: "1. 协议适用与接受",
     paragraphs: [
-      "欢迎使用可达AI（以下简称“本服务”）。本用户协议适用于你访问官网、注册账号、使用 AI 创作、素材管理、定时计划及多平台发布等功能。",
+      "欢迎使用KeduckAI（以下简称“本服务”）。本用户协议适用于你访问官网、注册账号、使用 AI 创作、素材管理、定时计划及多平台发布等功能。",
       "当你注册、登录或继续使用本服务时，即表示你已阅读并同意本协议及相关规则。如你不同意，请停止使用本服务。",
     ],
   },
@@ -141,7 +141,7 @@ const TERMS_EN: Section[] = [
   {
     title: "1. Scope and Acceptance",
     paragraphs: [
-      "Welcome to Keduck AI (the \"Service\"). These Terms apply to your access to our website, account registration, AI creation tools, asset management, scheduled plans, and multi-platform publishing features.",
+      "Welcome to KeduckAI (the \"Service\"). These Terms apply to your access to our website, account registration, AI creation tools, asset management, scheduled plans, and multi-platform publishing features.",
       "By registering, signing in, or continuing to use the Service, you agree to these Terms and related rules. If you do not agree, please stop using the Service.",
     ],
   },

@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
   ChevronRightIcon,
   CopyIcon,
   CreditCardIcon,
   GiftIcon,
+  HeadphonesIcon,
   HouseIcon,
   LinkIcon,
   LogOutIcon,
@@ -32,6 +34,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import {
   Select,
   SelectContent,
@@ -190,6 +197,8 @@ export function AppShellSidebarFooter() {
     const feedbackThreadId = getThreadIdFromPathname(pathname);
     const balancePoints = billingAccount?.account.balance_points ?? 0;
     const displayBalancePoints = Math.round(balancePoints / 100);
+    const customerServiceLabel =
+      locale === "en" ? "Contact Support" : "联系客服";
     const billingHint = tSidebar("footer.billingHint", {
       plan: planDisplayName,
       points: displayBalancePoints.toLocaleString(locale === "en" ? "en-US" : "zh-CN"),
@@ -292,6 +301,35 @@ export function AppShellSidebarFooter() {
               <MessageSquareIcon className="size-4" />
               {tSidebar("footer.feedback")}
             </DropdownMenuItem>
+            <HoverCard>
+              <HoverCardTrigger
+                render={
+                  <button
+                    type="button"
+                    className="relative flex w-full cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-2 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+                  />
+                }
+              >
+                <HeadphonesIcon className="size-4 shrink-0" />
+                {customerServiceLabel}
+              </HoverCardTrigger>
+              <HoverCardContent
+                side="right"
+                align="center"
+                sideOffset={12}
+                className="w-[152px] p-3"
+              >
+                <div className="relative mx-auto size-32 overflow-hidden rounded-md border border-border bg-white p-1">
+                  <Image
+                    src="/erweima.webp"
+                    alt={customerServiceLabel}
+                    fill
+                    sizes="128px"
+                    className="object-contain"
+                  />
+                </div>
+              </HoverCardContent>
+            </HoverCard>
 
             <DropdownMenuSeparator className="mx-2 my-1.5" />
 

@@ -136,6 +136,7 @@ export function InputBox({
   onEditPersonaRequest,
   showPersonaManagementActions = false,
   toolbarVariant = "default",
+  attachmentsPlacement = "default",
   submitLabel,
   ...props
 }: Omit<ComponentProps<typeof PromptInput>, "onSubmit"> & {
@@ -175,6 +176,7 @@ export function InputBox({
   onEditPersonaRequest?: (persona: { id: string; name: string }) => void;
   showPersonaManagementActions?: boolean;
   toolbarVariant?: "default" | "attachmentsOnly";
+  attachmentsPlacement?: "default" | "underHeader";
   submitLabel?: string;
 }) {
   const { t } = useI18n();
@@ -312,6 +314,7 @@ export function InputBox({
     showPersonaManagementActions && Boolean(onDeletePersonaRequest);
   const hasPersonaManagementActions = canEditPersona || canDeletePersona;
   const attachmentsOnlyToolbar = toolbarVariant === "attachmentsOnly";
+  const attachmentsUnderHeader = attachmentsPlacement === "underHeader";
   const hasAttachments = attachments.files.length > 0;
 
   const handleSubmit = useCallback(
@@ -443,9 +446,9 @@ export function InputBox({
         className={cn(
           "bg-background/85 rounded-2xl backdrop-blur-sm transition-all duration-300 ease-out *:data-[slot='input-group']:rounded-2xl",
           className,
-          attachmentsOnlyToolbar &&
+          attachmentsUnderHeader &&
             hasAttachments &&
-            "[&_[name='message']]:min-h-[120px] [&_[name='message']]:pt-2",
+            "[&_[name='message']]:min-h-[120px] [&_[name='message']]:pt-1",
         )}
         disabled={disabled}
         globalDrop
@@ -464,7 +467,7 @@ export function InputBox({
         <PromptInputAttachments
           className={cn(
             "relative z-10",
-            attachmentsOnlyToolbar && "px-6 pt-[58px] pb-2",
+            attachmentsUnderHeader && "px-[23px] pt-[58px] pb-1",
           )}
         >
           {(attachment) => <PromptInputAttachment data={attachment} />}
@@ -492,7 +495,7 @@ export function InputBox({
             <AddAttachmentsButton
               className={cn("px-2!", attachmentsOnlyToolbar && "gap-1.5!")}
               disabled={disabled || !canUseAuthFeatures}
-              label={attachmentsOnlyToolbar ? "可上传参考图片" : undefined}
+              label={attachmentsOnlyToolbar ? "参考图" : undefined}
             />
             {!attachmentsOnlyToolbar ? (
               <>

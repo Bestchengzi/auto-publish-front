@@ -4,11 +4,13 @@ import Image from "next/image";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  DownloadIcon,
   ImageIcon,
   ImageOffIcon,
   PencilIcon,
   PlusIcon,
   RefreshCwIcon,
+  SendIcon,
   XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -28,8 +30,11 @@ import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { usePublishFlow } from "@/components/publish";
+import type { PublishEditResponse } from "@/lib/api/publish";
 import {
   createThreadImageTask,
+  downloadThreadImageTask,
   getThreadImageTask,
   listThreadImageTasks,
   type ImageTaskItemResponse,
@@ -323,18 +328,73 @@ function removeIndexedRecordItem<T>(
   return next;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildRednoteTextMarkdown({
+  title,
+  content,
+}: {
+  title: string;
+  content: string;
+}): string {
+  return [title.trim() ? `# ${title.trim()}` : "", content.trim()]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function buildRednotePublishHtml({
+  title,
+  content,
+  images,
+}: {
+  title: string;
+  content: string;
+  images: string[];
+}): string {
+  const imageHtml = images
+    .map(
+      (image, index) =>
+        `<img src="${escapeHtml(image)}" alt="图${index + 1}" />`,
+    )
+    .join("");
+  return [
+    title.trim() ? `<h1>${escapeHtml(title.trim())}</h1>` : "",
+    imageHtml,
+    content
+      .split("\n")
+      .map((line) => `<p>${escapeHtml(line)}</p>`)
+      .join(""),
+  ].join("");
+}
+
 function mergeImageTaskHistories(tasks: ImageTaskResponse[]): {
   historiesByUid: Record<string, PromptImageHistoryItem[]>;
   uidOrder: string[];
 } {
   const historiesByUid: Record<string, PromptImageHistoryItem[]> = {};
   const uidOrder: string[] = [];
+  const seenUids = new Set<string>();
+
+  for (const task of [...tasks].reverse()) {
+    for (const item of task.items) {
+      if (!seenUids.has(item.uid)) {
+        seenUids.add(item.uid);
+        uidOrder.push(item.uid);
+      }
+    }
+  }
 
   for (const task of tasks) {
     for (const item of task.items) {
       if (!historiesByUid[item.uid]) {
         historiesByUid[item.uid] = [];
-        uidOrder.push(item.uid);
       }
       historiesByUid[item.uid].push(imageTaskItemToHistoryItem(task, item));
     }
@@ -343,19 +403,33 @@ function mergeImageTaskHistories(tasks: ImageTaskResponse[]): {
   return { historiesByUid, uidOrder };
 }
 
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function RednoteContentEditor({
   rednoteContent,
   className,
   threadId,
   imageSize,
   inputImages,
+  userInput,
 }: {
   rednoteContent: RednoteContent | null;
   className?: string;
   threadId: string;
   imageSize?: string | null;
   inputImages?: string[] | null;
+  userInput?: string | null;
 }) {
+  const { beginDirectPublish, isPreparingPublishPreview } = usePublishFlow();
   const sourceKey = useMemo(
     () => JSON.stringify(rednoteContent ?? null),
     [rednoteContent],
@@ -380,6 +454,7 @@ export function RednoteContentEditor({
   const [hasImageTaskHistory, setHasImageTaskHistory] = useState(false);
   const [isImageTaskHistoryReady, setIsImageTaskHistoryReady] = useState(false);
   const [isSubmittingImageTask, setIsSubmittingImageTask] = useState(false);
+  const [isDownloadingImageTask, setIsDownloadingImageTask] = useState(false);
   const [insufficientBalanceInfo, setInsufficientBalanceInfo] =
     useState<InsufficientBalanceInfo | null>(null);
   const [insufficientBalanceDialogOpen, setInsufficientBalanceDialogOpen] =
@@ -401,6 +476,7 @@ export function RednoteContentEditor({
   useEffect(() => {
     setInsufficientBalanceInfo(null);
     setInsufficientBalanceDialogOpen(false);
+    setIsDownloadingImageTask(false);
   }, [threadId]);
 
   useEffect(() => {
@@ -531,9 +607,58 @@ export function RednoteContentEditor({
   const showGenerateImagesButton =
     isImageTaskHistoryReady &&
     draft.prompts.length > 0 &&
-    (!hasImageTaskHistory || isGeneratingImages);
+    !hasImageTaskHistory;
   const shouldRenderPromptPages =
     isImageTaskHistoryReady && (draft.prompts.length > 0 || canEditPromptPages);
+  const firstCompletedImageTaskId = useMemo(() => {
+    const historyItems = Object.values(imageHistoriesByUid)
+      .flat()
+      .filter((item) => item.taskId !== PENDING_IMAGE_TASK_ID)
+      .sort((left, right) =>
+        left.taskCreatedAt.localeCompare(right.taskCreatedAt),
+      );
+    const firstTaskId = historyItems[0]?.taskId ?? null;
+    if (!firstTaskId) return null;
+
+    const firstTaskItems = historyItems.filter((item) => item.taskId === firstTaskId);
+    if (
+      firstTaskItems.length === 0 ||
+      firstTaskItems.some((item) => item.status !== "completed")
+    ) {
+      return null;
+    }
+
+    return firstTaskId;
+  }, [imageHistoriesByUid]);
+  const publishImages = useMemo(
+    () =>
+      draft.prompts
+        .map((_, index) => {
+          const uid = promptUidsByIndex[index];
+          const history = uid ? (imageHistoriesByUid[uid] ?? []) : [];
+          const selectedHistoryIndex = uid
+            ? (selectedHistoryIndexes[uid] ?? 0)
+            : 0;
+          const currentHistory = history[selectedHistoryIndex];
+          if (currentHistory?.status !== "completed") return "";
+          return getGenImageUrl(currentHistory.url, threadId);
+        })
+        .filter((url): url is string => url.trim().length > 0),
+    [
+      draft.prompts,
+      imageHistoriesByUid,
+      promptUidsByIndex,
+      selectedHistoryIndexes,
+      threadId,
+    ],
+  );
+  const canPublishRednote =
+    hasImageResults &&
+    !isGeneratingImages &&
+    draft.prompts.length > 0 &&
+    publishImages.length === draft.prompts.length;
+  const showPublishRednoteButton =
+    !showGenerateImagesButton && hasImageResults;
 
   const submitImageTask = useCallback(
     async (
@@ -593,6 +718,13 @@ export function RednoteContentEditor({
           prompts,
           size: imageSize ?? null,
           input_images: inputImages ?? [],
+          metadata: {
+            thread_id: threadId,
+            platform: "xhs",
+            user_input: userInput?.trim() ?? "",
+            title: draft.title.trim(),
+            content: draft.content.trim(),
+          },
         });
         setImageTaskId(task.id);
         setImageHistoriesByUid((current) => {
@@ -649,6 +781,9 @@ export function RednoteContentEditor({
       isGeneratingImages,
       pollImageTask,
       refreshImageTaskHistory,
+      userInput,
+      draft.content,
+      draft.title,
       threadId,
       upsertImageTaskItems,
     ],
@@ -773,6 +908,89 @@ export function RednoteContentEditor({
       submitImageTask,
     ],
   );
+
+  const handlePublishRednote = useCallback(() => {
+    if (!canPublishRednote) return;
+    const title = draft.title.trim();
+    const content = draft.content.trim();
+    const markdown = buildRednoteTextMarkdown({ title, content });
+    const contentHtml = buildRednotePublishHtml({
+      title,
+      content,
+      images: publishImages,
+    });
+    const artifactPath = `rednote-image-cards:${threadId}`;
+
+    void beginDirectPublish({
+      threadId,
+      artifactPath,
+      title,
+      contentHtml,
+      markdownSnapshot: markdown,
+      allowedPlatformIds: ["rednote"],
+      allowedPublishPlatformIds: ["rednote"],
+      previewVariant: "rednote-image-cards",
+      rednotePreview: {
+        images: publishImages,
+        title,
+        content,
+      },
+      createPublishEdit: async (selectedAccountIds) => {
+        const publishEdit: PublishEditResponse = {
+          thread_id: threadId,
+          artifacts: artifactPath,
+          platform: {
+            rednote: {
+              accounts: selectedAccountIds.map((accountId) => ({
+                id: accountId,
+                avatar: null,
+                nickname: "",
+                account: "",
+                platform: "rednote",
+              })),
+              content: markdown,
+              draft: false,
+              skip_image_upload: false,
+              timeout: 60,
+              platform_options: {
+                title,
+                image_cards: true,
+                images: publishImages,
+                privacy: "PUBLIC",
+                original: false,
+                note_copyable: false,
+              },
+            },
+          },
+        };
+        return publishEdit;
+      },
+    });
+  }, [
+    beginDirectPublish,
+    canPublishRednote,
+    draft.content,
+    draft.title,
+    publishImages,
+    threadId,
+  ]);
+
+  const handleDownloadFirstImageTask = useCallback(async () => {
+    if (!firstCompletedImageTaskId || isDownloadingImageTask) return;
+
+    setIsDownloadingImageTask(true);
+    try {
+      const blob = await downloadThreadImageTask(
+        threadId,
+        firstCompletedImageTaskId,
+      );
+      saveBlob(blob, `rednote-images-${firstCompletedImageTaskId}.zip`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "下载失败，请稍后重试。"));
+    } finally {
+      setIsDownloadingImageTask(false);
+    }
+  }, [firstCompletedImageTaskId, isDownloadingImageTask, threadId]);
 
   if (!rednoteContent) {
     return null;
@@ -1089,6 +1307,33 @@ export function RednoteContentEditor({
           >
             <ImageIcon className="size-4" />
             <span>{isGeneratingImages ? "生成中..." : "生成图片"}</span>
+          </Button>
+        </div>
+      ) : null}
+      {showPublishRednoteButton ? (
+        <div className="flex justify-center gap-3">
+          {firstCompletedImageTaskId ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 gap-2 rounded-full px-5 font-semibold shadow-sm"
+              disabled={isDownloadingImageTask}
+              onClick={handleDownloadFirstImageTask}
+              title="下载"
+            >
+              <DownloadIcon className="size-4" />
+              <span>{isDownloadingImageTask ? "下载中..." : "下载"}</span>
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            className="h-10 gap-2 rounded-full bg-[#ff2442] px-6 font-semibold text-white shadow-sm hover:bg-[#e51f3b]"
+            disabled={!canPublishRednote || isPreparingPublishPreview}
+            onClick={handlePublishRednote}
+            title="发布"
+          >
+            <SendIcon className="size-4" />
+            <span>{isPreparingPublishPreview ? "加载中..." : "发布"}</span>
           </Button>
         </div>
       ) : null}

@@ -3,6 +3,8 @@
 import { AppleIcon, CpuIcon, DownloadIcon, MonitorIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { desktopMarketingDownloadUrls } from "@/lib/marketing/desktop-oss-download";
+
 type DownloadCard = {
   key: "windows" | "intel" | "apple";
   title: string;
@@ -21,7 +23,7 @@ export function MarketingDownloadPage() {
       title: t("downloadWindows"),
       desc: t("downloadWindowsDesc"),
       format: ".exe",
-      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-win-x64.exe",
+      url: desktopMarketingDownloadUrls.windowsExe,
       icon: MonitorIcon,
     },
     {
@@ -29,7 +31,7 @@ export function MarketingDownloadPage() {
       title: t("downloadMacIntel"),
       desc: t("downloadMacIntelDesc"),
       format: ".dmg / .zip (x64)",
-      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-mac-x64.dmg",
+      url: desktopMarketingDownloadUrls.macIntelDmg,
       icon: CpuIcon,
     },
     {
@@ -37,7 +39,7 @@ export function MarketingDownloadPage() {
       title: t("downloadMacApple"),
       desc: t("downloadMacAppleDesc"),
       format: ".dmg / .zip (arm64)",
-      url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/keduckAI-0.1.2-mac-arm64.dmg",
+      url: desktopMarketingDownloadUrls.macAppleSiliconDmg,
       icon: AppleIcon,
     },
   ];

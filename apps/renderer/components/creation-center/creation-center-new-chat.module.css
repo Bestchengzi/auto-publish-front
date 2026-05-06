@@ -9,45 +9,6 @@
   }
 }
 
-@keyframes ambientShift {
-  0% {
-    transform: translate3d(-2%, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(2%, 8px, 0) scale(1.03);
-  }
-}
-
-@keyframes sceneDrift {
-  0% {
-    background-position:
-      0 0,
-      0 0;
-  }
-  100% {
-    background-position:
-      120px 80px,
-      -180px 120px;
-  }
-}
-
-@keyframes sceneSweep {
-  0% {
-    transform: translateX(-42%) skewX(-16deg);
-    opacity: 0;
-  }
-  18% {
-    opacity: 0.8;
-  }
-  54% {
-    opacity: 0.38;
-  }
-  100% {
-    transform: translateX(42%) skewX(-16deg);
-    opacity: 0;
-  }
-}
-
 .fadeUp {
   opacity: 0;
   animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -78,7 +39,6 @@
       transparent 114px
     );
   mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
-  animation: sceneDrift 18s linear infinite;
 }
 
 .scene::after {
@@ -92,7 +52,8 @@
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  animation: sceneSweep 6.5s ease-in-out infinite;
+  opacity: 0.38;
+  transform: skewX(-16deg);
 }
 
 .ambient {
@@ -100,14 +61,15 @@
     linear-gradient(
       105deg,
       transparent 0%,
-      color-mix(in oklch, #f97316 18%, transparent) 23%,
-      transparent 43%,
-      color-mix(in oklch, #22c55e 14%, transparent) 62%,
-      color-mix(in oklch, #3b82f6 12%, transparent) 78%,
+      color-mix(in oklch, #ec4899 6%, transparent) 18%,
+      color-mix(in oklch, #ef4444 5%, transparent) 34%,
+      color-mix(in oklch, #0ea5e9 4%, transparent) 52%,
+      color-mix(in oklch, #10b981 4%, transparent) 68%,
+      color-mix(in oklch, #f97316 3%, transparent) 84%,
       transparent 100%
     );
-  filter: blur(34px);
-  animation: ambientShift 7s ease-in-out infinite alternate;
+  filter: blur(42px);
+  transform: translate3d(0, 4px, 0) scale(1.015);
 }
 
 .composerGlow {

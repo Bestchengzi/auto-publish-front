@@ -87,7 +87,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     };
   }, [mobileNavOpen]);
 
-  const appName = locale === "en" ? "Keduck AI" : "可达AI";
+  const appName = locale === "en" ? "KeduckAI" : "KeduckAI";
   const localeOptions: AppLocale[] = ["zh-CN", "en"];
   const localeLabels: Record<AppLocale, string> = {
     "zh-CN": t("langZh"),
@@ -381,12 +381,12 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto grid w-fit grid-cols-3 gap-x-10 gap-y-6 text-sm text-slate-500 sm:mx-0 sm:w-auto sm:grid-cols-2 sm:gap-10 lg:grid-cols-4 dark:text-zinc-400">
             <div className="col-span-3 sm:col-span-2 lg:col-span-1">
               <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {locale === "en" ? "Info" : "可达AI"}
+                {locale === "en" ? "Info" : "KeduckAI"}
               </p>
               <p className="mt-3 leading-relaxed">
                 {locale === "en"
-                  ? "Keduck AI helps teams and creators complete chat-based creation and publishing in one place."
-                  : "可达AI 是面向团队与创作者的一体化对话创作与发布平台。"}
+                  ? "KeduckAI helps teams and creators complete chat-based creation and publishing in one place."
+                  : "KeduckAI 是面向团队与创作者的一体化对话创作与发布平台。"}
               </p>
             </div>
             <div>

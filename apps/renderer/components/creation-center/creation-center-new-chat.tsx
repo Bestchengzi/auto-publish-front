@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import type { FileUIPart } from "ai";
+import { RednotePublicExamples } from "./rednote-public-examples";
 import styles from "./creation-center-new-chat.module.css";
 
 const HIGHLIGHTED_PARTS = [
@@ -131,14 +132,14 @@ type RednoteStyleOption = {
 type AgentHeroCopy = {
   title: string;
   subtitle: string;
-  placeholder: string;
+  placeholders: string[];
 };
 
 const CONTENT_AGENTS: AgentOption[] = [
   {
     id: "rednote",
     label: "\u5c0f\u7ea2\u4e66\u56fe\u6587Agent",
-    description: "\u5c0f\u7ea2\u4e66\u56fe\u6587\u5185\u5bb9\uff0c\u9002\u5408\u79cd\u8349\u3001\u653b\u7565\u3001\u751f\u6d3b\u65b9\u5f0f\u5206\u4eab",
+    description: "\u79cd\u8349\u3001\u653b\u7565\u3001\u6d4b\u8bc4\u3001\u751f\u6d3b\u65b9\u5f0f\u5206\u4eab",
     icon: PenLineIcon,
     accent: "from-rose-500 to-orange-400",
     logoSrc: "/platform-logos/xiao-hong-shu.png",
@@ -146,7 +147,7 @@ const CONTENT_AGENTS: AgentOption[] = [
   {
     id: "news",
     label: "\u5934\u6761Agent",
-    description: "\u70ed\u70b9\u89e3\u8bfb\u3001\u5feb\u8baf\u3001\u8d8b\u52bf\u8ffd\u8e2a",
+    description: "\u70ed\u70b9\u89e3\u8bfb\u3001\u5feb\u8baf\u8ffd\u8e2a\u3001\u8d8b\u52bf\u5206\u6790",
     icon: NewspaperIcon,
     accent: "from-red-500 to-rose-500",
     logoSrc: "/platform-logos/jin-ri-tou-tiao.png",
@@ -154,7 +155,7 @@ const CONTENT_AGENTS: AgentOption[] = [
   {
     id: "longform",
     label: "\u77e5\u4e4eAgent",
-    description: "\u6df1\u5ea6\u5206\u6790\u3001\u89c2\u70b9\u8bba\u8bc1\u3001\u957f\u7bc7\u7a3f",
+    description: "\u6df1\u5ea6\u79d1\u666e\u3001\u7ecf\u9a8c\u5206\u4eab\u3001\u95ee\u9898\u89e3\u7b54",
     icon: BookOpenTextIcon,
     accent: "from-violet-500 to-indigo-500",
     logoSrc: "/platform-logos/zhihu.png",
@@ -162,7 +163,7 @@ const CONTENT_AGENTS: AgentOption[] = [
   {
     id: "wechat",
     label: "\u516c\u4f17\u53f7Agent",
-    description: "\u751f\u6210\u53ef\u76f4\u63a5\u7f16\u8f91\u4e0e\u53d1\u5e03\u7684\u516c\u4f17\u53f7\u7a3f\u4ef6\uff0c\u652f\u6301 HTML \u683c\u5f0f\u751f\u6210",
+    description: "\u54c1\u724c\u63a8\u6587\u3001\u6df1\u5ea6\u5e72\u8d27\u3001\u4e2a\u4eba\u4e13\u680f\uff0c\u652f\u6301 HTML \u683c\u5f0f\u751f\u6210",
     icon: FileTextIcon,
     accent: "from-emerald-500 to-teal-400",
     logoSrc: "/platform-logos/wei-xin-gong-zhong-hao.png",
@@ -277,6 +278,8 @@ const REDNOTE_RUN_OPTIONS = {
   streamMode: ["values", "updates"],
 };
 
+const PLACEHOLDER_ROTATION_MS = 4000;
+
 const REDNOTE_CONTEXT_OVERRIDES = {
   model_name: "deepseek-v4",
 };
@@ -319,32 +322,47 @@ const AGENT_HERO_COPY: Record<ContentAgentId, AgentHeroCopy> = {
   rednote: {
     title: "一句话生成小红书爆款图文",
     subtitle: "适合种草、攻略、测评、生活方式分享，自动生成标题正文和图文提示词。",
-    placeholder:
-      "海蓝之谜贵妇护肤入门",
+    placeholders: [
+      "夏季清爽防晒推荐，通勤日常必备",
+      "网红爆款唇釉实测，平价替代巨划算",
+      "小个子穿搭技巧，显高显瘦公式分享",
+    ],
   },
   news: {
     title: "协同生成头条热点爆文",
-    subtitle: "围绕热点事件、趋势话题和观点解读，生成更适合信息流传播的内容。",
-    placeholder:
-      "五一消费趋势解读",
+    subtitle: "适合热点解读、快讯追踪、趋势分析，自动生成更适合信息流传播的爆款文章。",
+    placeholders: [
+      "科技产业最新突破，哪些领域将迎来爆发",
+      "楼市最新行情深度分析，刚需买房看准这几点",
+      "国内重大工程进展速览，带动多地就业与发展",
+    ],
   },
   longform: {
     title: "协同生成知乎深度文章",
-    subtitle: "把问题拆成结构化观点、论据和案例，生成有说服力的长回答。",
-    placeholder:
-      "AI Agent 为什么会成为下一代应用入口？",
+    subtitle: "适合深度科普、经验分享、问题解答，自动生成专业长文和逻辑严谨的观点论述。",
+    placeholders: [
+      "为什么很多人工作几年后，会陷入 “越忙越穷” 的困境？",
+      "月薪 5k 和月薪 2w 的职场人，核心差距到底在哪里？",
+      "想自学编程转行，怎么规划学习路线才能不走弯路？",
+    ],
   },
   wechat: {
     title: "协同生成公众号精品文章",
-    subtitle: "生成可继续编辑和发布的公众号稿件，适合品牌、活动和知识型内容。",
-    placeholder:
-      "公司新品发布会回顾",
+    subtitle: "适合品牌推文、深度干货、个人专栏，自动生成排版友好和适配公众号生态的内容。",
+    placeholders: [
+      "避开人潮！这几个小众春日旅行地，治愈感拉满",
+      "品牌公众号运营避坑指南：这些错误很多人都在犯",
+      "当代年轻人的消费观：从超前消费到理性存钱",
+    ],
   },
   csdn: {
     title: "协同生成CSDN高质量技术教程",
-    subtitle: "适合技术教程、实战笔记和问题复盘，自动整理步骤与代码说明。",
-    placeholder:
-      "Next.js 路由缓存机制实战",
+    subtitle: "适合技术教程、实战笔记、问题复盘，自动生成结构清晰的技术文章和代码说明。",
+    placeholders: [
+      "Python 零基础入门：从环境搭建到项目实战完整路线",
+      "新手快速上手 Docker：容器部署入门教程",
+      "算法入门必备：十大经典排序算法详解",
+    ],
   },
 };
 
@@ -416,7 +434,7 @@ function RednoteStyleLogo({
   return (
     <span
       className={cn(
-        "relative block size-5 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-foreground/10",
+        "relative block size-5.5 shrink-0 overflow-hidden rounded-sm bg-muted shadow-sm ring-1 ring-foreground/10",
         className,
       )}
     >
@@ -451,8 +469,9 @@ export function CreationCenterNewChat() {
   const [rednoteStyleId, setRednoteStyleId] =
     useState<RednoteStyleId | "">("");
   const [rednoteAspectRatio, setRednoteAspectRatio] =
-    useState<RednoteAspectRatio>("2:3");
+    useState<RednoteAspectRatio>("3:4");
   const [generatedImageCount, setGeneratedImageCount] = useState("");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [rednoteStyleMenuOpen, setRednoteStyleMenuOpen] = useState(false);
   const [rednoteAspectRatioMenuOpen, setRednoteAspectRatioMenuOpen] =
     useState(false);
@@ -498,6 +517,10 @@ export function CreationCenterNewChat() {
     [selectedAgentId],
   );
   const selectedAgentHeroCopy = AGENT_HERO_COPY[selectedAgent.id];
+  const selectedPlaceholder =
+    selectedAgentHeroCopy.placeholders[
+      placeholderIndex % selectedAgentHeroCopy.placeholders.length
+    ] ?? "";
   const selectedImageMode = useMemo(
     () =>
       IMAGE_MODE_OPTIONS.find((mode) => mode.id === imageModeId) ??
@@ -553,6 +576,18 @@ export function CreationCenterNewChat() {
       });
     }
   }, [authReady, context, isLoggedIn, setSettings]);
+
+  useEffect(() => {
+    setPlaceholderIndex(0);
+    const placeholders = AGENT_HERO_COPY[selectedAgentId].placeholders;
+    if (placeholders.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((current) => (current + 1) % placeholders.length);
+    }, PLACEHOLDER_ROTATION_MS);
+
+    return () => window.clearInterval(timer);
+  }, [selectedAgentId]);
 
   useEffect(() => {
     const contextPersonaId =
@@ -682,10 +717,14 @@ export function CreationCenterNewChat() {
           ];
 
       return [
-        `\u8bf7\u4f7f\u7528\u300c${selectedAgent.label}\u300d\u5904\u7406\u4ee5\u4e0b\u5185\u5bb9\u521b\u4f5c\u9700\u6c42\u3002`,
+        ...(isRednoteAgent
+          ? []
+          : [
+              `\u8bf7\u4f7f\u7528\u300c${selectedAgent.label}\u300d\u5904\u7406\u4ee5\u4e0b\u5185\u5bb9\u521b\u4f5c\u9700\u6c42\u3002`,
+            ]),
         ...configLines,
         "",
-        `\u7528\u6237\u9700\u6c42\uff1a${trimmed || "\u8bf7\u7ed3\u5408\u6211\u4e0a\u4f20\u7684\u9644\u4ef6\u6216\u7d20\u6750\u5b8c\u6210\u5185\u5bb9\u521b\u4f5c\u3002"}`,
+        trimmed || "\u8bf7\u7ed3\u5408\u6211\u4e0a\u4f20\u7684\u9644\u4ef6\u6216\u7d20\u6750\u5b8c\u6210\u5185\u5bb9\u521b\u4f5c\u3002",
       ].join("\n");
     },
     [
@@ -721,16 +760,16 @@ export function CreationCenterNewChat() {
     <div
       className={cn(
         styles.scene,
-        "relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_54%,#f6f7fb_100%)] px-6 py-10 dark:bg-[linear-gradient(180deg,#151515_0%,#101010_60%,#151515_100%)]",
+        "relative flex min-h-full flex-col items-center justify-center overflow-x-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_54%,#f6f7fb_100%)] px-6 py-10 dark:bg-[linear-gradient(180deg,#151515_0%,#101010_60%,#151515_100%)]",
       )}
     >
       <div
         className={cn(
           styles.ambient,
-          "pointer-events-none absolute inset-x-0 top-12 h-64 opacity-80",
+          "pointer-events-none absolute inset-x-0 top-12 h-64 opacity-50",
         )}
       />
-      <div className="relative z-10 flex w-full max-w-6xl -translate-y-8 flex-col items-center gap-7">
+      <div className="relative z-10 flex w-full max-w-6xl -translate-y-12 flex-col items-center gap-7">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className={cn(styles.fadeUp, "[animation-delay:80ms]")}>
             <HighlightedTitle title={selectedAgentHeroCopy.title} />
@@ -759,7 +798,7 @@ export function CreationCenterNewChat() {
                   key={agent.id}
                   type="button"
                   className={cn(
-                    "group relative inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+                    "group relative inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-sm font-medium shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
                     selected
                       ? activeStyle.button
                       : "border-transparent bg-white/75 text-foreground/75 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10",
@@ -768,7 +807,7 @@ export function CreationCenterNewChat() {
                   title={agent.description}
                 >
                   {agent.logoSrc ? (
-                    <span className="relative flex size-6 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm dark:bg-white">
+                    <span className="relative flex size-5.5 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm dark:bg-white">
                       <Image
                         src={agent.logoSrc}
                         alt=""
@@ -780,7 +819,7 @@ export function CreationCenterNewChat() {
                   ) : (
                     <span
                       className={cn(
-                        "flex size-6 items-center justify-center rounded-md bg-gradient-to-br text-white shadow-sm",
+                        "flex size-5.5 items-center justify-center rounded-md bg-gradient-to-br text-white shadow-sm",
                         agent.accent,
                       )}
                     >
@@ -808,7 +847,7 @@ export function CreationCenterNewChat() {
             "relative w-full max-w-[1080px] [animation-delay:260ms]",
           )}
         >
-          <div className="absolute left-5 right-5 top-5 z-20 flex flex-wrap items-center gap-2">
+          <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-2">
             {isRednoteAgent ? (
               <DropdownMenu
                 key="rednote-aspect-ratio"
@@ -877,7 +916,7 @@ export function CreationCenterNewChat() {
                         >
                           {selectedRednoteStyle
                             ? `风格：${selectedRednoteStyle.label}`
-                            : "选择风格"}
+                            : "风格"}
                         </span>
                       </span>
                       <ChevronDownIcon className="size-4 opacity-60" />
@@ -901,7 +940,7 @@ export function CreationCenterNewChat() {
                     {REDNOTE_STYLE_OPTIONS.map((style) => (
                       <DropdownMenuRadioItem
                         key={style.id}
-                        className="gap-2"
+                        className="gap-4 py-1.5"
                         value={style.id}
                       >
                         <RednoteStyleLogo option={style} />
@@ -926,7 +965,7 @@ export function CreationCenterNewChat() {
                 onOpenChange={setRednoteImageCountMenuOpen}
               >
                 <DropdownMenuTrigger
-                  className="h-8 min-w-[156px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
+                  className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
                   render={
                     <button
                       type="button"
@@ -938,8 +977,8 @@ export function CreationCenterNewChat() {
                         )}
                       >
                         {generatedImageCount === ""
-                          ? "选择生成图片张数"
-                          : `生成图片张数：${generatedImageCount}张`}
+                          ? "图片张数"
+                          : `图片张数：${generatedImageCount}张`}
                       </span>
                       <ChevronDownIcon className="size-4 opacity-60" />
                     </button>
@@ -1047,9 +1086,7 @@ export function CreationCenterNewChat() {
               threadId="new"
               autoFocus={false}
               toolbarVariant={isRednoteAgent ? "attachmentsOnly" : "default"}
-              placeholder={
-                selectedAgentHeroCopy.placeholder
-              }
+              placeholder={selectedPlaceholder}
               status="ready"
               context={context}
               disabled={isStarting}
@@ -1079,10 +1116,18 @@ export function CreationCenterNewChat() {
                 setEditingPersona(fullPersona);
               }}
               showPersonaManagementActions
+              attachmentsPlacement="underHeader"
               onSubmit={handleSubmit}
               onStop={undefined}
             />
           </ThreadContext.Provider>
+        </div>
+
+        <div className="absolute left-1/2 top-full mt-6 w-[min(1360px,calc(100vw-320px))] -translate-x-1/2 max-lg:w-[calc(100vw-48px)]">
+          <RednotePublicExamples
+            enabled={isRednoteAgent}
+            className={cn(styles.fadeUp, "[animation-delay:320ms]")}
+          />
         </div>
       </div>
 

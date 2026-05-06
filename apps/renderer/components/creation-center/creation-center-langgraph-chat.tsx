@@ -1,6 +1,11 @@
 "use client";
 
-import { ChevronUpIcon, FolderOpenIcon, NotebookPenIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronUpIcon,
+  FolderOpenIcon,
+  Loader2Icon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
@@ -217,53 +222,44 @@ function RednoteGenerationProgress({
   return (
     <section
       className={cn(
-        "relative mx-auto my-5 min-h-[380px] w-full max-w-6xl overflow-hidden rounded-lg border border-border/80 bg-card p-7 shadow-[0_18px_45px_rgba(15,23,42,0.06)] md:p-9",
+        "relative mx-auto my-5 w-full max-w-6xl rounded-2xl border border-border/70 bg-white p-7 shadow-[0_16px_42px_rgba(15,23,42,0.06)] md:p-8 dark:bg-card",
         className,
       )}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-rose-500/70"
-        aria-hidden="true"
-      />
-
-      <header className="relative flex items-start gap-4">
-        <div className="relative flex size-14 shrink-0 items-center justify-center rounded-lg bg-background text-rose-500 ring-1 ring-border">
-          <span
-            className="absolute inset-0 animate-ping rounded-lg bg-rose-400/10"
-            aria-hidden="true"
-          />
-          <NotebookPenIcon className="relative size-7" />
+      <header className="flex items-center gap-4">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-500 ring-1 ring-rose-100">
+          <Loader2Icon className="size-6 animate-spin" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground">
               {stageText.title}
             </h2>
-            <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600 ring-1 ring-rose-100">
+            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-600">
               小红书图文
             </span>
           </div>
-          <p className="mt-2 text-base leading-7 text-muted-foreground">
+          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
             {stageText.detail}
           </p>
         </div>
+        <span className="hidden rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground md:inline-flex">
+          处理中
+        </span>
       </header>
 
-      <div className="relative mt-8 h-3 overflow-hidden rounded-full bg-muted">
+      <div className="relative mt-7 h-2 overflow-hidden rounded-full bg-muted">
         <div
           className={cn(
-            "h-full rounded-full bg-rose-500 transition-all duration-500 ease-out",
+            "relative h-full overflow-hidden rounded-full bg-rose-500 transition-all duration-500 ease-out",
             stageText.progressClassName,
           )}
         >
-          <div
-            className="h-full w-full animate-pulse bg-white/30"
-            aria-hidden="true"
-          />
+          <div className="h-full w-full animate-pulse bg-white/45" aria-hidden="true" />
         </div>
       </div>
 
-      <div className="relative mt-8 grid gap-4 md:grid-cols-3">
+      <div className="mt-7 grid gap-3 md:grid-cols-3">
         {REDNOTE_GENERATION_STEPS.map((step, index) => {
           const isDone = index < stageIndex;
           const isActive = index === stageIndex;
@@ -272,42 +268,42 @@ function RednoteGenerationProgress({
             <div
               key={step.key}
               className={cn(
-                "min-h-[180px] rounded-lg border p-5 transition-all duration-300",
+                "rounded-xl border p-4 transition-colors duration-300",
                 isDone
-                  ? "border-rose-100 bg-card shadow-sm"
+                  ? "border-rose-100 bg-rose-50/40"
                   : isActive
-                    ? "scale-[1.02] border-rose-300 bg-card shadow-[0_12px_30px_rgba(244,63,94,0.12)] animate-pulse"
-                    : "border-border/70 bg-card",
+                    ? "border-rose-200 bg-white"
+                    : "border-border/60 bg-white",
               )}
             >
               <div className="flex items-center gap-2">
                 <span
                   className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-md text-sm font-semibold",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                     isDone
-                      ? "bg-rose-400 text-white"
+                      ? "bg-rose-500 text-white"
                       : isActive
                         ? "bg-rose-500 text-white"
-                        : "bg-background text-muted-foreground ring-1 ring-border",
+                        : "bg-muted text-muted-foreground",
                   )}
                 >
-                  {isDone ? "✓" : index + 1}
+                  {isDone ? <CheckIcon className="size-4" /> : index + 1}
                 </span>
                 <span className="text-base font-semibold text-foreground">
                   {step.title}
                 </span>
               </div>
-              <p className="mt-4 min-h-12 text-sm leading-6 text-muted-foreground">
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {step.helper}
               </p>
               {isActive ? (
-                <div className="mt-5 space-y-3" aria-hidden="true">
-                  <div className="h-3 w-full animate-pulse rounded-sm bg-rose-300/80" />
-                  <div className="h-3 w-4/5 animate-pulse rounded-sm bg-rose-200 [animation-delay:180ms]" />
-                  <div className="flex gap-2 pt-1">
-                    <span className="size-2.5 animate-bounce rounded-full bg-rose-500" />
-                    <span className="size-2.5 animate-bounce rounded-full bg-rose-400 [animation-delay:120ms]" />
-                    <span className="size-2.5 animate-bounce rounded-full bg-rose-300 [animation-delay:240ms]" />
+                <div className="mt-4 space-y-2.5" aria-hidden="true">
+                  <div className="h-2.5 animate-pulse rounded-full bg-rose-300" />
+                  <div className="h-2.5 w-4/5 animate-pulse rounded-full bg-rose-200 [animation-delay:160ms]" />
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="size-2 animate-bounce rounded-full bg-rose-500" />
+                    <span className="size-2 animate-bounce rounded-full bg-rose-500 [animation-delay:120ms]" />
+                    <span className="size-2 animate-bounce rounded-full bg-rose-500 [animation-delay:240ms]" />
                   </div>
                 </div>
               ) : null}
@@ -553,6 +549,10 @@ export function CreationCenterLanggraphChat() {
     () => thread.messages.filter((message) => message.type === "human"),
     [thread.messages],
   );
+  const rednoteUserInput = useMemo(() => {
+    const firstHumanMessage = rednoteHumanMessages[0];
+    return firstHumanMessage ? (textOfMessage(firstHumanMessage) ?? "") : "";
+  }, [rednoteHumanMessages]);
   const insufficientBalanceInfo = useMemo(
     () => extractInsufficientBalanceInfo(thread),
     [thread],
@@ -668,6 +668,7 @@ export function CreationCenterLanggraphChat() {
                       threadId={threadId}
                       imageSize={rednoteImageSize}
                       inputImages={rednoteInputImages}
+                      userInput={rednoteUserInput}
                     />
                     {!rednoteContent &&
                     (thread.isLoading || thread.isThreadLoading) ? (
