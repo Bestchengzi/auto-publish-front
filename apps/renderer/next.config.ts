@@ -8,14 +8,14 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      // {
-      //   source: "/media/:path*",
-      //   destination: "http://192.168.88.30:22026/:path*",
-      // },
       {
         source: "/media/:path*",
-        destination: "http://192.168.88.156:13100/:path*",
+        destination: "http://192.168.88.30:22026/:path*",
       },
+      // {
+      //   source: "/media/:path*",
+      //   destination: "http://192.168.88.156:13100/:path*",
+      // },
     ];
   },
 };

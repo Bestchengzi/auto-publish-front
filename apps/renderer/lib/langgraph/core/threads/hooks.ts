@@ -88,6 +88,18 @@ function isPromptInputImageFile(
   return isImageExtension(file.filename?.split(".").pop());
 }
 
+function isPromptInputLocalFile(
+  file: NonNullable<PromptInputMessage["files"]>[number] | undefined,
+): boolean {
+  return Boolean(file?.url?.startsWith("blob:") && file.filename);
+}
+
+function isPromptInputExistingFile(
+  file: NonNullable<PromptInputMessage["files"]>[number] | undefined,
+): boolean {
+  return Boolean(file?.url && !file.url.startsWith("blob:"));
+}
+
 function getStreamErrorMessage(error: unknown): string {
   if (typeof error === "string" && error.trim()) {
     return error;
@@ -303,13 +315,16 @@ export function useThreadStream({
       prevMsgCountRef.current = thread.messages.length;
 
       // Build optimistic files list with uploading status
-      const optimisticFiles: FileInMessage[] = (message.files ?? []).map(
-        (f) => ({
+      const optimisticFiles: FileInMessage[] = (message.files ?? [])
+        .filter((file) => isPromptInputLocalFile(file) || isPromptInputExistingFile(file))
+        .map((f) => ({
           filename: f.filename ?? "",
           size: 0,
-          status: "uploading" as const,
-        }),
-      );
+          ...(isPromptInputExistingFile(f) ? { url: f.url } : {}),
+          status: isPromptInputExistingFile(f)
+            ? ("uploaded" as const)
+            : ("uploading" as const),
+        }));
 
       // Create optimistic human message (shown immediately)
       const optimisticHumanMsg: Message = {
@@ -340,11 +355,12 @@ export function useThreadStream({
 
       try {
         // Upload files first if any
-        if (message.files && message.files.length > 0) {
+        const uploadableFileParts = message.files?.filter(isPromptInputLocalFile) ?? [];
+        if (uploadableFileParts.length > 0) {
           setIsUploading(true);
           try {
             // Convert FileUIPart to File objects by fetching blob URLs
-            const filePromises = message.files.map(async (fileUIPart) => {
+            const filePromises = uploadableFileParts.map(async (fileUIPart) => {
               if (fileUIPart.url && fileUIPart.filename) {
                 try {
                   // Fetch the blob URL to get the file data
@@ -432,18 +448,35 @@ export function useThreadStream({
             status: "uploaded" as const,
           }),
         );
+        const existingFilesForSubmit: FileInMessage[] = (message.files ?? [])
+          .filter(isPromptInputExistingFile)
+          .map((file) => ({
+            filename: file.filename ?? "reference-image",
+            size: 0,
+            url: file.url,
+            status: "uploaded" as const,
+          }));
         const uploadedInputImages = uploadedFileInfo
           .filter(
             (info, index) =>
               isUploadedImageFile(info) ||
-              isPromptInputImageFile(message.files?.[index]),
+              isPromptInputImageFile(uploadableFileParts[index]),
           )
           .map(getUploadPreviewUrl)
           .filter((url): url is string => Boolean(url));
+        const existingInputImages = (message.files ?? [])
+          .map((file) => file.url)
+          .filter(
+            (url): url is string =>
+              typeof url === "string" &&
+              url.length > 0 &&
+              !url.startsWith("blob:"),
+          );
         const inputImages = Array.from(
           new Set([
             ...readStringArray(context.input_images),
             ...readStringArray(extraContext?.input_images),
+            ...existingInputImages,
             ...uploadedInputImages,
           ]),
         );
@@ -461,7 +494,10 @@ export function useThreadStream({
                 ],
                 additional_kwargs:
                   {
-                    ...(filesForSubmit.length > 0 ? { files: filesForSubmit } : {}),
+                    ...(filesForSubmit.length > 0 ||
+                    existingFilesForSubmit.length > 0
+                      ? { files: [...existingFilesForSubmit, ...filesForSubmit] }
+                      : {}),
                     ...(extraAdditionalKwargs ?? {}),
                   },
               },

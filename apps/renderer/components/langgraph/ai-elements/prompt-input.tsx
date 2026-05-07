@@ -46,7 +46,6 @@ import {
   XIcon,
 } from "lucide-react";
 import { nanoid } from "nanoid";
-import Image from "next/image";
 import {
   type ChangeEvent,
   type ChangeEventHandler,
@@ -77,6 +76,7 @@ import {
 export type AttachmentsContext = {
   files: (FileUIPart & { id: string })[];
   add: (files: File[] | FileList) => void;
+  addFileParts: (files: FileUIPart[]) => void;
   remove: (id: string) => void;
   clear: () => void;
   openFileDialog: () => void;
@@ -175,6 +175,22 @@ export function PromptInputProvider({
     );
   }, []);
 
+  const addFileParts = useCallback((files: FileUIPart[]) => {
+    const incoming = files.filter((file) => file.url);
+    if (incoming.length === 0) {
+      return;
+    }
+
+    setAttachmentFiles((prev) =>
+      prev.concat(
+        incoming.map((file) => ({
+          ...file,
+          id: nanoid(),
+        })),
+      ),
+    );
+  }, []);
+
   const remove = useCallback((id: string) => {
     setAttachmentFiles((prev) => {
       const found = prev.find((f) => f.id === id);
@@ -219,12 +235,13 @@ export function PromptInputProvider({
     () => ({
       files: attachmentFiles,
       add,
+      addFileParts,
       remove,
       clear,
       openFileDialog,
       fileInputRef,
     }),
-    [attachmentFiles, add, remove, clear, openFileDialog],
+    [attachmentFiles, add, addFileParts, remove, clear, openFileDialog],
   );
 
   const __registerFileInput = useCallback(
@@ -311,13 +328,11 @@ export function PromptInputAttachment({
             <div className="relative size-5 shrink-0">
               <div className="bg-background absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded transition-opacity group-hover:opacity-0">
                 {isImage ? (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element -- attachments can be blob/data/remote URLs
+                  <img
                     alt={filename || "attachment"}
                     className="size-5 object-cover"
-                    height={20}
                     src={data.url}
-                    unoptimized
-                    width={20}
                   />
                 ) : (
                   <div className="text-muted-foreground flex size-5 items-center justify-center">
@@ -348,13 +363,11 @@ export function PromptInputAttachment({
         <div className="w-full space-y-3">
           {isImage && (
             <div className="flex max-h-96 w-full items-center justify-center overflow-hidden rounded-md border">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element -- attachments can be blob/data/remote URLs */}
+              <img
                 alt={filename || "attachment preview"}
                 className="max-h-full max-w-full object-contain"
-                height={384}
                 src={data.url}
-                unoptimized
-                width={448}
               />
             </div>
           )}
@@ -570,6 +583,22 @@ export const PromptInput = ({
     [matchesAccept, maxFiles, maxFileSize, onError],
   );
 
+  const addFilePartsLocal = useCallback((fileParts: FileUIPart[]) => {
+    const incoming = fileParts.filter((file) => file.url);
+    if (incoming.length === 0) {
+      return;
+    }
+
+    setItems((prev) =>
+      prev.concat(
+        incoming.map((file) => ({
+          ...file,
+          id: nanoid(),
+        })),
+      ),
+    );
+  }, []);
+
   const removeLocal = useCallback(
     (id: string) =>
       setItems((prev) => {
@@ -596,6 +625,9 @@ export const PromptInput = ({
   );
 
   const add = usingProvider ? controller.attachments.add : addLocal;
+  const addFileParts = usingProvider
+    ? controller.attachments.addFileParts
+    : addFilePartsLocal;
   const remove = usingProvider ? controller.attachments.remove : removeLocal;
   const clear = usingProvider ? controller.attachments.clear : clearLocal;
   const openFileDialog = usingProvider
@@ -707,12 +739,13 @@ export const PromptInput = ({
     () => ({
       files: files.map((item) => ({ ...item, id: item.id })),
       add,
+      addFileParts,
       remove,
       clear,
       openFileDialog,
       fileInputRef: inputRef,
     }),
-    [files, add, remove, clear, openFileDialog],
+    [files, add, addFileParts, remove, clear, openFileDialog],
   );
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {

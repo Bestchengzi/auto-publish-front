@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 type RednotePublicExamplesProps = {
   enabled: boolean;
   className?: string;
+  onUseExample?: (example: PublicImageTaskResponse) => void;
 };
 
 const REDNOTE_EXAMPLES_QUERY_SIZE = 20;
@@ -30,8 +31,18 @@ function getExampleTitle(example: PublicImageTaskResponse) {
   return example.title?.trim() || "";
 }
 
+function getExampleTag(example: PublicImageTaskResponse) {
+  return example.tag?.trim() || "";
+}
+
 function getExampleImages(example: PublicImageTaskResponse | null) {
   return (example?.images ?? []).filter((image) => image.trim().length > 0);
+}
+
+export function getRednoteExampleReferenceImages(
+  example: PublicImageTaskResponse,
+) {
+  return (example.input_images ?? []).filter((image) => image.trim().length > 0);
 }
 
 function getExampleContent(example: PublicImageTaskResponse) {
@@ -41,18 +52,26 @@ function getExampleContent(example: PublicImageTaskResponse) {
 function RednoteExampleCard({
   example,
   onPreview,
+  onUseExample,
 }: {
   example: PublicImageTaskResponse;
   onPreview: (example: PublicImageTaskResponse) => void;
+  onUseExample: (example: PublicImageTaskResponse) => void;
 }) {
   const coverImage = getExampleImages(example)[0];
   if (!coverImage) return null;
 
   const title = getExampleTitle(example);
+  const tag = getExampleTag(example);
 
   return (
     <article className="group min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.06]">
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        {tag ? (
+          <span className="absolute left-3 top-3 z-10 max-w-[calc(100%-1.5rem)] truncate rounded-md bg-white/85 px-3 py-1.5 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-black/5 backdrop-blur-sm">
+            {tag}
+          </span>
+        ) : null}
         {/* eslint-disable-next-line @next/next/no-img-element -- public image URLs are returned by the backend */}
         <img
           src={coverImage}
@@ -76,6 +95,7 @@ function RednoteExampleCard({
             type="button"
             size="sm"
             className="h-8 cursor-pointer rounded-full bg-pink-500 px-3 text-xs font-medium text-white shadow-sm hover:bg-pink-600"
+            onClick={() => onUseExample(example)}
             title="一键同款"
           >
             <WandSparklesIcon className="mr-1 size-3.5" />
@@ -107,9 +127,11 @@ function RednoteExampleSkeleton() {
 function RednoteExamplePreviewDialog({
   example,
   onOpenChange,
+  onUseExample,
 }: {
   example: PublicImageTaskResponse | null;
   onOpenChange: (open: boolean) => void;
+  onUseExample: (example: PublicImageTaskResponse) => void;
 }) {
   const [imageIndex, setImageIndex] = useState(0);
   const images = useMemo(() => getExampleImages(example), [example]);
@@ -138,7 +160,7 @@ function RednoteExamplePreviewDialog({
         showCloseButton={false}
         className="w-[min(94vw,1120px)] max-w-[1120px] overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl dark:bg-zinc-950"
       >
-        <DialogTitle className="sr-only">{title || "小红书精品案例预览"}</DialogTitle>
+        <DialogTitle className="sr-only">{title || "小红书公开案例预览"}</DialogTitle>
         <header className="flex min-h-[72px] items-center justify-between gap-4 border-b border-slate-200 px-6 py-3 dark:border-zinc-800">
           <div className="min-w-0">
             {title ? (
@@ -151,6 +173,11 @@ function RednoteExamplePreviewDialog({
             <Button
               type="button"
               className="h-9 rounded-lg bg-[#ff2442] px-5 text-sm font-semibold text-white hover:bg-[#e91d3b]"
+              onClick={() => {
+                if (!example) return;
+                onUseExample(example);
+                onOpenChange(false);
+              }}
               title="一键同款"
             >
               一键同款
@@ -248,6 +275,7 @@ function RednoteExamplePreviewDialog({
 export function RednotePublicExamples({
   enabled,
   className,
+  onUseExample,
 }: RednotePublicExamplesProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [previewExample, setPreviewExample] =
@@ -282,7 +310,9 @@ export function RednotePublicExamples({
     <>
       <section className={cn("w-full max-w-[1360px]", className)}>
         <div className="mb-3 flex items-center px-1">
-          <h2 className="text-base font-semibold text-foreground">精品示例</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            生成案例
+          </h2>
         </div>
         <div className="relative">
           {canPaginate ? (
@@ -345,6 +375,7 @@ export function RednotePublicExamples({
                           key={`${page}-${index}`}
                           example={example}
                           onPreview={setPreviewExample}
+                          onUseExample={(item) => onUseExample?.(item)}
                         />
                       ))}
                   </div>
@@ -359,6 +390,7 @@ export function RednotePublicExamples({
         onOpenChange={(open) => {
           if (!open) setPreviewExample(null);
         }}
+        onUseExample={(item) => onUseExample?.(item)}
       />
     </>
   );

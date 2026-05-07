@@ -380,9 +380,9 @@ function RichFileCard({
     );
   }
 
-  if (!file.path) return null;
+  const fileUrl = file.url ?? (file.path ? resolveArtifactURL(file.path, threadId) : "");
 
-  const fileUrl = resolveArtifactURL(file.path, threadId);
+  if (!fileUrl) return null;
 
   if (isImage) {
     return (

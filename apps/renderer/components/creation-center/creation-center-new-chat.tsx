@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import type { PromptInputMessage } from "@/components/langgraph/ai-elements/prompt-input";
 import { InputBox } from "@/components/langgraph/workspace/input-box";
+import { usePromptInputController } from "@/components/langgraph/ai-elements/prompt-input";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -46,7 +47,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import type { FileUIPart } from "ai";
-import { RednotePublicExamples } from "./rednote-public-examples";
+import {
+  getRednoteExampleReferenceImages,
+  RednotePublicExamples,
+} from "./rednote-public-examples";
+import type { PublicImageTaskResponse } from "@/lib/api/image-tasks";
 import styles from "./creation-center-new-chat.module.css";
 
 const HIGHLIGHTED_PARTS = [
@@ -105,6 +110,11 @@ type RednoteStyleId =
   | "screen-print"
   | "sketch-notes";
 
+type RednoteContentStrategyId =
+  | "information-dense"
+  | "visual-first"
+  | "story-driven";
+
 type RednoteAspectRatio = "1:1" | "2:3" | "3:4" | "4:3" | "9:16" | "16:9";
 
 type AgentOption = {
@@ -127,6 +137,12 @@ type RednoteStyleOption = {
   label: string;
   description: string;
   logoSrc: string;
+};
+
+type RednoteContentStrategyOption = {
+  id: RednoteContentStrategyId;
+  label: string;
+  description: string;
 };
 
 type AgentHeroCopy = {
@@ -270,6 +286,24 @@ const REDNOTE_STYLE_OPTIONS: RednoteStyleOption[] = [
     label: "手绘信息",
     description: "手绘教育信息图，暖奶油底上的马卡龙色，线条轻微抖动",
     logoSrc: "/rednote-style-logos/sketch-notes.png",
+  },
+];
+
+const REDNOTE_CONTENT_STRATEGY_OPTIONS: RednoteContentStrategyOption[] = [
+  {
+    id: "information-dense",
+    label: "信息密集",
+    description: "信息密集，突出干货浓度、关键结论和完整信息点",
+  },
+  {
+    id: "visual-first",
+    label: "视觉优先",
+    description: "视觉优先，优先强化画面吸引力、封面表现和版式冲击",
+  },
+  {
+    id: "story-driven",
+    label: "故事驱动",
+    description: "故事驱动，用场景、情绪和转折带动用户阅读",
   },
 ];
 
@@ -454,6 +488,7 @@ export function CreationCenterNewChat() {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const promptInput = usePromptInputController();
   const locale = pathname?.split("/").filter(Boolean)[0] ?? "zh-CN";
 
   const [settings, setSettings] = useLocalSettings();
@@ -468,11 +503,15 @@ export function CreationCenterNewChat() {
   const [imageModeId, setImageModeId] = useState<ImageModeId>("ai");
   const [rednoteStyleId, setRednoteStyleId] =
     useState<RednoteStyleId | "">("");
+  const [rednoteContentStrategyId, setRednoteContentStrategyId] =
+    useState<RednoteContentStrategyId | "">("");
   const [rednoteAspectRatio, setRednoteAspectRatio] =
     useState<RednoteAspectRatio>("3:4");
   const [generatedImageCount, setGeneratedImageCount] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [rednoteStyleMenuOpen, setRednoteStyleMenuOpen] = useState(false);
+  const [rednoteContentStrategyMenuOpen, setRednoteContentStrategyMenuOpen] =
+    useState(false);
   const [rednoteAspectRatioMenuOpen, setRednoteAspectRatioMenuOpen] =
     useState(false);
   const [rednoteImageCountMenuOpen, setRednoteImageCountMenuOpen] =
@@ -532,6 +571,13 @@ export function CreationCenterNewChat() {
       REDNOTE_STYLE_OPTIONS.find((style) => style.id === rednoteStyleId) ??
       null,
     [rednoteStyleId],
+  );
+  const selectedRednoteContentStrategy = useMemo(
+    () =>
+      REDNOTE_CONTENT_STRATEGY_OPTIONS.find(
+        (strategy) => strategy.id === rednoteContentStrategyId,
+      ) ?? null,
+    [rednoteContentStrategyId],
   );
   const isRednoteAgent = selectedAgent.id === "rednote";
   const composerBorderClass = useMemo(() => {
@@ -698,21 +744,24 @@ export function CreationCenterNewChat() {
   const buildConfiguredPrompt = useCallback(
     (text: string) => {
       const trimmed = text.trim();
-      const length = articleLength.trim() || "\u6839\u636e\u5185\u5bb9\u9700\u6c42\u5408\u7406\u63a7\u5236";
-      const imageCount =
-        generatedImageCount === ""
-          ? "\u6839\u636e\u5185\u5bb9\u9700\u6c42\u5408\u7406\u63a7\u5236"
-          : `${generatedImageCount}\u5f20`;
+      const length = articleLength.trim();
       const configLines = isRednoteAgent
         ? [
             ...(selectedRednoteStyle
               ? [`风格要求：${selectedRednoteStyle.description}`]
               : []),
+            ...(selectedRednoteContentStrategy
+              ? [`内容策略：${selectedRednoteContentStrategy.description}`]
+              : []),
             `图片比例：${rednoteAspectRatio}`,
-            `\u751f\u6210\u56fe\u7247\u5f20\u6570\uff1a${imageCount}`,
+            ...(generatedImageCount
+              ? [`\u751f\u6210\u56fe\u7247\u5f20\u6570\uff1a${generatedImageCount}\u5f20`]
+              : []),
           ]
         : [
-            `\u6587\u7ae0\u7bc7\u5e45\uff08\u5b57\u6570\uff09\uff1a${length}`,
+            ...(length
+              ? [`\u6587\u7ae0\u7bc7\u5e45\uff08\u5b57\u6570\uff09\uff1a${length}`]
+              : []),
             `\u914d\u56fe\u65b9\u5f0f\uff1a${selectedImageMode.label}`,
           ];
 
@@ -734,6 +783,7 @@ export function CreationCenterNewChat() {
       rednoteAspectRatio,
       selectedAgent.label,
       selectedImageMode.label,
+      selectedRednoteContentStrategy,
       selectedRednoteStyle,
     ],
   );
@@ -749,6 +799,25 @@ export function CreationCenterNewChat() {
       await startThreadWithText(buildConfiguredPrompt(text), files);
     },
     [buildConfiguredPrompt, isStarting, startThreadWithText],
+  );
+
+  const handleUseRednoteExample = useCallback(
+    (example: PublicImageTaskResponse) => {
+      const title = example.title?.trim() ?? "";
+      const referenceImages = getRednoteExampleReferenceImages(example);
+
+      promptInput.textInput.setInput(title);
+      promptInput.attachments.clear();
+      promptInput.attachments.addFileParts(
+        referenceImages.map((image, index) => ({
+          type: "file" as const,
+          url: image,
+          mediaType: "image/*",
+          filename: `reference-${index + 1}.png`,
+        })),
+      );
+    },
+    [promptInput],
   );
 
   const handleAddPersona = useCallback(async () => {
@@ -960,6 +1029,59 @@ export function CreationCenterNewChat() {
             )}
             {isRednoteAgent ? (
               <DropdownMenu
+                key="rednote-content-strategy"
+                open={rednoteContentStrategyMenuOpen}
+                onOpenChange={setRednoteContentStrategyMenuOpen}
+              >
+                <DropdownMenuTrigger
+                  className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
+                  render={
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-between gap-2"
+                    >
+                      <span
+                        className={cn(
+                          !selectedRednoteContentStrategy &&
+                            "text-muted-foreground",
+                        )}
+                      >
+                        {selectedRednoteContentStrategy
+                          ? `内容策略：${selectedRednoteContentStrategy.label}`
+                          : "内容策略"}
+                      </span>
+                      <ChevronDownIcon className="size-4 opacity-60" />
+                    </button>
+                  }
+                />
+                <DropdownMenuContent align="start" className="min-w-40">
+                  <DropdownMenuRadioGroup
+                    value={rednoteContentStrategyId}
+                    onValueChange={(value) => {
+                      const nextStrategy = REDNOTE_CONTENT_STRATEGY_OPTIONS.find(
+                        (strategy) => strategy.id === value,
+                      );
+
+                      if (nextStrategy) {
+                        setRednoteContentStrategyId(nextStrategy.id);
+                        setRednoteContentStrategyMenuOpen(false);
+                      }
+                    }}
+                  >
+                    {REDNOTE_CONTENT_STRATEGY_OPTIONS.map((strategy) => (
+                      <DropdownMenuRadioItem
+                        key={strategy.id}
+                        value={strategy.id}
+                      >
+                        {strategy.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {isRednoteAgent ? (
+              <DropdownMenu
                 key="rednote-image-count"
                 open={rednoteImageCountMenuOpen}
                 onOpenChange={setRednoteImageCountMenuOpen}
@@ -1127,6 +1249,7 @@ export function CreationCenterNewChat() {
           <RednotePublicExamples
             enabled={isRednoteAgent}
             className={cn(styles.fadeUp, "[animation-delay:320ms]")}
+            onUseExample={handleUseRednoteExample}
           />
         </div>
       </div>

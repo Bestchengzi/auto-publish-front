@@ -42,6 +42,8 @@ export type PublicImageTaskResponse = {
   title: string | null;
   content: string | null;
   user_input: string | null;
+  tag?: string | null;
+  input_images?: string[];
   images: string[];
 };
 

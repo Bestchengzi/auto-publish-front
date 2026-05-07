@@ -467,6 +467,7 @@ export interface FileInMessage {
   filename: string;
   size: number; // bytes
   path?: string; // virtual path, may not be set during upload
+  url?: string; // existing remote/blob URL, used for reference images
   status?: "uploading" | "uploaded";
 }
 
