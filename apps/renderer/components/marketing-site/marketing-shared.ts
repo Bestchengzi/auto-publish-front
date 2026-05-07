@@ -2,10 +2,6 @@ export function toDisplayAmount(raw: number): string {
   return (raw / 100).toFixed(2).replace(/\.00$/, "");
 }
 
-export function toDisplayPoints(raw: number, locale: string): string {
-  return (raw / 100).toLocaleString(locale === "en" ? "en-US" : "zh-CN");
-}
-
 export function sectionMotion(reduce: boolean) {
   if (reduce) {
     return {

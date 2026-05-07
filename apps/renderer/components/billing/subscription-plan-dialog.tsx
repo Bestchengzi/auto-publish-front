@@ -15,14 +15,11 @@ import {
 } from "@/lib/api/billing";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatBillingPoints } from "@/lib/billing-points";
 import { getApiErrorMessage } from "@/lib/request";
 
 function toDisplayAmount(raw: number): string {
   return (raw / 100).toFixed(2).replace(/\.00$/, "");
-}
-
-function toDisplayPoints(raw: number, locale: string): string {
-  return (raw / 100).toLocaleString(locale === "en" ? "en-US" : "zh-CN");
 }
 
 function openPaymentPage(codeUrl: string): boolean {
@@ -269,7 +266,7 @@ export function SubscriptionPlanDialog({
                   </div>
                   <div className="mt-2 text-sm text-muted-foreground">
                     {t("pointsPerMonth", {
-                      points: toDisplayPoints(plan.monthly_points, locale),
+                      points: formatBillingPoints(plan.monthly_points, locale),
                     })}
                   </div>
                   <div className="mt-5 space-y-2">
@@ -318,4 +315,3 @@ export function SubscriptionPlanDialog({
     </Dialog>
   );
 }
-

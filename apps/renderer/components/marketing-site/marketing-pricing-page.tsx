@@ -26,8 +26,8 @@ import {
   sectionLead,
   sectionMotion,
   toDisplayAmount,
-  toDisplayPoints,
 } from "@/components/marketing-site/marketing-shared";
+import { formatBillingPoints } from "@/lib/billing-points";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
@@ -196,7 +196,7 @@ export function MarketingPricingPage() {
                 <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
                   {plan.monthly_points > 0
                     ? t("pricingPointsMonth", {
-                        points: toDisplayPoints(plan.monthly_points, locale),
+                        points: formatBillingPoints(plan.monthly_points, locale),
                       })
                     : locale === "en"
                       ? "Monthly credits shown in app"

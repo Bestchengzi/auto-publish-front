@@ -54,6 +54,7 @@ export type DesktopUpdateState = {
   phase: "idle" | "checking" | "available" | "downloading" | "downloaded" | "not-available" | "error";
   currentVersion: string;
   availableVersion?: string;
+  downloadUrl?: string;
   percent?: number;
   transferred?: number;
   total?: number;
@@ -76,6 +77,18 @@ export type DesktopApi = {
     check: () => Promise<
       | { ok: true }
       | { ok: false; reason: "not_packaged" | "check_failed"; message?: string }
+    >;
+    download: () => Promise<
+      | { ok: true; action: "download_started" | "opened_download_url" }
+      | {
+          ok: false;
+          reason:
+            | "not_ready"
+            | "missing_download_url"
+            | "open_failed"
+            | "download_failed";
+          message?: string;
+        }
     >;
     install: () => Promise<{ ok: true } | { ok: false; reason: "not_ready" }>;
     onStateChanged: (cb: (state: DesktopUpdateState) => void) => () => void;
@@ -166,6 +179,7 @@ const api: DesktopApi = {
   updater: {
     getState: () => ipcRenderer.invoke("app:update:get-state"),
     check: () => ipcRenderer.invoke("app:update:check"),
+    download: () => ipcRenderer.invoke("app:update:download"),
     install: () => ipcRenderer.invoke("app:update:install"),
     onStateChanged: (cb) =>
       subscribe("app:update:state-changed", (state) => cb(state as DesktopUpdateState)),
@@ -192,4 +206,3 @@ if (shouldExposeDesktopApi()) {
   contextBridge.exposeInMainWorld("desktop", api);
 }
 contextBridge.exposeInMainWorld("__desktopEmbeddedView", detectEmbeddedView());
-

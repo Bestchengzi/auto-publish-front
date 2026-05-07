@@ -50,6 +50,7 @@ import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { getBillingAccount } from "@/lib/api/billing";
 import { clearAuthRelatedQueryCache } from "@/lib/auth/query-cache";
 import { clearAuthStorage, getAuthUser } from "@/lib/auth/session";
+import { formatBillingPoints } from "@/lib/billing-points";
 import {
   ACCENT_STORAGE_KEY,
   applyAccent,
@@ -196,12 +197,11 @@ export function AppShellSidebarFooter() {
       tSidebar("footer.freePlan");
     const feedbackThreadId = getThreadIdFromPathname(pathname);
     const balancePoints = billingAccount?.account.balance_points ?? 0;
-    const displayBalancePoints = Math.round(balancePoints / 100);
     const customerServiceLabel =
       locale === "en" ? "Contact Support" : "联系客服";
     const billingHint = tSidebar("footer.billingHint", {
       plan: planDisplayName,
-      points: displayBalancePoints.toLocaleString(locale === "en" ? "en-US" : "zh-CN"),
+      points: formatBillingPoints(balancePoints, locale),
     });
     const inviteLink =
       inviteCode.length > 0

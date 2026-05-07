@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, Menu, session, webContents, WebContentsView } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, session, shell, webContents, WebContentsView } from "electron";
 import path from "node:path";
 import { autoUpdater } from "electron-updater";
+import type { UpdateInfo } from "electron-updater";
 
 import { fetchPageMeta } from "./fetch-page-meta";
 import {
@@ -26,6 +27,7 @@ type UpdateState = {
   phase: UpdatePhase;
   currentVersion: string;
   availableVersion?: string;
+  downloadUrl?: string;
   percent?: number;
   transferred?: number;
   total?: number;
@@ -45,6 +47,39 @@ let updateState: UpdateState = {
 };
 
 let autoUpdaterInitialized = false;
+const UPDATE_DOWNLOAD_BASE_URL = "https://open-stack.oss-cn-shanghai.aliyuncs.com/";
+
+function getRendererBaseUrl() {
+  const envRendererUrl = process.env.ELECTRON_RENDERER_URL?.trim();
+  if (typeof envRendererUrl === "string" && /^https?:\/\//i.test(envRendererUrl)) {
+    return envRendererUrl;
+  }
+  return app.isPackaged ? "https://keduck.cn" : "http://localhost:13200";
+}
+
+function getUpdateDownloadUrl(info: UpdateInfo, extension: string): string | undefined {
+  const normalizedExtension = extension.toLowerCase();
+  const file = info.files?.find((entry) =>
+    entry.url.toLowerCase().split("?")[0]?.endsWith(`.${normalizedExtension}`),
+  );
+  const rawUrl = file?.url ?? (info.path?.toLowerCase().endsWith(`.${normalizedExtension}`) ? info.path : undefined);
+  if (!rawUrl) return undefined;
+  try {
+    return new URL(rawUrl, UPDATE_DOWNLOAD_BASE_URL).href;
+  } catch {
+    return rawUrl;
+  }
+}
+
+function applyUpdateInfo(info: UpdateInfo, phase: UpdatePhase) {
+  setUpdateState({
+    phase,
+    availableVersion: info.version,
+    downloadUrl: getUpdateDownloadUrl(info, process.platform === "darwin" ? "dmg" : "exe"),
+    message: undefined,
+    checkedAt: Date.now(),
+  });
+}
 
 function broadcastUpdateState() {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -62,7 +97,7 @@ function setUpdateState(next: Partial<UpdateState>) {
 function setupAutoUpdater() {
   if (autoUpdaterInitialized) return;
   autoUpdaterInitialized = true;
-  autoUpdater.autoDownload = true;
+  autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = true;
 
@@ -73,16 +108,13 @@ function setupAutoUpdater() {
       percent: undefined,
       transferred: undefined,
       total: undefined,
+      downloadUrl: undefined,
       checkedAt: Date.now(),
     });
   });
 
   autoUpdater.on("update-available", (info) => {
-    setUpdateState({
-      phase: "available",
-      availableVersion: info.version,
-      checkedAt: Date.now(),
-    });
+    applyUpdateInfo(info, "available");
   });
 
   autoUpdater.on("download-progress", (progress) => {
@@ -98,6 +130,7 @@ function setupAutoUpdater() {
     setUpdateState({
       phase: "not-available",
       availableVersion: undefined,
+      downloadUrl: undefined,
       percent: undefined,
       transferred: undefined,
       total: undefined,
@@ -106,12 +139,8 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on("update-downloaded", (info) => {
-    setUpdateState({
-      phase: "downloaded",
-      availableVersion: info.version,
-      percent: 100,
-      checkedAt: Date.now(),
-    });
+    applyUpdateInfo(info, "downloaded");
+    setUpdateState({ percent: 100 });
   });
 
   autoUpdater.on("error", (error) => {
@@ -142,10 +171,7 @@ async function createMainWindow() {
     win.maximize();
   });
 
-  const envRendererUrl = process.env.ELECTRON_RENDERER_URL?.trim();
-  const rendererUrl = (typeof envRendererUrl === "string" && /^https?:\/\//i.test(envRendererUrl))
-    ? envRendererUrl
-    : (app.isPackaged ? "https://keduck.cn" : "http://localhost:13200");
+  const rendererUrl = getRendererBaseUrl();
   try {
     await win.loadURL(rendererUrl);
   } catch (error) {
@@ -192,6 +218,41 @@ ipcMain.handle("app:update:check", async () => {
     const message = error instanceof Error ? error.message : String(error);
     setUpdateState({ phase: "error", message, checkedAt: Date.now() });
     return { ok: false as const, reason: "check_failed" as const, message };
+  }
+});
+
+ipcMain.handle("app:update:download", async () => {
+  if (updateState.phase !== "available" && updateState.phase !== "error") {
+    return { ok: false as const, reason: "not_ready" as const };
+  }
+
+  if (process.platform === "darwin") {
+    if (!updateState.downloadUrl) {
+      return { ok: false as const, reason: "missing_download_url" as const };
+    }
+    try {
+      await shell.openExternal(updateState.downloadUrl);
+      return { ok: true as const, action: "opened_download_url" as const };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setUpdateState({ phase: "error", message, checkedAt: Date.now() });
+      return { ok: false as const, reason: "open_failed" as const, message };
+    }
+  }
+
+  try {
+    setUpdateState({
+      phase: "downloading",
+      percent: 0,
+      transferred: undefined,
+      total: undefined,
+    });
+    await autoUpdater.downloadUpdate();
+    return { ok: true as const, action: "download_started" as const };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setUpdateState({ phase: "error", message, checkedAt: Date.now() });
+    return { ok: false as const, reason: "download_failed" as const, message };
   }
 });
 
@@ -668,4 +729,3 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) await createMainWindow();
   });
 });
-

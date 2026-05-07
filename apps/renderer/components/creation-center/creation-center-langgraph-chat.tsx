@@ -55,6 +55,7 @@ import {
   takePendingInitialMessage,
 } from "@/lib/creation-center/pending-initial-message";
 import { listPersonas } from "@/lib/api/personas";
+import { formatBillingPoints } from "@/lib/billing-points";
 import { cn } from "@/lib/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 
@@ -669,6 +670,7 @@ export function CreationCenterLanggraphChat() {
                       imageSize={rednoteImageSize}
                       inputImages={rednoteInputImages}
                       userInput={rednoteUserInput}
+                      locale={locale}
                     />
                     {!rednoteContent &&
                     (thread.isLoading || thread.isThreadLoading) ? (
@@ -847,7 +849,7 @@ export function CreationCenterLanggraphChat() {
                   "账户余额不足，请先充值后再试。"}
                 {typeof insufficientBalanceInfo?.availablePoints === "number" &&
                 typeof insufficientBalanceInfo?.requiredPoints === "number"
-                  ? `（当前余额：${insufficientBalanceInfo.availablePoints}，所需：${insufficientBalanceInfo.requiredPoints}）`
+                  ? `（当前余额：${formatBillingPoints(insufficientBalanceInfo.availablePoints, locale)}，所需：${formatBillingPoints(insufficientBalanceInfo.requiredPoints, locale)}）`
                   : ""}
               </DialogDescription>
             </DialogHeader>

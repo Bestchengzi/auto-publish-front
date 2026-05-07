@@ -43,5 +43,10 @@ export function useDesktopUpdater() {
     return desktop?.updater?.install?.();
   }, []);
 
-  return { state, check, install };
+  const download = React.useCallback(() => {
+    const desktop = getDesktop();
+    return desktop?.updater?.download?.();
+  }, []);
+
+  return { state, check, download, install };
 }

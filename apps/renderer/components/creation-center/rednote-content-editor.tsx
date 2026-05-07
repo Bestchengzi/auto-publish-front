@@ -42,6 +42,7 @@ import {
   type ImageTaskResponse,
   type ImageTaskStatus,
 } from "@/lib/api/image-tasks";
+import { formatBillingPoints } from "@/lib/billing-points";
 import { getApiErrorData, getApiErrorMessage } from "@/lib/request";
 import { cn, getGenImageUrl } from "@/lib/utils";
 
@@ -421,6 +422,7 @@ export function RednoteContentEditor({
   imageSize,
   inputImages,
   userInput,
+  locale = "zh-CN",
 }: {
   rednoteContent: RednoteContent | null;
   className?: string;
@@ -428,12 +430,9 @@ export function RednoteContentEditor({
   imageSize?: string | null;
   inputImages?: string[] | null;
   userInput?: string | null;
+  locale?: string;
 }) {
   const { beginDirectPublish, isPreparingPublishPreview } = usePublishFlow();
-  const sourceKey = useMemo(
-    () => JSON.stringify(rednoteContent ?? null),
-    [rednoteContent],
-  );
   const [draft, setDraft] = useState<EditableRednoteContent>(() =>
     createEditableContent(rednoteContent),
   );
@@ -451,7 +450,6 @@ export function RednoteContentEditor({
   const [editingPromptIndexes, setEditingPromptIndexes] = useState<
     Record<number, boolean>
   >({});
-  const [hasImageTaskHistory, setHasImageTaskHistory] = useState(false);
   const [isImageTaskHistoryReady, setIsImageTaskHistoryReady] = useState(false);
   const [isSubmittingImageTask, setIsSubmittingImageTask] = useState(false);
   const [isDownloadingImageTask, setIsDownloadingImageTask] = useState(false);
@@ -466,12 +464,6 @@ export function RednoteContentEditor({
     src: string;
     alt: string;
   } | null>(null);
-
-  useEffect(() => {
-    if (!hasImageTaskHistory) {
-      setDraft(createEditableContent(rednoteContent));
-    }
-  }, [hasImageTaskHistory, sourceKey, rednoteContent]);
 
   useEffect(() => {
     setInsufficientBalanceInfo(null);
@@ -491,7 +483,6 @@ export function RednoteContentEditor({
     (tasks: ImageTaskResponse[]): boolean => {
       const tasksWithItems = tasks.filter((task) => task.items.length > 0);
       if (tasksWithItems.length === 0) {
-        setHasImageTaskHistory(false);
         setPromptUidsByIndex({});
         setImageHistoriesByUid({});
         setSelectedHistoryIndexes({});
@@ -513,7 +504,6 @@ export function RednoteContentEditor({
         };
       });
 
-      setHasImageTaskHistory(true);
       setPromptUidsByIndex(nextPromptUids);
       setImageHistoriesByUid(historiesByUid);
       setSelectedHistoryIndexes(
@@ -596,18 +586,20 @@ export function RednoteContentEditor({
     [draft.prompts],
   );
 
-  const isGeneratingImages = isSubmittingImageTask || imageTaskId !== null;
-  const hasImageResults = useMemo(
-    () =>
-      Object.values(imageHistoriesByUid).some((history) => history.length > 0),
+  const imageHistoryItems = useMemo(
+    () => Object.values(imageHistoriesByUid).flat(),
     [imageHistoriesByUid],
   );
+  const hasImageTaskHistory = imageHistoryItems.length > 0;
+  const hasCompletedImageResults = imageHistoryItems.some(
+    (item) => item.status === "completed",
+  );
+  const isGeneratingImages =
+    isSubmittingImageTask ||
+    imageTaskId !== null ||
+    imageHistoryItems.some((item) => !isTerminalImageStatus(item.status));
   const canEditPromptPages =
-    isImageTaskHistoryReady && !hasImageResults && !isGeneratingImages;
-  const showGenerateImagesButton =
-    isImageTaskHistoryReady &&
-    draft.prompts.length > 0 &&
-    !hasImageTaskHistory;
+    isImageTaskHistoryReady && !hasCompletedImageResults && !isGeneratingImages;
   const shouldRenderPromptPages =
     isImageTaskHistoryReady && (draft.prompts.length > 0 || canEditPromptPages);
   const firstCompletedImageTaskId = useMemo(() => {
@@ -653,12 +645,26 @@ export function RednoteContentEditor({
     ],
   );
   const canPublishRednote =
-    hasImageResults &&
+    hasCompletedImageResults &&
     !isGeneratingImages &&
     draft.prompts.length > 0 &&
     publishImages.length === draft.prompts.length;
-  const showPublishRednoteButton =
-    !showGenerateImagesButton && hasImageResults;
+  const imageActionMode: "generate" | "generating" | "publish" | null =
+    !isImageTaskHistoryReady || draft.prompts.length === 0
+      ? null
+      : isGeneratingImages
+        ? "generating"
+        : !hasImageTaskHistory
+          ? "generate"
+          : hasCompletedImageResults
+            ? "publish"
+            : null;
+
+  useEffect(() => {
+    if (!hasImageTaskHistory) {
+      setDraft(createEditableContent(rednoteContent));
+    }
+  }, [hasImageTaskHistory, rednoteContent]);
 
   const submitImageTask = useCallback(
     async (
@@ -810,7 +816,6 @@ export function RednoteContentEditor({
         }
       } catch {
         if (!cancelled) {
-          setHasImageTaskHistory(false);
           setIsImageTaskHistoryReady(true);
         }
       }
@@ -1145,7 +1150,7 @@ export function RednoteContentEditor({
                         </Button>
                       </>
                     ) : null}
-                    {hasImageResults ? (
+                    {hasCompletedImageResults ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -1296,21 +1301,23 @@ export function RednoteContentEditor({
         </section>
       ) : null}
 
-      {showGenerateImagesButton ? (
+      {imageActionMode === "generate" || imageActionMode === "generating" ? (
         <div className="flex justify-center">
           <Button
             type="button"
             className="h-10 gap-2 rounded-full bg-[#ff2442] px-5 font-semibold text-white shadow-sm hover:bg-[#e51f3b]"
-            disabled={!canGenerateImages || isGeneratingImages}
+            disabled={!canGenerateImages || imageActionMode === "generating"}
             onClick={handleGenerateImages}
             title="生成图片"
           >
             <ImageIcon className="size-4" />
-            <span>{isGeneratingImages ? "生成中..." : "生成图片"}</span>
+            <span>
+              {imageActionMode === "generating" ? "生成中..." : "生成图片"}
+            </span>
           </Button>
         </div>
       ) : null}
-      {showPublishRednoteButton ? (
+      {imageActionMode === "publish" ? (
         <div className="flex justify-center gap-3">
           {firstCompletedImageTaskId ? (
             <Button
@@ -1368,7 +1375,7 @@ export function RednoteContentEditor({
               {insufficientBalanceInfo?.message ?? "账户余额不足，请先充值后再试。"}
               {typeof insufficientBalanceInfo?.availablePoints === "number" &&
               typeof insufficientBalanceInfo?.requiredPoints === "number"
-                ? `（当前余额：${insufficientBalanceInfo.availablePoints}，所需：${insufficientBalanceInfo.requiredPoints}）`
+                ? `（当前余额：${formatBillingPoints(insufficientBalanceInfo.availablePoints, locale)}，所需：${formatBillingPoints(insufficientBalanceInfo.requiredPoints, locale)}）`
                 : ""}
             </DialogDescription>
           </DialogHeader>

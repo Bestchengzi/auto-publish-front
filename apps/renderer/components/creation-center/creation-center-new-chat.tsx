@@ -8,7 +8,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpenTextIcon,
-  ChevronDownIcon,
   FileTextIcon,
   ImageIcon,
   LayersIcon,
@@ -25,12 +24,12 @@ import { InputBox } from "@/components/langgraph/workspace/input-box";
 import { usePromptInputController } from "@/components/langgraph/ai-elements/prompt-input";
 import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ThreadContext,
   type ThreadContextType,
@@ -142,7 +141,6 @@ type RednoteStyleOption = {
 type RednoteContentStrategyOption = {
   id: RednoteContentStrategyId;
   label: string;
-  description: string;
 };
 
 type AgentHeroCopy = {
@@ -235,7 +233,7 @@ const REDNOTE_STYLE_OPTIONS: RednoteStyleOption[] = [
   },
   {
     id: "bold",
-    label: "高冲击",
+    label: "高冲击力",
     description: "高冲击力、吸引注意",
     logoSrc: "/rednote-style-logos/bold.png",
   },
@@ -293,17 +291,14 @@ const REDNOTE_CONTENT_STRATEGY_OPTIONS: RednoteContentStrategyOption[] = [
   {
     id: "information-dense",
     label: "信息密集",
-    description: "信息密集，突出干货浓度、关键结论和完整信息点",
   },
   {
     id: "visual-first",
     label: "视觉优先",
-    description: "视觉优先，优先强化画面吸引力、封面表现和版式冲击",
   },
   {
     id: "story-driven",
     label: "故事驱动",
-    description: "故事驱动，用场景、情绪和转折带动用户阅读",
   },
 ];
 
@@ -317,6 +312,85 @@ const PLACEHOLDER_ROTATION_MS = 4000;
 const REDNOTE_CONTEXT_OVERRIDES = {
   model_name: "deepseek-v4",
 };
+
+function normalizeConfigValue(value: string) {
+  return value.replace(/\s+/g, "").trim();
+}
+
+function trimEmptyEdgeLines(lines: string[]) {
+  const next = [...lines];
+  while (next.length > 0 && next[0]?.trim() === "") {
+    next.shift();
+  }
+  while (next.length > 0 && next.at(-1)?.trim() === "") {
+    next.pop();
+  }
+  return next;
+}
+
+function parseRednoteExampleUserInput(userInput: string) {
+  let aspectRatio: RednoteAspectRatio | null = null;
+  let styleId: RednoteStyleId | "" | null = null;
+  let contentStrategyId: RednoteContentStrategyId | "" | null = null;
+  let imageCount: string | null = null;
+  const contentLines: string[] = [];
+
+  for (const line of userInput.split(/\r?\n/)) {
+    const trimmed = line.trim();
+
+    const aspectRatioMatch = trimmed.match(/^(?:图片比例|比例)\s*[:：]\s*(.+)$/);
+    if (aspectRatioMatch) {
+      const value = normalizeConfigValue(aspectRatioMatch[1] ?? "");
+      const matchedRatio = REDNOTE_ASPECT_RATIO_OPTIONS.find(
+        (ratio) => normalizeConfigValue(ratio) === value,
+      );
+      if (matchedRatio) {
+        aspectRatio = matchedRatio;
+      }
+      continue;
+    }
+
+    const styleMatch = trimmed.match(/^(?:风格要求|风格)\s*[:：]\s*(.+)$/);
+    if (styleMatch) {
+      const value = normalizeConfigValue(styleMatch[1] ?? "");
+      const matchedStyle = REDNOTE_STYLE_OPTIONS.find((style) => {
+        const label = normalizeConfigValue(style.label);
+        const description = normalizeConfigValue(style.description);
+        return label === value || description === value || description.includes(value);
+      });
+      styleId = matchedStyle?.id ?? "";
+      continue;
+    }
+
+    const strategyMatch = trimmed.match(/^内容策略\s*[:：]\s*(.+)$/);
+    if (strategyMatch) {
+      const value = normalizeConfigValue(strategyMatch[1] ?? "");
+      const matchedStrategy = REDNOTE_CONTENT_STRATEGY_OPTIONS.find(
+        (strategy) => normalizeConfigValue(strategy.label) === value,
+      );
+      contentStrategyId = matchedStrategy?.id ?? "";
+      continue;
+    }
+
+    const imageCountMatch = trimmed.match(/^(?:生成图片张数|图片张数)\s*[:：]\s*(.+)$/);
+    if (imageCountMatch) {
+      const value = imageCountMatch[1]?.trim() ?? "";
+      const count = value.match(/\d+/)?.[0] ?? "";
+      imageCount = IMAGE_COUNT_OPTIONS.includes(count) ? count : "";
+      continue;
+    }
+
+    contentLines.push(line);
+  }
+
+  return {
+    text: trimEmptyEdgeLines(contentLines).join("\n"),
+    aspectRatio,
+    styleId,
+    contentStrategyId,
+    imageCount,
+  };
+}
 
 const AGENT_ACTIVE_STYLES: Record<
   ContentAgentId,
@@ -509,14 +583,6 @@ export function CreationCenterNewChat() {
     useState<RednoteAspectRatio>("3:4");
   const [generatedImageCount, setGeneratedImageCount] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [rednoteStyleMenuOpen, setRednoteStyleMenuOpen] = useState(false);
-  const [rednoteContentStrategyMenuOpen, setRednoteContentStrategyMenuOpen] =
-    useState(false);
-  const [rednoteAspectRatioMenuOpen, setRednoteAspectRatioMenuOpen] =
-    useState(false);
-  const [rednoteImageCountMenuOpen, setRednoteImageCountMenuOpen] =
-    useState(false);
-  const [imageModeMenuOpen, setImageModeMenuOpen] = useState(false);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(() =>
     typeof context.persona_id === "string" ? context.persona_id : null,
   );
@@ -748,10 +814,10 @@ export function CreationCenterNewChat() {
       const configLines = isRednoteAgent
         ? [
             ...(selectedRednoteStyle
-              ? [`风格要求：${selectedRednoteStyle.description}`]
+              ? [`风格要求：${selectedRednoteStyle.label}`]
               : []),
             ...(selectedRednoteContentStrategy
-              ? [`内容策略：${selectedRednoteContentStrategy.description}`]
+              ? [`内容策略：${selectedRednoteContentStrategy.label}`]
               : []),
             `图片比例：${rednoteAspectRatio}`,
             ...(generatedImageCount
@@ -803,10 +869,24 @@ export function CreationCenterNewChat() {
 
   const handleUseRednoteExample = useCallback(
     (example: PublicImageTaskResponse) => {
-      const title = example.title?.trim() ?? "";
+      const userInput = example.user_input?.trim() ?? "";
+      const parsed = parseRednoteExampleUserInput(userInput);
       const referenceImages = getRednoteExampleReferenceImages(example);
 
-      promptInput.textInput.setInput(title);
+      if (parsed.aspectRatio) {
+        setRednoteAspectRatio(parsed.aspectRatio);
+      }
+      if (parsed.styleId !== null) {
+        setRednoteStyleId(parsed.styleId);
+      }
+      if (parsed.contentStrategyId !== null) {
+        setRednoteContentStrategyId(parsed.contentStrategyId);
+      }
+      if (parsed.imageCount !== null) {
+        setGeneratedImageCount(parsed.imageCount);
+      }
+
+      promptInput.textInput.setInput(parsed.text);
       promptInput.attachments.clear();
       promptInput.attachments.addFileParts(
         referenceImages.map((image, index) => ({
@@ -918,107 +998,76 @@ export function CreationCenterNewChat() {
         >
           <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-2">
             {isRednoteAgent ? (
-              <DropdownMenu
+              <Select
                 key="rednote-aspect-ratio"
-                open={rednoteAspectRatioMenuOpen}
-                onOpenChange={setRednoteAspectRatioMenuOpen}
-              >
-                <DropdownMenuTrigger
-                  className="h-8 min-w-[96px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
-                  render={
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-between gap-2"
-                    >
-                      <span>{`比例：${rednoteAspectRatio}`}</span>
-                      <ChevronDownIcon className="size-4 opacity-60" />
-                    </button>
+                value={rednoteAspectRatio}
+                onValueChange={(value) => {
+                  if (
+                    REDNOTE_ASPECT_RATIO_OPTIONS.includes(
+                      value as RednoteAspectRatio,
+                    )
+                  ) {
+                    setRednoteAspectRatio(value as RednoteAspectRatio);
                   }
-                />
-                <DropdownMenuContent align="start" className="min-w-32">
-                  <DropdownMenuRadioGroup
-                    value={rednoteAspectRatio}
-                    onValueChange={(value) => {
-                      if (
-                        REDNOTE_ASPECT_RATIO_OPTIONS.includes(
-                          value as RednoteAspectRatio,
-                        )
-                      ) {
-                        setRednoteAspectRatio(value as RednoteAspectRatio);
-                        setRednoteAspectRatioMenuOpen(false);
-                      }
-                    }}
-                  >
-                    {REDNOTE_ASPECT_RATIO_OPTIONS.map((ratio) => (
-                      <DropdownMenuRadioItem key={ratio} value={ratio}>
-                        {ratio}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                }}
+              >
+                <SelectTrigger className="h-8 min-w-[96px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45">
+                  <span>{`比例：${rednoteAspectRatio}`}</span>
+                  <SelectValue className="sr-only" />
+                </SelectTrigger>
+                <SelectContent align="start" className="min-w-32">
+                  {REDNOTE_ASPECT_RATIO_OPTIONS.map((ratio) => (
+                    <SelectItem key={ratio} value={ratio}>
+                      {ratio}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : null}
             {isRednoteAgent ? (
-              <DropdownMenu
+              <Select
                 key="rednote-style"
-                open={rednoteStyleMenuOpen}
-                onOpenChange={setRednoteStyleMenuOpen}
-              >
-                <DropdownMenuTrigger
-                  className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
-                  render={
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-between gap-2"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        {selectedRednoteStyle ? (
-                          <RednoteStyleLogo
-                            option={selectedRednoteStyle}
-                            className="size-4"
-                          />
-                        ) : null}
-                        <span
-                          className={cn(
-                            !selectedRednoteStyle && "text-muted-foreground",
-                          )}
-                        >
-                          {selectedRednoteStyle
-                            ? `风格：${selectedRednoteStyle.label}`
-                            : "风格"}
-                        </span>
-                      </span>
-                      <ChevronDownIcon className="size-4 opacity-60" />
-                    </button>
-                  }
-                />
-                <DropdownMenuContent align="start" className="max-h-64 min-w-48">
-                  <DropdownMenuRadioGroup
-                    value={rednoteStyleId}
-                    onValueChange={(value) => {
-                      const nextStyle = REDNOTE_STYLE_OPTIONS.find(
-                        (style) => style.id === value,
-                      );
+                value={rednoteStyleId}
+                onValueChange={(value) => {
+                  const nextStyle = REDNOTE_STYLE_OPTIONS.find(
+                    (style) => style.id === value,
+                  );
 
-                      if (nextStyle) {
-                        setRednoteStyleId(nextStyle.id);
-                        setRednoteStyleMenuOpen(false);
-                      }
-                    }}
-                  >
-                    {REDNOTE_STYLE_OPTIONS.map((style) => (
-                      <DropdownMenuRadioItem
-                        key={style.id}
-                        className="gap-4 py-1.5"
-                        value={style.id}
-                      >
-                        <RednoteStyleLogo option={style} />
-                        <span>{style.label}</span>
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  if (nextStyle) {
+                    setRednoteStyleId(nextStyle.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45">
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    {selectedRednoteStyle ? (
+                      <RednoteStyleLogo
+                        option={selectedRednoteStyle}
+                        className="size-4"
+                      />
+                    ) : null}
+                    <span
+                      className={cn(
+                        "truncate",
+                        !selectedRednoteStyle && "text-muted-foreground",
+                      )}
+                    >
+                      {selectedRednoteStyle
+                        ? `风格：${selectedRednoteStyle.label}`
+                        : "风格"}
+                    </span>
+                  </span>
+                  <SelectValue className="sr-only" />
+                </SelectTrigger>
+                <SelectContent align="start" className="max-h-64 min-w-48">
+                  {REDNOTE_STYLE_OPTIONS.map((style) => (
+                    <SelectItem key={style.id} className="gap-4 py-1.5" value={style.id}>
+                      <RednoteStyleLogo option={style} />
+                      <span>{style.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
               <Input
                 className="h-8 w-[150px] max-w-full rounded-md border-0 bg-muted/75 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
@@ -1028,155 +1077,104 @@ export function CreationCenterNewChat() {
               />
             )}
             {isRednoteAgent ? (
-              <DropdownMenu
+              <Select
                 key="rednote-content-strategy"
-                open={rednoteContentStrategyMenuOpen}
-                onOpenChange={setRednoteContentStrategyMenuOpen}
-              >
-                <DropdownMenuTrigger
-                  className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
-                  render={
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-between gap-2"
-                    >
-                      <span
-                        className={cn(
-                          !selectedRednoteContentStrategy &&
-                            "text-muted-foreground",
-                        )}
-                      >
-                        {selectedRednoteContentStrategy
-                          ? `内容策略：${selectedRednoteContentStrategy.label}`
-                          : "内容策略"}
-                      </span>
-                      <ChevronDownIcon className="size-4 opacity-60" />
-                    </button>
-                  }
-                />
-                <DropdownMenuContent align="start" className="min-w-40">
-                  <DropdownMenuRadioGroup
-                    value={rednoteContentStrategyId}
-                    onValueChange={(value) => {
-                      const nextStrategy = REDNOTE_CONTENT_STRATEGY_OPTIONS.find(
-                        (strategy) => strategy.id === value,
-                      );
+                value={rednoteContentStrategyId}
+                onValueChange={(value) => {
+                  const nextStrategy = REDNOTE_CONTENT_STRATEGY_OPTIONS.find(
+                    (strategy) => strategy.id === value,
+                  );
 
-                      if (nextStrategy) {
-                        setRednoteContentStrategyId(nextStrategy.id);
-                        setRednoteContentStrategyMenuOpen(false);
-                      }
-                    }}
+                  if (nextStrategy) {
+                    setRednoteContentStrategyId(nextStrategy.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45">
+                  <span
+                    className={cn(
+                      !selectedRednoteContentStrategy && "text-muted-foreground",
+                    )}
                   >
-                    {REDNOTE_CONTENT_STRATEGY_OPTIONS.map((strategy) => (
-                      <DropdownMenuRadioItem
-                        key={strategy.id}
-                        value={strategy.id}
-                      >
-                        {strategy.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {selectedRednoteContentStrategy
+                      ? `内容策略：${selectedRednoteContentStrategy.label}`
+                      : "内容策略"}
+                  </span>
+                  <SelectValue className="sr-only" />
+                </SelectTrigger>
+                <SelectContent align="start" className="min-w-40">
+                  {REDNOTE_CONTENT_STRATEGY_OPTIONS.map((strategy) => (
+                    <SelectItem key={strategy.id} value={strategy.id}>
+                      {strategy.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : null}
             {isRednoteAgent ? (
-              <DropdownMenu
+              <Select
                 key="rednote-image-count"
-                open={rednoteImageCountMenuOpen}
-                onOpenChange={setRednoteImageCountMenuOpen}
-              >
-                <DropdownMenuTrigger
-                  className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
-                  render={
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-between gap-2"
-                    >
-                      <span
-                        className={cn(
-                          generatedImageCount === "" && "text-muted-foreground",
-                        )}
-                      >
-                        {generatedImageCount === ""
-                          ? "图片张数"
-                          : `图片张数：${generatedImageCount}张`}
-                      </span>
-                      <ChevronDownIcon className="size-4 opacity-60" />
-                    </button>
+                value={generatedImageCount}
+                onValueChange={(value) => {
+                  if (value == null || value === "") {
+                    setGeneratedImageCount("");
+                  } else if (IMAGE_COUNT_OPTIONS.includes(value)) {
+                    setGeneratedImageCount(value);
                   }
-                />
-                <DropdownMenuContent align="start" className="max-h-64 min-w-48">
-                  <DropdownMenuRadioGroup
-                    value={generatedImageCount}
-                    onValueChange={(value) => {
-                      if (value == null || value === "") {
-                        setGeneratedImageCount("");
-                        setRednoteImageCountMenuOpen(false);
-                      } else if (IMAGE_COUNT_OPTIONS.includes(value)) {
-                        setGeneratedImageCount(value);
-                        setRednoteImageCountMenuOpen(false);
-                      }
-                    }}
+                }}
+              >
+                <SelectTrigger className="h-8 min-w-[116px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45">
+                  <span
+                    className={cn(
+                      generatedImageCount === "" && "text-muted-foreground",
+                    )}
                   >
-                    {IMAGE_COUNT_OPTIONS.map((count) => (
-                      <DropdownMenuRadioItem key={count} value={count}>
-                        {count}张
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {generatedImageCount === ""
+                      ? "图片张数"
+                      : `图片张数：${generatedImageCount}张`}
+                  </span>
+                  <SelectValue className="sr-only" />
+                </SelectTrigger>
+                <SelectContent align="start" className="max-h-64 min-w-48">
+                  {IMAGE_COUNT_OPTIONS.map((count) => (
+                    <SelectItem key={count} value={count}>
+                      {count}张
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
-              <DropdownMenu
+              <Select
                 key="image-mode"
-                open={imageModeMenuOpen}
-                onOpenChange={setImageModeMenuOpen}
-              >
-                <DropdownMenuTrigger
-                  className="h-8 min-w-[104px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45"
-                  render={
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-between gap-2"
-                    >
-                      <span>{selectedImageMode.label}</span>
-                      <ChevronDownIcon className="size-4 opacity-60" />
-                    </button>
+                value={imageModeId}
+                onValueChange={(value) => {
+                  if (
+                    value === "ai" ||
+                    value === "search" ||
+                    value === "library" ||
+                    value === "none"
+                  ) {
+                    setImageModeId(value);
                   }
-                />
-                <DropdownMenuContent align="start" className="max-h-64 min-w-48">
-                  <DropdownMenuRadioGroup
-                    value={imageModeId}
-                    onValueChange={(value) => {
-                      if (
-                        value === "ai" ||
-                        value === "search" ||
-                        value === "library" ||
-                        value === "none"
-                      ) {
-                        setImageModeId(value);
-                        setImageModeMenuOpen(false);
-                      }
-                    }}
-                  >
-                    {IMAGE_MODE_OPTIONS.map((mode) => {
-                      const Icon = mode.icon;
+                }}
+              >
+                <SelectTrigger className="h-8 min-w-[104px] rounded-md border-0 bg-muted/75 px-3 text-sm shadow-sm ring-1 ring-foreground/5 transition-colors hover:bg-muted focus-visible:ring-2 dark:bg-muted/45">
+                  <span>{selectedImageMode.label}</span>
+                  <SelectValue className="sr-only" />
+                </SelectTrigger>
+                <SelectContent align="start" className="max-h-64 min-w-48">
+                  {IMAGE_MODE_OPTIONS.map((mode) => {
+                    const Icon = mode.icon;
 
-                      return (
-                        <DropdownMenuRadioItem
-                          key={mode.id}
-                          className="gap-2"
-                          value={mode.id}
-                        >
-                          <Icon className="size-4 text-muted-foreground" />
-                          <span>{mode.label}</span>
-                        </DropdownMenuRadioItem>
-                      );
-                    })}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    return (
+                      <SelectItem key={mode.id} className="gap-2" value={mode.id}>
+                        <Icon className="size-4 text-muted-foreground" />
+                        <span>{mode.label}</span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             )}
           </div>
           <ThreadContext.Provider

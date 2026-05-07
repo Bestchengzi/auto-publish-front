@@ -5,6 +5,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CopyIcon,
+  DownloadIcon,
   GlobeIcon,
   MinusIcon,
   PlusIcon,
@@ -148,9 +149,14 @@ export function BrowserChromeHeader({
             <button
               type="button"
               onClick={onUpdateBadgeClick}
-              className="rounded bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+              className="inline-flex h-6 cursor-pointer items-center gap-1.5 rounded bg-primary/15 px-2 text-xs font-medium text-primary hover:bg-primary/20"
             >
-              {updateBadgeText}
+              {updateBadgeText === t("browserChrome.updater.ready") ? (
+                <RefreshCwIcon className="size-3.5" />
+              ) : (
+                <DownloadIcon className="size-3.5" />
+              )}
+              <span>{updateBadgeText}</span>
             </button>
           ) : null}
           <div className="flex items-center gap-1">

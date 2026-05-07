@@ -49,7 +49,12 @@ export function BrowserChrome() {
 
   const [canGoBack, setCanGoBack] = React.useState(false);
   const [canGoForward, setCanGoForward] = React.useState(false);
-  const { state: updateState, check: checkUpdates, install: installUpdates } = useDesktopUpdater();
+  const {
+    state: updateState,
+    check: checkUpdates,
+    download: downloadUpdates,
+    install: installUpdates,
+  } = useDesktopUpdater();
 
   React.useLayoutEffect(() => {
     dismissAppBootstrapOverlay();
@@ -245,17 +250,28 @@ export function BrowserChrome() {
   const updateBadgeText = React.useMemo(() => {
     if (!getDesktop()) return null;
     if (updateState.phase === "checking") return t("browserChrome.updater.checking");
-    if (updateState.phase === "available") return t("browserChrome.updater.available");
+    if (updateState.phase === "available") {
+      return [
+        t("browserChrome.updater.newVersion"),
+        updateState.availableVersion,
+      ].filter(Boolean).join(" ");
+    }
     if (updateState.phase === "downloading") {
       const pct = Math.max(0, Math.min(100, Math.round(updateState.percent ?? 0)));
       return t("browserChrome.updater.downloading", { percent: pct });
     }
-    if (updateState.phase === "downloaded") return t("browserChrome.updater.ready");
+    if (updateState.phase === "downloaded") {
+      return t("browserChrome.updater.ready");
+    }
     if (updateState.phase === "error") return t("browserChrome.updater.error");
     return null;
   }, [t, updateState]);
 
   const handleUpdateBadgeClick = React.useCallback(() => {
+    if (updateState.phase === "available" || updateState.phase === "error") {
+      void downloadUpdates?.();
+      return;
+    }
     if (updateState.phase === "downloaded") {
       void installUpdates();
       return;
@@ -263,11 +279,10 @@ export function BrowserChrome() {
     if (
       updateState.phase === "idle"
       || updateState.phase === "not-available"
-      || updateState.phase === "error"
     ) {
       void checkUpdates();
     }
-  }, [checkUpdates, installUpdates, updateState.phase]);
+  }, [checkUpdates, downloadUpdates, installUpdates, updateState.phase]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-muted/40 dark:bg-muted/40">
