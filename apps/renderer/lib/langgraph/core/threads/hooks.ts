@@ -91,13 +91,19 @@ function isPromptInputImageFile(
 function isPromptInputLocalFile(
   file: NonNullable<PromptInputMessage["files"]>[number] | undefined,
 ): boolean {
-  return Boolean(file?.url?.startsWith("blob:") && file.filename);
+  return Boolean(
+    file?.filename &&
+      (file.url?.startsWith("blob:") || file.url?.startsWith("data:")),
+  );
 }
 
 function isPromptInputExistingFile(
   file: NonNullable<PromptInputMessage["files"]>[number] | undefined,
 ): boolean {
-  return Boolean(file?.url && !file.url.startsWith("blob:"));
+  return Boolean(
+    file?.url &&
+      (file.url.startsWith("http://") || file.url.startsWith("https://")),
+  );
 }
 
 function getStreamErrorMessage(error: unknown): string {
@@ -316,7 +322,9 @@ export function useThreadStream({
 
       // Build optimistic files list with uploading status
       const optimisticFiles: FileInMessage[] = (message.files ?? [])
-        .filter((file) => isPromptInputLocalFile(file) || isPromptInputExistingFile(file))
+        .filter(
+          (file) => isPromptInputLocalFile(file) || isPromptInputExistingFile(file),
+        )
         .map((f) => ({
           filename: f.filename ?? "",
           size: 0,
@@ -325,6 +333,9 @@ export function useThreadStream({
             ? ("uploaded" as const)
             : ("uploading" as const),
         }));
+      const hasUploadingFiles = optimisticFiles.some(
+        (file) => file.status === "uploading",
+      );
 
       // Create optimistic human message (shown immediately)
       const optimisticHumanMsg: Message = {
@@ -338,7 +349,7 @@ export function useThreadStream({
       };
 
       const newOptimistic: Message[] = [optimisticHumanMsg];
-      if (optimisticFiles.length > 0) {
+      if (hasUploadingFiles) {
         // Mock AI message while files are being uploaded
         newOptimistic.push({
           type: "ai",
@@ -470,7 +481,7 @@ export function useThreadStream({
             (url): url is string =>
               typeof url === "string" &&
               url.length > 0 &&
-              !url.startsWith("blob:"),
+              (url.startsWith("http://") || url.startsWith("https://")),
           );
         const inputImages = Array.from(
           new Set([

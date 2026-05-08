@@ -84,7 +84,7 @@ function RednoteExampleCard({
             type="button"
             size="sm"
             variant="secondary"
-            className="h-8 cursor-pointer rounded-full bg-white px-3 text-xs font-medium text-foreground shadow-sm hover:bg-white"
+            className="h-8 cursor-pointer rounded-full bg-white/95 px-3 text-xs font-medium text-slate-950 shadow-sm ring-1 ring-black/10 hover:bg-white dark:bg-white/95 dark:text-slate-950 dark:ring-white/20 dark:hover:bg-white"
             onClick={() => onPreview(example)}
             title="预览"
           >
