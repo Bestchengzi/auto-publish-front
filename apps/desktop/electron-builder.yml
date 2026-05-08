@@ -40,5 +40,5 @@ nsis:
 
 publish:
   provider: generic
-  # 与手动上传到 OSS 的根路径一致（末尾 / 便于拼接 latest*.yml 与安装包）
+  # Windows：`latest.yml` + 安装包放在桶根。Mac：运行时改为 `mac/x64/`、`mac/arm64/`（见 main.ts），上传 OSS 时按架构分目录。
   url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/"

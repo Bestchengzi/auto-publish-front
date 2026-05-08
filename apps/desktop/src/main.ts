@@ -53,7 +53,27 @@ let updateState: UpdateState = {
 };
 
 let autoUpdaterInitialized = false;
+/** OSS 桶根（与 electron-builder `publish.url` 一致）；Windows 的 `latest.yml` 与安装包放此根下 */
 const UPDATE_DOWNLOAD_BASE_URL = "https://open-stack.oss-cn-shanghai.aliyuncs.com/";
+
+/** Mac：Intel / ARM 各一份 `latest-mac.yml`，OSS 上分目录避免覆盖；与官网下载直链前缀一致 */
+function getMacAutoUpdateFeedUrl(): string {
+  const root = UPDATE_DOWNLOAD_BASE_URL.endsWith("/")
+    ? UPDATE_DOWNLOAD_BASE_URL
+    : `${UPDATE_DOWNLOAD_BASE_URL}/`;
+  const sub = process.arch === "arm64" ? "mac/arm64/" : "mac/x64/";
+  return `${root}${sub}`;
+}
+
+/** 解析 yml / UpdateInfo 里相对路径时使用的基址（Mac 用架构子目录，Win 用桶根） */
+function getUpdateResolutionBaseUrl(): string {
+  if (process.platform === "darwin") {
+    return getMacAutoUpdateFeedUrl();
+  }
+  return UPDATE_DOWNLOAD_BASE_URL.endsWith("/")
+    ? UPDATE_DOWNLOAD_BASE_URL
+    : `${UPDATE_DOWNLOAD_BASE_URL}/`;
+}
 
 function getRendererBaseUrl() {
   const envRendererUrl = process.env.ELECTRON_RENDERER_URL?.trim();
@@ -71,7 +91,7 @@ function getUpdateDownloadUrl(info: UpdateInfo, extension: string): string | und
   const rawUrl = file?.url ?? (info.path?.toLowerCase().endsWith(`.${normalizedExtension}`) ? info.path : undefined);
   if (!rawUrl) return undefined;
   try {
-    return new URL(rawUrl, UPDATE_DOWNLOAD_BASE_URL).href;
+    return new URL(rawUrl, getUpdateResolutionBaseUrl()).href;
   } catch {
     return rawUrl;
   }
@@ -141,6 +161,13 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = true;
+
+  if (process.platform === "darwin") {
+    autoUpdater.setFeedURL({
+      provider: "generic",
+      url: getMacAutoUpdateFeedUrl(),
+    });
+  }
 
   autoUpdater.on("checking-for-update", () => {
     setUpdateState({
@@ -302,7 +329,7 @@ ipcMain.handle("app:update:install", async () => {
     return { ok: false as const, reason: "not_ready" as const };
   }
   setImmediate(() => {
-    autoUpdater.quitAndInstall();
+    autoUpdater.quitAndInstall(false, true);
   });
   return { ok: true as const };
 });
