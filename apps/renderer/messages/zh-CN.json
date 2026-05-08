@@ -191,6 +191,7 @@
     "actions": {
       "add": "添加账号",
       "edit": "编辑",
+      "reconnect": "重连",
       "delete": "删除",
       "batchDelete": "批量删除",
       "deleteAccountConfirm": "确定删除该账号吗？",

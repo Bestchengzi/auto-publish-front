@@ -40,7 +40,11 @@ declare global {
       ping: () => Promise<{ ok: true; ts: number }>;
       startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
       fetchPageMeta: (url: string) => Promise<{ title?: string; favicon?: string }>;
-      openPlatformAuthInTab: (platformId: string) => void;
+      openPlatformAuthInTab: (
+        platformId: string,
+        cookie?: string | null,
+        mode?: "capture" | "browse",
+      ) => void;
       shellNav: {
         getState: () => Promise<{ canGoBack: boolean; canGoForward: boolean }>;
       };

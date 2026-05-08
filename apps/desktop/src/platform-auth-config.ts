@@ -13,6 +13,7 @@ export type PlatformAuthId =
 
 export type PlatformAuthEntry = {
   loginUrl: string;
+  authedUrl?: string;
   /** 用于 session.cookies.get({ url }) 的基准 URL，可多条以覆盖子域 */
   cookieUrls: string[];
   /**
@@ -25,11 +26,13 @@ export type PlatformAuthEntry = {
 export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
   toutiao: {
     loginUrl: "https://mp.toutiao.com/auth/page/login",
+    authedUrl: "https://mp.toutiao.com/",
     cookieUrls: ["https://mp.toutiao.com/"],
     successUrlPatterns: ["^https://mp\\.toutiao\\.com/(?!auth/page/login)"],
   },
   rednote: {
     loginUrl: "https://creator.xiaohongshu.com/login?selfLogout=true",
+    authedUrl: "https://creator.xiaohongshu.com/new/home",
     cookieUrls: [
       "https://creator.xiaohongshu.com/",
     ],
@@ -39,6 +42,7 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
   },
   douyin: {
     loginUrl: "https://creator.douyin.com/",
+    authedUrl: "https://creator.douyin.com/creator-micro/home",
     cookieUrls: ["https://creator.douyin.com/"],
     successUrlPatterns: [
       "^https://creator\\.douyin\\.com/creator-micro",
@@ -48,21 +52,25 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
   },
   wechat_mp: {
     loginUrl: "https://mp.weixin.qq.com/",
+    authedUrl: "https://mp.weixin.qq.com/",
     cookieUrls: ["https://mp.weixin.qq.com/"],
     successUrlPatterns: ["^https://mp\\.weixin\\.qq\\.com/cgi-bin/(?!loginpage)"],
   },
   wechat_channels: {
     loginUrl: "https://channels.weixin.qq.com/login.html",
+    authedUrl: "https://channels.weixin.qq.com/platform",
     cookieUrls: ["https://channels.weixin.qq.com/"],
     successUrlPatterns: ["^https://channels\\.weixin\\.qq\\.com/(?!login\\.html)"],
   },
   zhihu: {
     loginUrl: "https://www.zhihu.com/signin?next=%2Fcreator",
+    authedUrl: "https://www.zhihu.com/creator",
     cookieUrls: ["https://www.zhihu.com/"],
     successUrlPatterns: ["^https://www\\.zhihu\\.com/creator"],
   },
   baijiahao: {
     loginUrl: "https://baijiahao.baidu.com/builder/theme/bjh/login",
+    authedUrl: "https://baijiahao.baidu.com/builder/rc/home",
     cookieUrls: ["https://baijiahao.baidu.com/"],
     successUrlPatterns: [
       "^https://baijiahao\\.baidu\\.com/builder/(?!theme/bjh/login(?:/|[?#]|$))",
@@ -70,6 +78,7 @@ export const PLATFORM_AUTH_CONFIG: Record<PlatformAuthId, PlatformAuthEntry> = {
   },
   csdn: {
     loginUrl: "https://passport.csdn.net/login?code=applets",
+    authedUrl: "https://www.csdn.net/",
     cookieUrls: ["https://passport.csdn.net/", "https://www.csdn.net/"],
     successUrlPatterns: [
       "^https://passport\\.csdn\\.net/(?!login(?:/|[?#]|$))",

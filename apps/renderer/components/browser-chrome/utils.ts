@@ -9,7 +9,7 @@ const ROUTE_TO_TITLE_KEY: Record<string, string> = {
 
 export function getTitleKeyFromPath(pathname: string): string {
   const seg = pathname.split("/").filter(Boolean)[1];
-  return (seg && ROUTE_TO_TITLE_KEY[seg]) ?? "sidebar.items.overview";
+  return (seg && ROUTE_TO_TITLE_KEY[seg]) ?? "browserChrome.newTab";
 }
 
 export function getDomainFromUrl(url: string): string {

@@ -26,4 +26,6 @@ export type Account = {
   avatarSeed: string;
   /** Optional avatar image URL. When set, displays portrait instead of colored letter. */
   avatar?: string | null;
+  /** Serialized platform cookies returned by the account API. */
+  cookie?: string | null;
 };

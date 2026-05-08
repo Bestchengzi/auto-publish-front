@@ -41,6 +41,12 @@ type WillDownloadListener = (
   webContents: Electron.WebContents,
 ) => void;
 
+type PendingAuthRequest = {
+  requesterWebContentsId: number;
+  cookie: string | null;
+  mode: "capture" | "browse";
+};
+
 let updateState: UpdateState = {
   phase: "idle",
   currentVersion: app.getVersion(),
@@ -83,9 +89,44 @@ function applyUpdateInfo(info: UpdateInfo, phase: UpdatePhase) {
 
 function broadcastUpdateState() {
   for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-      win.webContents.send("app:update:state-changed", updateState);
-    }
+    safeSendToWindow(win, "app:update:state-changed", updateState);
+  }
+}
+
+function safeSendToWebContents(
+  target: Electron.WebContents | undefined | null,
+  channel: string,
+  ...args: unknown[]
+) {
+  try {
+    if (!target || target.isDestroyed()) return;
+    target.send(channel, ...args);
+  } catch {
+    // Window or webContents may be destroyed between lifecycle checks.
+  }
+}
+
+function safeSendToWindow(
+  win: BrowserWindow | undefined | null,
+  channel: string,
+  ...args: unknown[]
+) {
+  try {
+    if (!win || win.isDestroyed()) return;
+    safeSendToWebContents(win.webContents, channel, ...args);
+  } catch {
+    // Accessing webContents can throw after BrowserWindow destruction.
+  }
+}
+
+function getWindowWebContentsId(win: BrowserWindow | undefined | null): number | undefined {
+  try {
+    if (!win || win.isDestroyed()) return undefined;
+    const target = win.webContents;
+    if (!target || target.isDestroyed()) return undefined;
+    return target.id;
+  } catch {
+    return undefined;
   }
 }
 
@@ -193,7 +234,7 @@ async function createMainWindow() {
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
-      win.webContents.send("open-in-tab", url);
+      safeSendToWindow(win, "open-in-tab", url);
     }
     return { action: "deny" };
   });
@@ -303,9 +344,8 @@ ipcMain.handle("window:isMaximized", async () => {
 
 ipcMain.on("desktop:is-embedded-view-sync", (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  const isEmbedded = Boolean(
-    win && !win.isDestroyed() && event.sender.id !== win.webContents.id,
-  );
+  const winWebContentsId = getWindowWebContentsId(win);
+  const isEmbedded = typeof winWebContentsId === "number" && event.sender.id !== winWebContentsId;
   event.returnValue = isEmbedded;
 });
 
@@ -320,7 +360,7 @@ const platformAuthTabInitialized = new Set<string>();
 /** 记录发起授权的 renderer，授权完成后仅定向回传给发起者（同时通知壳层用于收口 tab） */
 const platformAuthRequesterByTabId = new Map<string, number>();
 /** 按平台暂存发起者队列：收到 load-platform-auth 时再与新 tabId 绑定 */
-const pendingAuthRequesterQueueByPlatform = new Map<string, number[]>();
+const pendingAuthRequestQueueByPlatform = new Map<string, PendingAuthRequest[]>();
 let activeExternalTabId: string | null = null;
 let lastBounds: { x: number; y: number; width: number; height: number } = { x: 0, y: 0, width: 0, height: 0 };
 
@@ -332,7 +372,7 @@ function getWindowFromIpcEvent(event: Electron.IpcMainEvent): BrowserWindow | nu
 function sendToWebContentsId(targetId: number | undefined, channel: string, ...args: unknown[]) {
   if (typeof targetId !== "number") return;
   const target = webContents.fromId(targetId);
-  if (target && !target.isDestroyed()) target.send(channel, ...args);
+  safeSendToWebContents(target, channel, ...args);
 }
 
 function detachEmbeddedView(win: BrowserWindow, view: WebContentsView) {
@@ -353,6 +393,66 @@ function destroyEmbeddedWebContents(wc: Electron.WebContents) {
   });
 }
 
+function parseAccountCookie(rawCookie: string | null): Electron.Cookie[] {
+  if (typeof rawCookie !== "string" || rawCookie.trim() === "") return [];
+  try {
+    const parsed: unknown = JSON.parse(rawCookie);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((item): Electron.Cookie[] => {
+      if (!item || typeof item !== "object") return [];
+      const cookie = item as Partial<Electron.Cookie>;
+      if (
+        typeof cookie.name !== "string" ||
+        cookie.name.trim() === "" ||
+        typeof cookie.value !== "string"
+      ) {
+        return [];
+      }
+      return [
+        {
+          name: cookie.name,
+          value: cookie.value,
+          domain: typeof cookie.domain === "string" ? cookie.domain : undefined,
+          path: typeof cookie.path === "string" ? cookie.path : "/",
+          secure: Boolean(cookie.secure),
+          httpOnly: Boolean(cookie.httpOnly),
+          sameSite: cookie.sameSite,
+          expirationDate:
+            typeof cookie.expirationDate === "number"
+              ? cookie.expirationDate
+              : undefined,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function cookieUrlFromDomain(domain: string | undefined, secure: boolean): string | null {
+  if (typeof domain !== "string" || domain.trim() === "") return null;
+  const hostname = domain.trim().replace(/^\./, "");
+  if (!hostname) return null;
+  return `${secure ? "https" : "http"}://${hostname}/`;
+}
+
+async function injectAccountCookies(
+  ses: Electron.Session,
+  rawCookie: string | null,
+  fallbackUrls: string[],
+) {
+  const cookies = parseAccountCookie(rawCookie);
+  await Promise.allSettled(
+    cookies.map((cookie) => {
+      const url =
+        cookieUrlFromDomain(cookie.domain, Boolean(cookie.secure)) ??
+        fallbackUrls[0];
+      if (!url) return Promise.resolve();
+      return ses.cookies.set({ ...cookie, url });
+    }),
+  );
+}
+
 function createExternalView(win: BrowserWindow, tabId: string) {
   if (externalTabs.has(tabId)) return externalTabs.get(tabId)!;
   const bv = new WebContentsView({
@@ -365,9 +465,7 @@ function createExternalView(win: BrowserWindow, tabId: string) {
   });
   externalTabs.set(tabId, bv);
   const send = (channel: string, ...args: unknown[]) => {
-    if (win.webContents && !win.webContents.isDestroyed()) {
-      win.webContents.send(channel, ...args);
-    }
+    safeSendToWindow(win, channel, ...args);
   };
   const onWillDownload: WillDownloadListener = (_event, _item, wc) => {
     const hostWc = bv.webContents;
@@ -568,19 +666,25 @@ ipcMain.on("external-tab:reload", (event, tabId: string) => {
   if (view?.webContents) view.webContents.reload();
 });
 
-ipcMain.handle("platform-auth:open-in-tab", (event, platformId: string) => {
+ipcMain.handle("platform-auth:open-in-tab", (event, platformId: string, cookie?: string | null, mode?: string) => {
   if (!isPlatformAuthId(platformId)) return;
   const cfg = PLATFORM_AUTH_CONFIG[platformId];
   const requesterWebContentsId = event.sender.id;
-  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
-  queue.push(requesterWebContentsId);
-  pendingAuthRequesterQueueByPlatform.set(platformId, queue);
+  const authMode = mode === "browse" ? "browse" : "capture";
+  const queue = pendingAuthRequestQueueByPlatform.get(platformId) ?? [];
+  queue.push({
+    requesterWebContentsId,
+    cookie: typeof cookie === "string" ? cookie : null,
+    mode: authMode,
+  });
+  pendingAuthRequestQueueByPlatform.set(platformId, queue);
+  const targetUrl = authMode === "browse" ? (cfg.authedUrl ?? cfg.loginUrl) : cfg.loginUrl;
   const win = BrowserWindow.fromWebContents(event.sender);
-  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-    win.webContents.send("open-platform-auth-tab", platformId, cfg.loginUrl);
+  if (win && !win.isDestroyed()) {
+    safeSendToWindow(win, "open-platform-auth-tab", platformId, targetUrl);
     return;
   }
-  event.sender.send("open-platform-auth-tab", platformId, cfg.loginUrl);
+  safeSendToWebContents(event.sender, "open-platform-auth-tab", platformId, targetUrl);
 });
 
 function createPlatformAuthView(
@@ -600,9 +704,7 @@ function createPlatformAuthView(
   });
   externalTabs.set(tabId, bv);
   const send = (channel: string, ...args: unknown[]) => {
-    if (win.webContents && !win.webContents.isDestroyed()) {
-      win.webContents.send(channel, ...args);
-    }
+    safeSendToWindow(win, channel, ...args);
   };
 
   bv.webContents.on("page-title-updated", (_e, title) => {
@@ -655,11 +757,11 @@ ipcMain.on(
     showExternalTab(win, tabId);
     return;
   }
-  const queue = pendingAuthRequesterQueueByPlatform.get(platformId) ?? [];
-  const requesterId = queue.shift();
-  if (queue.length > 0) pendingAuthRequesterQueueByPlatform.set(platformId, queue);
-  else pendingAuthRequesterQueueByPlatform.delete(platformId);
-  platformAuthRequesterByTabId.set(tabId, requesterId ?? event.sender.id);
+  const queue = pendingAuthRequestQueueByPlatform.get(platformId) ?? [];
+  const authRequest = queue.shift();
+  if (queue.length > 0) pendingAuthRequestQueueByPlatform.set(platformId, queue);
+  else pendingAuthRequestQueueByPlatform.delete(platformId);
+  platformAuthRequesterByTabId.set(tabId, authRequest?.requesterWebContentsId ?? event.sender.id);
   platformAuthTabInitialized.add(tabId);
 
   const cfg = PLATFORM_AUTH_CONFIG[platformId];
@@ -676,10 +778,9 @@ ipcMain.on(
     const requesterId = platformAuthRequesterByTabId.get(tabId);
     platformAuthRequesterByTabId.delete(tabId);
     platformAuthTabInitialized.delete(tabId);
-    if (!win.webContents.isDestroyed()) {
-      win.webContents.send("platform-auth:completed", tabId, result);
-    }
-    if (requesterId && requesterId !== win.webContents.id) {
+    safeSendToWindow(win, "platform-auth:completed", tabId, result);
+    const winWebContentsId = getWindowWebContentsId(win);
+    if (requesterId && requesterId !== winWebContentsId) {
       sendToWebContentsId(requesterId, "platform-auth:completed", tabId, result);
     }
     externalTabs.delete(tabId);
@@ -690,14 +791,24 @@ ipcMain.on(
     destroyEmbeddedWebContents(view.webContents);
   };
 
-  attachPlatformAuthSuccessListener(view.webContents, platformId, ses, (result) => finish(result));
+  if (authRequest?.mode !== "browse") {
+    attachPlatformAuthSuccessListener(view.webContents, platformId, ses, (result) => finish(result));
+  }
 
   // 先附着到主窗口再加载，与独立 BrowserWindow 行为一致，避免部分站点在未附着 View 上报 ERR_FAILED
   showExternalTab(win, tabId);
-  void view.webContents.loadURL(cfg.loginUrl).catch((err) => {
+  const targetUrl =
+    authRequest?.mode === "browse" ? (cfg.authedUrl ?? cfg.loginUrl) : cfg.loginUrl;
+  void injectAccountCookies(ses, authRequest?.cookie ?? null, cfg.cookieUrls)
+    .then(() => view.webContents.loadURL(targetUrl))
+    .catch((err) => {
     // 重定向链中被新导航中断时，Electron 会抛 ERR_ABORTED(-3)，不应视为授权失败。
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("ERR_ABORTED") || msg.includes("(-3)")) return;
+    if (authRequest?.mode === "browse") {
+      safeSendToWindow(win, "external-tab:fail-load", tabId, -2, msg, targetUrl);
+      return;
+    }
     finish({
       ok: false,
       error: "load_failed",

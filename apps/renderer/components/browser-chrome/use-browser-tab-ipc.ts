@@ -13,6 +13,7 @@ type UseBrowserTabIpcParams = {
   router?: { push: (href: string) => void };
   activeIdRef: React.MutableRefObject<string | null>;
   tabsRef: React.MutableRefObject<TabItem[]>;
+  initialTabId: string;
   setCanGoBack: React.Dispatch<React.SetStateAction<boolean>>;
   setCanGoForward: React.Dispatch<React.SetStateAction<boolean>>;
   /** 当前标签是否正在显示嵌入的外部 / 平台授权 WebContents */
@@ -24,6 +25,7 @@ export function useBrowserTabIpc({
   setActiveId,
   activeIdRef,
   tabsRef,
+  initialTabId,
   setCanGoBack,
   setCanGoForward,
   embedExternalVisible,
@@ -207,11 +209,9 @@ export function useBrowserTabIpc({
       const wasActive = activeIdRef.current === tabId;
       setTabs(next);
       if (wasActive) {
-        const idx = prev.findIndex((t) => t.id === tabId);
-        const newActive = next[Math.max(0, idx - 1)] ?? next[0];
-        const nextId = newActive?.id ?? null;
-        setActiveId(nextId);
+        const appTab = next.find((t) => t.id === initialTabId);
+        setActiveId(appTab?.id ?? next[0]?.id ?? null);
       }
     });
-  }, [setTabs, setActiveId, activeIdRef, tabsRef]);
+  }, [setTabs, setActiveId, activeIdRef, tabsRef, initialTabId]);
 }

@@ -69,6 +69,7 @@ export function BrowserChrome() {
     setActiveId,
     activeIdRef,
     tabsRef,
+    initialTabId,
     setCanGoBack,
     setCanGoForward,
     embedExternalVisible: Boolean(!activeTab?.isEmpty),

@@ -67,7 +67,11 @@ export type DesktopApi = {
   platform: NodeJS.Platform;
   ping: () => Promise<{ ok: true; ts: number }>;
   startPlatformAuth: (platformId: string) => Promise<PlatformAuthResult>;
-  openPlatformAuthInTab: (platformId: string) => void;
+  openPlatformAuthInTab: (
+    platformId: string,
+    cookie?: string | null,
+    mode?: "capture" | "browse",
+  ) => void;
   fetchPageMeta: (url: string) => Promise<PageMeta>;
   /** 主窗口（产品页）自身 history，与 externalTab 无关 */
   shellNav: { getState: () => Promise<ShellNavState> };
@@ -139,8 +143,17 @@ const api: DesktopApi = {
   ping: () => ipcRenderer.invoke("app:ping"),
   startPlatformAuth: (platformId: string) =>
     ipcRenderer.invoke("platform-auth:start", platformId),
-  openPlatformAuthInTab: (platformId: string) =>
-    ipcRenderer.invoke("platform-auth:open-in-tab", platformId),
+  openPlatformAuthInTab: (
+    platformId: string,
+    cookie?: string | null,
+    mode?: "capture" | "browse",
+  ) =>
+    ipcRenderer.invoke(
+      "platform-auth:open-in-tab",
+      platformId,
+      cookie ?? null,
+      mode ?? "capture",
+    ),
   fetchPageMeta: (url: string) => ipcRenderer.invoke("fetch-page-meta", url),
   shellNav: {
     getState: () => ipcRenderer.invoke("shell-nav:get-state") as Promise<ShellNavState>,

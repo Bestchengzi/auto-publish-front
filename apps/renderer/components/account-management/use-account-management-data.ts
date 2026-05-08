@@ -53,6 +53,7 @@ function mapAccountResponseToAccount(a: accountsApi.AccountResponse): Account {
     updatedAt: formatDateShort(updatedAt, "--"),
     avatarSeed: a.id,
     avatar: a.avatar ?? undefined,
+    cookie: a.cookie ?? null,
   };
 }
 

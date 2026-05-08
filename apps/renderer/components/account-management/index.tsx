@@ -9,6 +9,7 @@ import {
   LayoutGridIcon,
   Rows3Icon,
   MoreHorizontalIcon,
+  RefreshCwIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -96,6 +97,10 @@ export function AccountManagement() {
     null,
   );
   const [editingGroupName, setEditingGroupName] = React.useState("");
+  const [canOpenAccountAuth, setCanOpenAccountAuth] = React.useState(false);
+  React.useEffect(() => {
+    setCanOpenAccountAuth(Boolean(window.desktop?.openPlatformAuthInTab));
+  }, []);
 
   const [view, setView] = React.useState<"table" | "card">("table");
 
@@ -216,6 +221,44 @@ export function AccountManagement() {
             .filter(Boolean)
             .join(", "),
     [groupNameMap],
+  );
+  const openAccountAuth = React.useCallback(
+    (account: Account) => {
+      const desktop =
+        typeof window !== "undefined" ? window.desktop : undefined;
+      if (!desktop?.openPlatformAuthInTab) {
+        return;
+      }
+      desktop.openPlatformAuthInTab(
+        account.platformId,
+        account.cookie ?? null,
+        "browse",
+      );
+    },
+    [],
+  );
+  const reconnectAccount = React.useCallback(
+    (account: Account) => {
+      const desktop =
+        typeof window !== "undefined" ? window.desktop : undefined;
+      if (!desktop?.openPlatformAuthInTab) {
+        setNeedDesktopDialogOpen(true);
+        return;
+      }
+      desktop.openPlatformAuthInTab(account.platformId, null, "capture");
+    },
+    [],
+  );
+  const handleAccountClick = React.useCallback(
+    (account: Account) => {
+      if (!canOpenAccountAuth) return;
+      if (account.status === "offline") {
+        reconnectAccount(account);
+        return;
+      }
+      openAccountAuth(account);
+    },
+    [canOpenAccountAuth, openAccountAuth, reconnectAccount],
   );
 
   return (
@@ -446,7 +489,11 @@ export function AccountManagement() {
                                 return (
                                   <TableRow
                                     key={a.id}
-                                    className="[&_td]:py-0 [&_td]:h-[53px]"
+                                    className={cn(
+                                      "[&_td]:py-0 [&_td]:h-[53px]",
+                                      canOpenAccountAuth && "cursor-pointer",
+                                    )}
+                                    onClick={() => handleAccountClick(a)}
                                   >
                                     <TableCell className="w-12 shrink-0 px-4">
                                       <Checkbox
@@ -454,6 +501,7 @@ export function AccountManagement() {
                                           "account.table.selectOne",
                                         )}
                                         checked={checked}
+                                        onClick={(e) => e.stopPropagation()}
                                         onCheckedChange={(v) =>
                                           toggleOne(a.id, Boolean(v))
                                         }
@@ -516,6 +564,9 @@ export function AccountManagement() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="size-8"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
                                                 aria-label={t(
                                                   "account.table.actions",
                                                 )}
@@ -529,16 +580,31 @@ export function AccountManagement() {
                                             className="w-36"
                                           >
                                             <DropdownMenuItem
-                                              onClick={() => openEditDrawer(a)}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openEditDrawer(a);
+                                              }}
                                             >
                                               <SettingsIcon className="size-4" />
                                               {t("account.actions.edit")}
                                             </DropdownMenuItem>
+                                            {a.status === "offline" ? (
+                                              <DropdownMenuItem
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  reconnectAccount(a);
+                                                }}
+                                              >
+                                                <RefreshCwIcon className="size-4" />
+                                                {t("account.actions.reconnect")}
+                                              </DropdownMenuItem>
+                                            ) : null}
                                             <DropdownMenuItem
                                               variant="destructive"
-                                              onClick={() =>
-                                                setPendingDeleteAccountId(a.id)
-                                              }
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPendingDeleteAccountId(a.id);
+                                              }}
                                             >
                                               <Trash2Icon className="size-4" />
                                               {t("account.actions.delete")}
@@ -599,12 +665,17 @@ export function AccountManagement() {
                               return (
                                 <div
                                   key={a.id}
-                                  className="relative rounded-2xl border border-border bg-card p-5 pb-3 shadow-sm transition hover:shadow-md"
+                                  className={cn(
+                                    "relative rounded-2xl border border-border bg-card p-5 pb-3 shadow-sm transition hover:shadow-md",
+                                    canOpenAccountAuth && "cursor-pointer",
+                                  )}
+                                  onClick={() => handleAccountClick(a)}
                                 >
                                   <div className="absolute left-3 top-3">
                                     <Checkbox
                                       aria-label={t("account.table.selectOne")}
                                       checked={checked}
+                                      onClick={(e) => e.stopPropagation()}
                                       onCheckedChange={(v) =>
                                         toggleOne(a.id, Boolean(v))
                                       }
@@ -656,7 +727,10 @@ export function AccountManagement() {
                                       variant="ghost"
                                       size="sm"
                                       className="h-8 gap-1.5 px-2"
-                                      onClick={() => openEditDrawer(a)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditDrawer(a);
+                                      }}
                                     >
                                       <SettingsIcon className="size-4" />
                                       {t("account.actions.edit")}
@@ -665,9 +739,10 @@ export function AccountManagement() {
                                       variant="link"
                                       size="sm"
                                       className="h-8 gap-1.5 px-2 text-destructive hover:text-destructive/90 no-underline hover:no-underline"
-                                      onClick={() =>
-                                        setPendingDeleteAccountId(a.id)
-                                      }
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPendingDeleteAccountId(a.id);
+                                      }}
                                     >
                                       <Trash2Icon className="size-4" />
                                       {t("account.actions.delete")}
