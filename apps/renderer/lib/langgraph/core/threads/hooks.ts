@@ -68,6 +68,22 @@ function readStringArray(value: unknown): string[] {
     : [];
 }
 
+function buildHumanMessageContent(
+  text: string,
+  imageUrls: string[],
+): Message["content"] {
+  return [
+    {
+      type: "text",
+      text,
+    },
+    ...imageUrls.map((url) => ({
+      type: "image_url" as const,
+      image_url: { url },
+    })),
+  ];
+}
+
 function isImageExtension(extension: string | undefined): boolean {
   return IMAGE_FILE_EXTENSIONS.has(
     (extension || "")
@@ -492,17 +508,15 @@ export function useThreadStream({
           ]),
         );
 
+        const contentImageUrls =
+          assistantId === "image_cards" ? inputImages : [];
+
         await thread.submit(
           {
             messages: [
               {
                 type: "human",
-                content: [
-                  {
-                    type: "text",
-                    text,
-                  },
-                ],
+                content: buildHumanMessageContent(text, contentImageUrls),
                 additional_kwargs:
                   {
                     ...(filesForSubmit.length > 0 ||
@@ -556,6 +570,7 @@ export function useThreadStream({
       }
     },
     [
+      assistantId,
       thread,
       _handleOnStart,
       t.uploads.uploadingFiles,

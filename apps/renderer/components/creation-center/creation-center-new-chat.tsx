@@ -310,7 +310,7 @@ const REDNOTE_RUN_OPTIONS = {
 const PLACEHOLDER_ROTATION_MS = 4000;
 
 const REDNOTE_CONTEXT_OVERRIDES = {
-  model_name: "deepseek-v4",
+  model_name: "qwen3.6-plus",
 };
 
 function normalizeConfigValue(value: string) {

@@ -22,6 +22,7 @@ import { resolveArtifactURL } from "@/lib/langgraph/core/artifacts/utils";
 import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import {
   extractContentFromMessage,
+  extractTextFromMessage,
   extractReasoningContentFromMessage,
   parseUploadedFiles,
   stripNeedHelpSelectionMarker,
@@ -145,6 +146,7 @@ function MessageContent_({
   );
 
   const rawContent = extractContentFromMessage(message);
+  const textContent = extractTextFromMessage(message);
   const reasoningContent = extractReasoningContentFromMessage(message);
 
   const files = useMemo(() => {
@@ -161,12 +163,12 @@ function MessageContent_({
 
   const contentToDisplay = useMemo(() => {
     if (isHuman) {
-      const stripped = rawContent ? stripUploadedFilesTag(rawContent) : "";
+      const stripped = textContent ? stripUploadedFilesTag(textContent) : "";
       // Hide structured marker blocks (used for UI state restore)
       return stripped ? stripNeedHelpSelectionMarker(stripped) : "";
     }
     return rawContent ?? "";
-  }, [rawContent, isHuman]);
+  }, [rawContent, textContent, isHuman]);
 
   const selectedNews = useMemo<SelectedNewsItem | null>(() => {
     const raw = message.additional_kwargs?.news_item;
