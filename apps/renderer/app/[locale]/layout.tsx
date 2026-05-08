@@ -10,7 +10,6 @@ import { AccentProvider } from "@/components/providers/accent-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { getMessages } from "@/i18n/get-messages";
 import { defaultLocale, locales, type AppLocale } from "@/i18n/config";
-import { DEV_AUTH_SESSION_BOOTSTRAP_SCRIPT } from "@/lib/auth/dev-session-bootstrap";
 import { APP_BOOTSTRAP_OVERLAY_SCRIPT } from "@/lib/app-bootstrap-overlay";
 import { ACCENT_INIT_SCRIPT } from "@/lib/ui-accent";
 import { setRequestLocale } from "next-intl/server";
@@ -107,11 +106,6 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: DEV_AUTH_SESSION_BOOTSTRAP_SCRIPT,
-          }}
-        />
         <script
           dangerouslySetInnerHTML={{ __html: APP_BOOTSTRAP_OVERLAY_SCRIPT }}
         />
