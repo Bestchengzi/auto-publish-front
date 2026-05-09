@@ -436,8 +436,15 @@ export function RednoteContentEditor({
   const [draft, setDraft] = useState<EditableRednoteContent>(() =>
     createEditableContent(rednoteContent),
   );
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [imageTaskId, setImageTaskId] = useState<string | null>(null);
+  const pollTimersByTaskIdRef = useRef(new Map<string, number>());
+
+  const clearPollTimerForTask = useCallback((taskId: string) => {
+    const existing = pollTimersByTaskIdRef.current.get(taskId);
+    if (existing != null) {
+      clearTimeout(existing);
+      pollTimersByTaskIdRef.current.delete(taskId);
+    }
+  }, []);
   const [promptUidsByIndex, setPromptUidsByIndex] = useState<
     Record<number, string>
   >({});
@@ -464,20 +471,26 @@ export function RednoteContentEditor({
     src: string;
     alt: string;
   } | null>(null);
+  /** 一旦本线程发起过图片生成（含接口失败），禁止再增加图文卡片，仅保留生成前的增删能力。 */
+  const [imageGenLayoutLocked, setImageGenLayoutLocked] = useState(false);
 
   useEffect(() => {
+    const timersMap = pollTimersByTaskIdRef.current;
+    const pollTaskIdsToClear = [...timersMap.keys()];
+    for (const taskId of pollTaskIdsToClear) {
+      clearPollTimerForTask(taskId);
+    }
     setInsufficientBalanceInfo(null);
     setInsufficientBalanceDialogOpen(false);
     setIsDownloadingImageTask(false);
-  }, [threadId]);
-
-  useEffect(() => {
+    setImageGenLayoutLocked(false);
     return () => {
-      if (pollTimerRef.current) {
-        clearTimeout(pollTimerRef.current);
+      const taskIdsOnUnmount = [...timersMap.keys()];
+      for (const taskId of taskIdsOnUnmount) {
+        clearPollTimerForTask(taskId);
       }
     };
-  }, []);
+  }, [threadId, clearPollTimerForTask]);
 
   const applyImageTaskHistory = useCallback(
     (tasks: ImageTaskResponse[]): boolean => {
@@ -556,15 +569,17 @@ export function RednoteContentEditor({
           task.items.length >= uidToIndex.size &&
           task.items.every((item) => isTerminalImageStatus(item.status));
         if (allSettled) {
-          setImageTaskId(null);
+          clearPollTimerForTask(taskId);
           await refreshImageTaskHistory();
           return;
         }
-        pollTimerRef.current = setTimeout(() => {
+        clearPollTimerForTask(taskId);
+        const timeoutId = window.setTimeout(() => {
           void pollImageTask(taskId, uidToIndex);
         }, IMAGE_TASK_POLL_INTERVAL_MS);
+        pollTimersByTaskIdRef.current.set(taskId, timeoutId);
       } catch {
-        setImageTaskId(null);
+        clearPollTimerForTask(taskId);
         setImageHistoriesByUid((current) => {
           const next = { ...current };
           for (const uid of Object.keys(next)) {
@@ -578,7 +593,7 @@ export function RednoteContentEditor({
         });
       }
     },
-    [refreshImageTaskHistory, threadId, upsertImageTaskItems],
+    [clearPollTimerForTask, refreshImageTaskHistory, threadId, upsertImageTaskItems],
   );
 
   const canGenerateImages = useMemo(
@@ -596,10 +611,10 @@ export function RednoteContentEditor({
   );
   const isGeneratingImages =
     isSubmittingImageTask ||
-    imageTaskId !== null ||
     imageHistoryItems.some((item) => !isTerminalImageStatus(item.status));
   const canEditPromptPages =
     isImageTaskHistoryReady && !hasCompletedImageResults && !isGeneratingImages;
+  const canAddPromptPages = canEditPromptPages && !imageGenLayoutLocked;
   const shouldRenderPromptPages =
     isImageTaskHistoryReady && (draft.prompts.length > 0 || canEditPromptPages);
   const firstCompletedImageTaskId = useMemo(() => {
@@ -671,11 +686,14 @@ export function RednoteContentEditor({
       submissionPrompts: ImageTaskSubmissionPrompt[],
       { resetEditing = false }: { resetEditing?: boolean } = {},
     ) => {
-      if (submissionPrompts.length === 0 || isGeneratingImages) return;
-      if (pollTimerRef.current) {
-        clearTimeout(pollTimerRef.current);
-        pollTimerRef.current = null;
+      if (submissionPrompts.length === 0) return;
+      for (const prompt of submissionPrompts) {
+        const hist = imageHistoriesByUid[prompt.uid] ?? [];
+        if (hist.some((item) => !isTerminalImageStatus(item.status))) {
+          return;
+        }
       }
+      setImageGenLayoutLocked(true);
 
       const uidToIndex = new Map(
         submissionPrompts.map((prompt) => [prompt.uid, prompt.index]),
@@ -732,7 +750,6 @@ export function RednoteContentEditor({
             content: draft.content.trim(),
           },
         });
-        setImageTaskId(task.id);
         setImageHistoriesByUid((current) => {
           const next = { ...current };
           for (const prompt of prompts) {
@@ -747,11 +764,13 @@ export function RednoteContentEditor({
           task.items.length >= uidToIndex.size &&
           task.items.every((item) => isTerminalImageStatus(item.status));
         if (!allSettled) {
-          pollTimerRef.current = setTimeout(() => {
+          clearPollTimerForTask(task.id);
+          const timeoutId = window.setTimeout(() => {
             void pollImageTask(task.id, uidToIndex);
           }, IMAGE_TASK_POLL_INTERVAL_MS);
+          pollTimersByTaskIdRef.current.set(task.id, timeoutId);
         } else {
-          setImageTaskId(null);
+          clearPollTimerForTask(task.id);
           await refreshImageTaskHistory();
         }
       } catch (error) {
@@ -782,16 +801,17 @@ export function RednoteContentEditor({
       }
     },
     [
-      imageSize,
-      inputImages,
-      isGeneratingImages,
-      pollImageTask,
-      refreshImageTaskHistory,
-      userInput,
+      clearPollTimerForTask,
       draft.content,
       draft.title,
+      imageHistoriesByUid,
+      imageSize,
+      inputImages,
+      pollImageTask,
+      refreshImageTaskHistory,
       threadId,
       upsertImageTaskItems,
+      userInput,
     ],
   );
 
@@ -803,16 +823,22 @@ export function RednoteContentEditor({
         const response = await listThreadImageTasks(threadId);
         if (cancelled) return;
         applyImageTaskHistory(response.items);
+        if (response.items.some((task) => task.items.length > 0)) {
+          setImageGenLayoutLocked(true);
+        }
         setIsImageTaskHistoryReady(true);
-        const activeTask = response.items.find((task) =>
+        const activeTasks = response.items.filter((task) =>
           task.items.some((item) => !isTerminalImageStatus(item.status)),
         );
-        if (activeTask) {
-          setImageTaskId(activeTask.id);
+        for (const task of activeTasks) {
           const uidToIndex = new Map(
-            activeTask.items.map((item, index) => [item.uid, index]),
+            task.items.map((item, index) => [item.uid, index]),
           );
-          void pollImageTask(activeTask.id, uidToIndex);
+          clearPollTimerForTask(task.id);
+          const timeoutId = window.setTimeout(() => {
+            void pollImageTask(task.id, uidToIndex);
+          }, IMAGE_TASK_POLL_INTERVAL_MS);
+          pollTimersByTaskIdRef.current.set(task.id, timeoutId);
         }
       } catch {
         if (!cancelled) {
@@ -823,7 +849,7 @@ export function RednoteContentEditor({
     return () => {
       cancelled = true;
     };
-  }, [applyImageTaskHistory, pollImageTask, threadId]);
+  }, [applyImageTaskHistory, clearPollTimerForTask, pollImageTask, threadId]);
 
   useEffect(() => {
     if (!canEditPromptPages) {
@@ -832,7 +858,7 @@ export function RednoteContentEditor({
   }, [canEditPromptPages]);
 
   const handleAddPrompt = useCallback(() => {
-    if (!canEditPromptPages) return;
+    if (!canAddPromptPages) return;
     setDraft((current) => ({
       ...current,
       prompts: [
@@ -843,7 +869,7 @@ export function RednoteContentEditor({
         },
       ],
     }));
-  }, [canEditPromptPages]);
+  }, [canAddPromptPages]);
 
   const handleConfirmDeletePrompt = useCallback(() => {
     if (!canEditPromptPages || deletePromptIndex === null) return;
@@ -889,7 +915,6 @@ export function RednoteContentEditor({
 
   const handleRegeneratePrompt = useCallback(
     async (index: number) => {
-      if (isGeneratingImages) return;
       const prompt = draft.prompts[index];
       const text = prompt?.text.trim() ?? "";
       if (!text) return;
@@ -906,12 +931,7 @@ export function RednoteContentEditor({
 
       await submitImageTask(prompts);
     },
-    [
-      draft.prompts,
-      isGeneratingImages,
-      promptUidsByIndex,
-      submitImageTask,
-    ],
+    [draft.prompts, promptUidsByIndex, submitImageTask],
   );
 
   const handlePublishRednote = useCallback(() => {
@@ -1095,6 +1115,9 @@ export function RednoteContentEditor({
               }));
             };
             const promptTitle = prompt.title.trim() || (index === 0 ? "封面" : "内容");
+            const isThisCardImageBusy =
+              !!uid &&
+              history.some((item) => !isTerminalImageStatus(item.status));
 
             return (
               <article
@@ -1150,13 +1173,13 @@ export function RednoteContentEditor({
                         </Button>
                       </>
                     ) : null}
-                    {hasCompletedImageResults ? (
+                    {canToggleResult ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-sm"
                         className="rounded-md text-muted-foreground hover:bg-[#ff2442]/10 hover:text-[#ff2442]"
-                        disabled={isGeneratingImages}
+                        disabled={isThisCardImageBusy}
                         onClick={() => void handleRegeneratePrompt(index)}
                         title="重新生成图片"
                         aria-label="重新生成图片"
@@ -1287,7 +1310,7 @@ export function RednoteContentEditor({
               </article>
             );
           })}
-          {canEditPromptPages ? (
+          {canAddPromptPages ? (
             <button
               type="button"
               className="flex min-h-[400px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border/70 bg-card p-4 text-muted-foreground shadow-sm transition-colors hover:border-[#ff2442]/40 hover:text-[#ff2442]"

@@ -68,6 +68,7 @@
       "creationCenter": "创作中心",
       "topicCenter": "选题中心",
       "autoPublish": "自动发布",
+      "earnPoints": "赚取积分",
       "worksLibrary": "发布记录",
       "account": "账号",
       "assetLibrary": "素材库",
@@ -120,6 +121,27 @@
           "description": "每成功邀请 1 位新用户注册，您和好友各得 500 积分；好友首次充值时，您还可获得额外奖励。"
         }
       }
+    }
+  },
+  "earnPointsPage": {
+    "heroSubtitle": "邀请好友一起创作，或用你的洞察换积分。每一次有效分享与反馈，都值得被犒赏。",
+    "stats": {
+      "invitedLabel": "累计邀请人数",
+      "pointsLabel": "累计获取积分",
+      "dataHint": "数据来自邀请统计，与账户邀请奖励同步。",
+      "loadError": "邀请统计暂不可用，请稍后刷新重试。"
+    },
+    "bounty": {
+      "eyebrow": "共创悬赏",
+      "title": "联系客服 · 反馈有奖",
+      "description": "发现功能问题，或提出让人眼前一亮的需求建议，欢迎联系客服或提交反馈。经官方评估并采纳后，将额外奖励 {points}。",
+      "pointsToken": "500 积分",
+      "bullet1": "描述越具体、复现步骤越清晰，处理越快。",
+      "bullet2": "说明真实使用场景与期望结果，更容易被采纳。",
+      "feedbackCta": "提交产品反馈",
+      "wechatTitle": "扫码添加客服微信",
+      "wechatAlt": "客服微信二维码",
+      "rewardCallout": "有效反馈经采纳后发放，让好想法变成真实功能。"
     }
   },
   "feedback": {
@@ -186,6 +208,11 @@
       "title": "编辑账号",
       "groupLabel": "所属分组（可多选）",
       "groupHint": "没有想要的所属分组，可先创建多个分组",
+      "proxyCityLabel": "代理城市",
+      "proxyCityPlaceholder": "请选择代理城市",
+      "proxyCitySearchPlaceholder": "搜索省份或城市…",
+      "proxyCityEmpty": "暂无匹配城市",
+      "proxyCityClear": "清除",
       "save": "保存"
     },
     "actions": {

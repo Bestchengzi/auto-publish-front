@@ -4,6 +4,7 @@ const STORAGE_KEY = "creation-center:pending-initial-message";
 
 /** 附件仅存内存（含 blob URL），与 session 中的 threadId 对应；刷新页面后会丢失。 */
 const pendingFilesByThreadId = new Map<string, FileUIPart[]>();
+let pendingCreationDraft: PendingCreationDraft | null = null;
 
 export type PendingInitialMessage = {
   threadId: string;
@@ -22,6 +23,15 @@ export type StashPendingInitialMessageInput = Omit<PendingInitialMessage, "files
   files?: FileUIPart[];
 };
 
+export type PendingCreationDraft = {
+  type: "news_item";
+  text: string;
+  personaId?: string | null;
+  additionalKwargs: {
+    news_item: Record<string, unknown>;
+  };
+};
+
 export function stashPendingInitialMessage(payload: StashPendingInitialMessageInput): void {
   if (typeof window === "undefined") return;
   const { files, ...serializable } = payload;
@@ -35,6 +45,18 @@ export function stashPendingInitialMessage(payload: StashPendingInitialMessageIn
   } else {
     pendingFilesByThreadId.delete(payload.threadId);
   }
+}
+
+export function stashPendingCreationDraft(payload: PendingCreationDraft): void {
+  pendingCreationDraft = payload;
+}
+
+export function peekPendingCreationDraft(): PendingCreationDraft | null {
+  return pendingCreationDraft;
+}
+
+export function clearPendingCreationDraft(): void {
+  pendingCreationDraft = null;
 }
 
 function readPendingInitialMessage(threadId: string): PendingInitialMessage | null {

@@ -53,6 +53,17 @@ export type BillingAccountEnvelope = {
   account: BillingAccount;
 };
 
+export type BillingInviteSummaryResponse = {
+  owner_id: string;
+  invite_code: string;
+  invited_user_count: number;
+  rewarded_points: number;
+};
+
+export type BillingInviteSummaryEnvelope = {
+  invite_summary: BillingInviteSummaryResponse;
+};
+
 export type PlanOrderCreateRequest = {
   plan_code: string;
   billing_cycle: "monthly" | "annual";
@@ -98,6 +109,12 @@ export async function getBillingSubscriptionPlans(): Promise<BillingSubscription
 
 export async function getBillingAccount(): Promise<BillingAccountEnvelope> {
   return request<BillingAccountEnvelope>(apiUrl("/api/billing/account"), {
+    method: "GET",
+  });
+}
+
+export async function getBillingInviteSummary(): Promise<BillingInviteSummaryEnvelope> {
+  return request<BillingInviteSummaryEnvelope>(apiUrl("/api/billing/invite-summary"), {
     method: "GET",
   });
 }

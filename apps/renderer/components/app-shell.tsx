@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  GiftIcon,
   ImagesIcon,
   LightbulbIcon,
   ListIcon,
@@ -24,7 +25,8 @@ type ActiveKey =
   | "worksLibrary"
   | "topicCenter"
   | "creationCenter"
-  | "autoPublish";
+  | "autoPublish"
+  | "earnPoints";
 
 function resolveActiveKey(pathname: string | null, locale: string): ActiveKey {
   if (!pathname) return "creationCenter";
@@ -36,6 +38,7 @@ function resolveActiveKey(pathname: string | null, locale: string): ActiveKey {
   if (segment === "creation-center") return "creationCenter";
   if (segment === "topic-center") return "topicCenter";
   if (segment === "auto-publish") return "autoPublish";
+  if (segment === "earn-points") return "earnPoints";
   if (segment === "account") return "account";
   if (segment === "asset-library") return "assetLibrary";
   if (segment === "works-library") return "worksLibrary";
@@ -124,6 +127,12 @@ export function AppShell({
                 active={activeKey === "autoPublish"}
                 icon={<SendIcon className="size-4" />}
                 label={t("sidebar.items.autoPublish")}
+              />
+              <AppShellProtectedNavItem
+                href={`/${locale}/earn-points`}
+                active={activeKey === "earnPoints"}
+                icon={<GiftIcon className="size-4" />}
+                label={t("sidebar.items.earnPoints")}
               />
             </div>
 

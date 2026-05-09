@@ -4,8 +4,10 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { Cascader, type CascaderOption } from "@/components/ui/cascader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { PROVINCE_CITY_CASCADER_OPTIONS } from "@/lib/data/province-city-cascader-options.generated";
 import { Avatar } from "./avatar";
 import { PlatformLogo } from "./platform-logo";
 import type { Account, Group, Platform } from "./types";
@@ -17,9 +19,22 @@ type EditAccountDrawerProps = {
   editableGroups: Group[];
   selectedGroupIds: string[];
   onSelectedGroupIdsChange: (ids: string[]) => void;
+  proxyCityValue: string[];
+  onProxyCityValueChange: (value: string[]) => void;
   onSave: () => void;
   platform: Platform | null;
 };
+
+const PROXY_CITY_OPTIONS: CascaderOption[] = PROVINCE_CITY_CASCADER_OPTIONS.map(
+  (province) => ({
+    value: province.provinceName,
+    label: province.provinceName,
+    children: province.cities.map((city) => ({
+      value: city.cityName,
+      label: city.cityName,
+    })),
+  }),
+);
 
 export function EditAccountDrawer({
   open,
@@ -28,6 +43,8 @@ export function EditAccountDrawer({
   editableGroups,
   selectedGroupIds,
   onSelectedGroupIdsChange,
+  proxyCityValue,
+  onProxyCityValueChange,
   onSave,
   platform,
 }: EditAccountDrawerProps) {
@@ -95,6 +112,21 @@ export function EditAccountDrawer({
                 <p className="mt-3 text-xs text-muted-foreground">
                   {t("account.editDrawer.groupHint")}
                 </p>
+              </div>
+
+              <div>
+                <h3 className="mb-3 text-sm font-medium text-foreground">
+                  {t("account.editDrawer.proxyCityLabel")}
+                </h3>
+                <Cascader
+                  options={PROXY_CITY_OPTIONS}
+                  value={proxyCityValue}
+                  onValueChange={onProxyCityValueChange}
+                  placeholder={t("account.editDrawer.proxyCityPlaceholder")}
+                  searchPlaceholder={t("account.editDrawer.proxyCitySearchPlaceholder")}
+                  emptyText={t("account.editDrawer.proxyCityEmpty")}
+                  clearText={t("account.editDrawer.proxyCityClear")}
+                />
               </div>
             </>
           )}

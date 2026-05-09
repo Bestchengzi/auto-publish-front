@@ -15,10 +15,13 @@ type UseAccountManagementActionsArgs = {
   t: TFn;
   selectedIds: Set<string>;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  accounts: Account[];
   editingAccountId: string | null;
   setEditingAccountId: React.Dispatch<React.SetStateAction<string | null>>;
   editingGroupIds: string[];
   setEditingGroupIds: React.Dispatch<React.SetStateAction<string[]>>;
+  editingProxyCity: string[];
+  setEditingProxyCity: React.Dispatch<React.SetStateAction<string[]>>;
   newGroupName: string;
   setNewGroupName: React.Dispatch<React.SetStateAction<string>>;
   editingGroupId: string | null;
@@ -34,10 +37,13 @@ export function useAccountManagementActions({
   t,
   selectedIds,
   setSelectedIds,
+  accounts,
   editingAccountId,
   setEditingAccountId,
   editingGroupIds,
   setEditingGroupIds,
+  editingProxyCity,
+  setEditingProxyCity,
   newGroupName,
   setNewGroupName,
   editingGroupId,
@@ -209,8 +215,28 @@ export function useAccountManagementActions({
       setEditingGroupIds(
         account.groupIds.length === 0 ? ["ungrouped"] : [...account.groupIds],
       );
+      const proxyConfig = account.platformOptions?.proxy_config;
+      const province =
+        proxyConfig &&
+        typeof proxyConfig === "object" &&
+        "province" in proxyConfig &&
+        typeof proxyConfig.province === "string"
+          ? proxyConfig.province
+          : "";
+      const city =
+        proxyConfig &&
+        typeof proxyConfig === "object" &&
+        "city" in proxyConfig &&
+        typeof proxyConfig.city === "string"
+          ? proxyConfig.city
+          : "";
+      setEditingProxyCity(
+        province && city && province !== "全国" && city !== "全部"
+          ? [province, city]
+          : [],
+      );
     },
-    [setEditingAccountId, setEditingGroupIds],
+    [setEditingAccountId, setEditingGroupIds, setEditingProxyCity],
   );
 
   const saveEditAccount = React.useCallback(async () => {
@@ -220,7 +246,22 @@ export function useAccountManagementActions({
         .filter((id) => id !== "ungrouped")
         .map((id) => parseInt(id, 10))
         .filter((n) => !Number.isNaN(n));
-      await accountsApi.updateAccount(editingAccountId, { group_ids: groupIds });
+      const editingAccount =
+        accounts.find((account) => account.id === editingAccountId) ?? null;
+      const platformOptions = {
+        ...(editingAccount?.platformOptions ?? {}),
+        proxy_config:
+          editingProxyCity.length === 2
+            ? {
+                province: editingProxyCity[0],
+                city: editingProxyCity[1],
+              }
+            : null,
+      };
+      await accountsApi.updateAccount(editingAccountId, {
+        group_ids: groupIds,
+        platform_options: platformOptions,
+      });
       setEditingAccountId(null);
       await invalidateAccountManagementQueries();
       await refreshData();
@@ -229,8 +270,10 @@ export function useAccountManagementActions({
       toast.error(getApiErrorMessage(e, t("common.error")));
     }
   }, [
+    accounts,
     editingAccountId,
     editingGroupIds,
+    editingProxyCity,
     invalidateAccountManagementQueries,
     refreshData,
     setEditingAccountId,

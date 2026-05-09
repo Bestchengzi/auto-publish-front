@@ -13,6 +13,7 @@ export type AccountResponse = {
   follower_count: number;
   status: "online" | "offline";
   cookie: string | null;
+  platform_options: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   last_refreshed_at?: string | null;
@@ -49,6 +50,7 @@ export type AccountUpdateBody = {
   follower_count?: number | null;
   status?: "online" | "offline" | null;
   cookie?: string | null;
+  platform_options?: Record<string, unknown> | null;
   group_ids?: number[] | null;
 };
 

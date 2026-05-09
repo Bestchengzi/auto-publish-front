@@ -1834,6 +1834,27 @@
                 }
             }
         },
+        "/api/billing/invite-summary": {
+            "get": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Get Invite Summary",
+                "operationId": "get_billing_invite_summary_api_billing_invite_summary_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingInviteSummaryEnvelope"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/billing/transactions": {
             "get": {
                 "tags": [
@@ -2232,6 +2253,47 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/BillingImageChargeResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/image-card-prompt-charges": {
+            "post": {
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Record Image Card Prompt Billing Charge",
+                "operationId": "record_image_card_prompt_billing_charge_api_billing_image_card_prompt_charges_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BillingImageCardPromptChargeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BillingImageCardPromptChargeResponse"
                                 }
                             }
                         }
@@ -5099,6 +5161,18 @@
         "schemas": {
             "AccountCreate": {
                 "properties": {
+                    "platform_options": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform Options"
+                    },
                     "avatar": {
                         "anyOf": [
                             {
@@ -5240,6 +5314,18 @@
                         ],
                         "title": "Cookie"
                     },
+                    "platform_options": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform Options"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -5296,6 +5382,7 @@
                     "follower_count",
                     "status",
                     "cookie",
+                    "platform_options",
                     "created_at",
                     "updated_at",
                     "last_refreshed_at",
@@ -5340,6 +5427,29 @@
                         "type": "string",
                         "title": "Status"
                     },
+                    "cookie": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cookie"
+                    },
+                    "platform_options": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform Options"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -5379,6 +5489,8 @@
                     "platform",
                     "follower_count",
                     "status",
+                    "cookie",
+                    "platform_options",
                     "created_at",
                     "updated_at",
                     "last_refreshed_at",
@@ -5455,6 +5567,18 @@
                         ],
                         "title": "Cookie"
                     },
+                    "platform_options": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform Options"
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -5495,6 +5619,7 @@
                     "follower_count",
                     "status",
                     "cookie",
+                    "platform_options",
                     "created_at",
                     "updated_at",
                     "last_refreshed_at",
@@ -5504,6 +5629,18 @@
             },
             "AccountUpdate": {
                 "properties": {
+                    "platform_options": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Platform Options"
+                    },
                     "avatar": {
                         "anyOf": [
                             {
@@ -6201,6 +6338,99 @@
                 ],
                 "title": "BillingImageBalanceCheckResponse"
             },
+            "BillingImageCardPromptChargeRequest": {
+                "properties": {
+                    "owner_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Owner Id",
+                        "description": "Optional owner id for internal requests; must match the resolved owner"
+                    },
+                    "thread_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Thread Id"
+                    },
+                    "run_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Run Id"
+                    },
+                    "message_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message Id"
+                    },
+                    "prompt_count": {
+                        "type": "integer",
+                        "minimum": 0.0,
+                        "title": "Prompt Count",
+                        "default": 0
+                    },
+                    "idempotency_key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Idempotency Key"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "idempotency_key"
+                ],
+                "title": "BillingImageCardPromptChargeRequest"
+            },
+            "BillingImageCardPromptChargeResponse": {
+                "properties": {
+                    "account": {
+                        "$ref": "#/components/schemas/BillingAccountResponse"
+                    },
+                    "transaction": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BillingTransactionResponse"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "charged": {
+                        "type": "boolean",
+                        "title": "Charged"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "account",
+                    "transaction",
+                    "charged"
+                ],
+                "title": "BillingImageCardPromptChargeResponse"
+            },
             "BillingImageChargeRequest": {
                 "properties": {
                     "owner_id": {
@@ -6311,6 +6541,46 @@
                     "charged"
                 ],
                 "title": "BillingImageChargeResponse"
+            },
+            "BillingInviteSummaryEnvelope": {
+                "properties": {
+                    "invite_summary": {
+                        "$ref": "#/components/schemas/BillingInviteSummaryResponse"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "invite_summary"
+                ],
+                "title": "BillingInviteSummaryEnvelope"
+            },
+            "BillingInviteSummaryResponse": {
+                "properties": {
+                    "owner_id": {
+                        "type": "string",
+                        "title": "Owner Id"
+                    },
+                    "invite_code": {
+                        "type": "string",
+                        "title": "Invite Code"
+                    },
+                    "invited_user_count": {
+                        "type": "integer",
+                        "title": "Invited User Count"
+                    },
+                    "rewarded_points": {
+                        "type": "integer",
+                        "title": "Rewarded Points"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "owner_id",
+                    "invite_code",
+                    "invited_user_count",
+                    "rewarded_points"
+                ],
+                "title": "BillingInviteSummaryResponse"
             },
             "BillingModelPricingDeleteResponse": {
                 "properties": {
@@ -8888,6 +9158,17 @@
                         ],
                         "title": "Resolution"
                     },
+                    "tag": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tag"
+                    },
                     "input_images": {
                         "items": {
                             "type": "string"
@@ -8919,6 +9200,7 @@
                     "thread_id",
                     "size",
                     "resolution",
+                    "tag",
                     "input_images",
                     "created_at",
                     "updated_at",
@@ -9713,6 +9995,24 @@
                         ],
                         "title": "User Input"
                     },
+                    "tag": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tag"
+                    },
+                    "input_images": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Input Images"
+                    },
                     "images": {
                         "items": {
                             "type": "string"
@@ -9726,6 +10026,8 @@
                     "title",
                     "content",
                     "user_input",
+                    "tag",
+                    "input_images",
                     "images"
                 ],
                 "title": "PublicImageTaskResponse"

@@ -68,6 +68,7 @@
       "creationCenter": "Creation Center",
       "topicCenter": "Topic Center",
       "autoPublish": "Auto-Publish",
+      "earnPoints": "Earn points",
       "worksLibrary": "Publishing Records",
       "account": "Account",
       "assetLibrary": "Asset Library",
@@ -120,6 +121,27 @@
           "description": "For each successful new user sign-up, both you and your friend get 500 points. You can also receive extra rewards when your friend makes their first top-up."
         }
       }
+    }
+  },
+  "earnPointsPage": {
+    "heroSubtitle": "Invite friends to create with you, or trade sharp product insights for points. Every meaningful share and piece of feedback deserves a reward.",
+    "stats": {
+      "invitedLabel": "Total invited users",
+      "pointsLabel": "Total points earned",
+      "dataHint": "Invite stats from your account; stays in sync with invite rewards.",
+      "loadError": "Invite stats are unavailable. Please refresh and try again."
+    },
+    "bounty": {
+      "eyebrow": "Bounty",
+      "title": "Contact support · Feedback rewards",
+      "description": "Report functional bugs or share standout product ideas via support or the feedback form. If we adopt your submission after review, you will receive an extra {points}.",
+      "pointsToken": "500 points",
+      "bullet1": "The more specific you are—with clear repro steps—the faster we can act.",
+      "bullet2": "Explain real scenarios and the outcome you want; that improves the chance of adoption.",
+      "feedbackCta": "Open feedback form",
+      "wechatTitle": "Scan to add support on WeChat",
+      "wechatAlt": "WeChat QR code for customer support",
+      "rewardCallout": "Rewards are issued after adoption— great ideas can become real features."
     }
   },
   "feedback": {
@@ -186,6 +208,11 @@
       "title": "Edit account",
       "groupLabel": "Group (multi-select)",
       "groupHint": "Create more groups in settings if you don't see the one you need.",
+      "proxyCityLabel": "Proxy city",
+      "proxyCityPlaceholder": "Select proxy city",
+      "proxyCitySearchPlaceholder": "Search province or city…",
+      "proxyCityEmpty": "No matching cities",
+      "proxyCityClear": "Clear",
       "save": "Save"
     },
     "actions": {

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,8 +34,16 @@ import {
   ThreadContext,
   type ThreadContextType,
 } from "@/components/langgraph/workspace/messages/context";
-import { createThread } from "@/lib/langgraph-client";
-import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
+import {
+  createThread,
+  THREAD_METADATA_PLATFORM_REDNOTE,
+} from "@/lib/langgraph-client";
+import {
+  clearPendingCreationDraft,
+  peekPendingCreationDraft,
+  stashPendingInitialMessage,
+  type PendingCreationDraft,
+} from "@/lib/creation-center/pending-initial-message";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import type { AgentThread } from "@/lib/langgraph/core/threads/types";
 import {
@@ -313,6 +321,12 @@ const REDNOTE_CONTEXT_OVERRIDES = {
   model_name: "qwen3.6-plus",
 };
 
+type StartThreadOptions = {
+  additionalKwargs?: Record<string, unknown>;
+  agentId?: ContentAgentId;
+  personaId?: string | null;
+};
+
 function normalizeConfigValue(value: string) {
   return value.replace(/\s+/g, "").trim();
 }
@@ -431,7 +445,7 @@ const AGENT_HERO_COPY: Record<ContentAgentId, AgentHeroCopy> = {
     title: "一句话生成小红书爆款图文",
     subtitle: "适合种草、攻略、测评、生活方式分享，自动生成标题正文和图文提示词。",
     placeholders: [
-      "夏季清爽防晒推荐，通勤日常必备",
+      "夏季清爽防晒推荐，通勤日常必备，水印设置为@米酱呀",
       "网红爆款唇釉实测，平价替代巨划算",
       "小个子穿搭技巧，显高显瘦公式分享",
     ],
@@ -583,6 +597,8 @@ export function CreationCenterNewChat() {
     useState<RednoteAspectRatio>("3:4");
   const [generatedImageCount, setGeneratedImageCount] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [pendingCreationDraft, setPendingCreationDraft] =
+    useState<PendingCreationDraft | null>(null);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(() =>
     typeof context.persona_id === "string" ? context.persona_id : null,
   );
@@ -590,6 +606,7 @@ export function CreationCenterNewChat() {
     id: string;
     name: string;
   } | null>(null);
+  const hydratedCreationDraftRef = useRef(false);
   const [deletePersonaDialogOpen, setDeletePersonaDialogOpen] = useState(false);
   const [deletePersonaDialogSnapshot, setDeletePersonaDialogSnapshot] = useState<{
     id: string;
@@ -646,6 +663,14 @@ export function CreationCenterNewChat() {
     [rednoteContentStrategyId],
   );
   const isRednoteAgent = selectedAgent.id === "rednote";
+  const selectedTopic = useMemo(() => {
+    const newsItem = pendingCreationDraft?.additionalKwargs.news_item;
+    const title =
+      typeof newsItem?.title === "string" ? newsItem.title.trim() : "";
+    return title ? { title, typeLabel: "选题" } : null;
+  }, [pendingCreationDraft]);
+  const isTopicUnsupportedAgent = Boolean(pendingCreationDraft && isRednoteAgent);
+  const visibleSelectedTopic = isTopicUnsupportedAgent ? null : selectedTopic;
   const composerBorderClass = useMemo(() => {
     switch (selectedAgent.id) {
       case "rednote":
@@ -666,6 +691,27 @@ export function CreationCenterNewChat() {
   const deletePersonaMutation = useMutation({
     mutationFn: async (personaId: string) => deletePersona(personaId),
   });
+
+  useEffect(() => {
+    if (hydratedCreationDraftRef.current) return;
+    const draft = peekPendingCreationDraft();
+    if (!draft) return;
+
+    hydratedCreationDraftRef.current = true;
+    clearPendingCreationDraft();
+    setPendingCreationDraft(draft);
+    setSelectedAgentId("news");
+    setImageModeId("ai");
+    setArticleLength("");
+    promptInput.textInput.setInput(draft.text);
+    if (typeof draft.personaId === "string") {
+      setSelectedPersonaId(draft.personaId);
+      setSettings("context", {
+        ...context,
+        persona_id: draft.personaId,
+      });
+    }
+  }, [context, promptInput.textInput, setSettings]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -729,20 +775,40 @@ export function CreationCenterNewChat() {
       return;
     }
 
+    if (pendingCreationDraft?.personaId === selectedPersonaId) return;
     if (!selectedPersonaId) return;
     if (personaOptions.some((persona) => persona.id === selectedPersonaId)) return;
 
     setSelectedPersonaId(null);
-  }, [context, personaOptions, personasFetched, selectedPersonaId, setSettings]);
+  }, [
+    context,
+    pendingCreationDraft?.personaId,
+    personaOptions,
+    personasFetched,
+    selectedPersonaId,
+    setSettings,
+  ]);
 
   const startThreadWithText = useCallback(
-    async (text: string, files: FileUIPart[] = []) => {
+    async (
+      text: string,
+      files: FileUIPart[] = [],
+      options: StartThreadOptions = {},
+    ) => {
       const trimmed = text.trim();
-      if (!trimmed && files.length === 0) return;
+      if (!trimmed && files.length === 0) return false;
+
+      const agentId = options.agentId ?? selectedAgent.id;
+      const isRednoteRun = agentId === "rednote";
+      const personaId = options.personaId ?? selectedPersonaId;
 
       setIsStarting(true);
       try {
-        const threadId = await createThread({ metadata: {} });
+        const threadId = await createThread({
+          metadata: isRednoteRun
+            ? { platform: THREAD_METADATA_PLATFORM_REDNOTE }
+            : {},
+        });
         const now = new Date().toISOString();
         const optimisticThread = {
           thread_id: threadId,
@@ -770,9 +836,12 @@ export function CreationCenterNewChat() {
         stashPendingInitialMessage({
           threadId,
           text: trimmed,
-          personaId: selectedPersonaId,
+          personaId,
+          ...(options.additionalKwargs
+            ? { additionalKwargs: options.additionalKwargs }
+            : {}),
           ...(files.length > 0 ? { files } : {}),
-          ...(isRednoteAgent
+          ...(isRednoteRun
             ? {
                 contextOverrides: {
                   ...REDNOTE_CONTEXT_OVERRIDES,
@@ -780,27 +849,29 @@ export function CreationCenterNewChat() {
                 },
               }
             : {}),
-          ...(isRednoteAgent ? { runOptions: REDNOTE_RUN_OPTIONS } : {}),
+          ...(isRednoteRun ? { runOptions: REDNOTE_RUN_OPTIONS } : {}),
         });
         setSettings("context", {
           ...context,
-          persona_id: selectedPersonaId ?? undefined,
-          size: isRednoteAgent ? rednoteAspectRatio : undefined,
+          persona_id: personaId ?? undefined,
+          size: isRednoteRun ? rednoteAspectRatio : undefined,
         });
         router.push(`/${locale}/creation-center/${threadId}`);
+        return true;
       } catch (error) {
         toast.error(error instanceof Error ? error.message : t("createThreadFailed"));
+        return false;
       } finally {
         setIsStarting(false);
       }
     },
     [
       context,
-      isRednoteAgent,
       locale,
       queryClient,
       rednoteAspectRatio,
       router,
+      selectedAgent.id,
       selectedPersonaId,
       setSettings,
       t,
@@ -860,11 +931,36 @@ export function CreationCenterNewChat() {
 
       const text = message.text.trim();
       const files = message.files ?? [];
+
+      if (pendingCreationDraft) {
+        if (isTopicUnsupportedAgent) return;
+
+        const draftText = buildConfiguredPrompt(text || pendingCreationDraft.text);
+        const started = await startThreadWithText(draftText, files, {
+          additionalKwargs: pendingCreationDraft.additionalKwargs,
+          agentId: "news",
+          personaId: pendingCreationDraft.personaId ?? selectedPersonaId,
+        });
+
+        if (started) {
+          clearPendingCreationDraft();
+          setPendingCreationDraft(null);
+        }
+        return;
+      }
+
       if (!text && files.length === 0) return;
 
       await startThreadWithText(buildConfiguredPrompt(text), files);
     },
-    [buildConfiguredPrompt, isStarting, startThreadWithText],
+    [
+      buildConfiguredPrompt,
+      isStarting,
+      isTopicUnsupportedAgent,
+      pendingCreationDraft,
+      selectedPersonaId,
+      startThreadWithText,
+    ],
   );
 
   const handleUseRednoteExample = useCallback(
@@ -886,6 +982,8 @@ export function CreationCenterNewChat() {
         setGeneratedImageCount(parsed.imageCount);
       }
 
+      clearPendingCreationDraft();
+      setPendingCreationDraft(null);
       promptInput.textInput.setInput(parsed.text);
       promptInput.attachments.clear();
       promptInput.attachments.addFileParts(
@@ -898,6 +996,28 @@ export function CreationCenterNewChat() {
       );
     },
     [promptInput],
+  );
+
+  const handleClearSelectedTopic = useCallback(() => {
+    clearPendingCreationDraft();
+    setPendingCreationDraft(null);
+  }, []);
+
+  const handleSelectAgent = useCallback(
+    (agentId: ContentAgentId) => {
+      setSelectedAgentId(agentId);
+
+      if (!pendingCreationDraft) return;
+      if (agentId === "rednote") {
+        promptInput.textInput.setInput("");
+        return;
+      }
+
+      if (!promptInput.textInput.value.trim()) {
+        promptInput.textInput.setInput(pendingCreationDraft.text);
+      }
+    },
+    [pendingCreationDraft, promptInput.textInput],
   );
 
   const handleAddPersona = useCallback(async () => {
@@ -952,7 +1072,7 @@ export function CreationCenterNewChat() {
                       ? activeStyle.button
                       : "border-transparent bg-white/75 text-foreground/75 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10",
                   )}
-                  onClick={() => setSelectedAgentId(agent.id)}
+                  onClick={() => handleSelectAgent(agent.id)}
                   title={agent.description}
                 >
                   {agent.logoSrc ? (
@@ -1187,6 +1307,8 @@ export function CreationCenterNewChat() {
                 composerBorderClass,
                 "relative w-full overflow-hidden rounded-[26px] border bg-transparent transition-colors",
                 "[&_[data-slot='input-group']]:rounded-[26px] [&_[data-slot='input-group']]:border-0 [&_[data-slot='input-group']]:bg-transparent",
+                (isStarting || isTopicUnsupportedAgent) &&
+                  "[&_[data-slot='input-group']:has([data-slot=input-group-control]:disabled)]:!bg-muted/30 dark:[&_[data-slot='input-group']:has([data-slot=input-group-control]:disabled)]:!bg-muted/15",
                 "[&_[data-slot='input-group']]:!outline-none [&_[data-slot='input-group']]:!ring-0 [&_[data-slot='input-group']]:!ring-transparent",
                 "[&_[name='message']]:min-h-[190px]",
                 "[&_[name='message']]:border-0",
@@ -1209,8 +1331,10 @@ export function CreationCenterNewChat() {
               placeholder={selectedPlaceholder}
               status="ready"
               context={context}
-              disabled={isStarting}
+              disabled={isStarting || isTopicUnsupportedAgent}
               clearTextOnSubmit={false}
+              selectedTopic={visibleSelectedTopic}
+              onClearSelectedTopic={handleClearSelectedTopic}
               submitLabel="发送"
               onContextChange={(nextContext) => setSettings("context", nextContext)}
               addPersonaLabel={t("addPersona")}

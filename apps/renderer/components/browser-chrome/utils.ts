@@ -5,6 +5,7 @@ const ROUTE_TO_TITLE_KEY: Record<string, string> = {
   "creation-center": "sidebar.items.creationCenter",
   "topic-center": "sidebar.items.topicCenter",
   "auto-publish": "sidebar.items.autoPublish",
+  "earn-points": "sidebar.items.earnPoints",
 };
 
 export function getTitleKeyFromPath(pathname: string): string {

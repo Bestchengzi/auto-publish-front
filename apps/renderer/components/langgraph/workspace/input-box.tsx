@@ -6,6 +6,7 @@ import {
   ChevronDownIcon,
   GraduationCapIcon,
   LightbulbIcon,
+  NewspaperIcon,
   PaperclipIcon,
   PencilIcon,
   PlusIcon,
@@ -32,10 +33,12 @@ import {
   PromptInputActionMenuItem,
   PromptInputActionMenuTrigger,
   PromptInputAttachment,
-  PromptInputAttachments,
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
+  PromptInputHoverCard,
+  PromptInputHoverCardContent,
+  PromptInputHoverCardTrigger,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
@@ -137,6 +140,8 @@ export function InputBox({
   showPersonaManagementActions = false,
   toolbarVariant = "default",
   attachmentsPlacement = "default",
+  selectedTopic,
+  onClearSelectedTopic,
   submitLabel,
   ...props
 }: Omit<ComponentProps<typeof PromptInput>, "onSubmit"> & {
@@ -177,6 +182,11 @@ export function InputBox({
   showPersonaManagementActions?: boolean;
   toolbarVariant?: "default" | "attachmentsOnly";
   attachmentsPlacement?: "default" | "underHeader";
+  selectedTopic?: {
+    title: string;
+    typeLabel: string;
+  } | null;
+  onClearSelectedTopic?: () => void;
   submitLabel?: string;
 }) {
   const { t } = useI18n();
@@ -294,8 +304,11 @@ export function InputBox({
 
   const selectedMode = getResolvedMode(context.mode, supportThinking);
   const searchEnabled = context.search_enabled !== false;
+  const hasSelectedTopic = Boolean(selectedTopic);
   const hasSubmitContent =
-    textInput.value.trim().length > 0 || attachments.files.length > 0;
+    textInput.value.trim().length > 0 ||
+    attachments.files.length > 0 ||
+    hasSelectedTopic;
   const submitDisabled =
     disabled ||
     !canUseAuthFeatures ||
@@ -315,7 +328,71 @@ export function InputBox({
   const hasPersonaManagementActions = canEditPersona || canDeletePersona;
   const attachmentsOnlyToolbar = toolbarVariant === "attachmentsOnly";
   const attachmentsUnderHeader = attachmentsPlacement === "underHeader";
+  const attachmentsNearFooter = attachmentsPlacement === "underHeader";
   const hasAttachments = attachments.files.length > 0;
+  const hasHeaderItems = hasAttachments || hasSelectedTopic;
+  const headerItems = hasHeaderItems ? (
+    <div
+      className={cn(
+        "relative z-10 flex w-full flex-wrap items-center gap-2 p-3",
+        attachmentsNearFooter && "px-[23px] pt-0 pb-0.5",
+      )}
+    >
+      {selectedTopic ? (
+        <div className="max-w-60">
+          <PromptInputHoverCard>
+            <PromptInputHoverCardTrigger
+              render={
+                <div className="group border-border hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 relative flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-1.5 text-sm font-medium transition-all select-none">
+                  <div className="relative size-5 shrink-0">
+                    <div className="bg-background absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded transition-opacity group-hover:opacity-0">
+                      <div className="text-muted-foreground flex size-5 items-center justify-center">
+                        <NewspaperIcon className="size-3.5 text-rose-500" />
+                      </div>
+                    </div>
+                    {onClearSelectedTopic ? (
+                      <button
+                        aria-label="移除选题"
+                        className="absolute inset-0 flex size-5 cursor-pointer items-center justify-center rounded p-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 hover:bg-accent"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onClearSelectedTopic();
+                        }}
+                        type="button"
+                      >
+                        <span className="text-base leading-none">×</span>
+                        <span className="sr-only">移除</span>
+                      </button>
+                    ) : null}
+                  </div>
+                  <span className="flex-1 truncate">{selectedTopic.title}</span>
+                </div>
+              }
+            />
+            <PromptInputHoverCardContent className="w-[min(24rem,calc(100vw-2rem))] p-2">
+              <div className="w-full space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="min-w-0 flex-1 space-y-1 px-0.5">
+                    <h4 className="truncate text-sm leading-none font-semibold">
+                      {selectedTopic.title}
+                    </h4>
+                    <p className="text-muted-foreground truncate font-mono text-xs">
+                      {selectedTopic.typeLabel}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </PromptInputHoverCardContent>
+          </PromptInputHoverCard>
+        </div>
+      ) : null}
+      {attachments.files.map((attachment) => (
+        <div className="max-w-60" key={attachment.id}>
+          <PromptInputAttachment data={attachment} />
+        </div>
+      ))}
+    </div>
+  ) : null;
 
   const handleSubmit = useCallback(
     async (message: PromptInputMessage) => {
@@ -325,7 +402,7 @@ export function InputBox({
       }
       const hasText = Boolean(message.text?.trim());
       const hasFiles = (message.files?.length ?? 0) > 0;
-      if (!hasText && !hasFiles) {
+      if (!hasText && !hasFiles && !hasSelectedTopic) {
         return;
       }
       // 建议能力暂时停用。
@@ -334,7 +411,7 @@ export function InputBox({
       // setFollowupsLoading(false);
       onSubmit?.(message);
     },
-    [onSubmit, onStop, status],
+    [hasSelectedTopic, onSubmit, onStop, status],
   );
 
   /*
@@ -447,8 +524,8 @@ export function InputBox({
           "bg-background/85 rounded-2xl backdrop-blur-sm transition-all duration-300 ease-out *:data-[slot='input-group']:rounded-2xl",
           className,
           attachmentsUnderHeader &&
-            hasAttachments &&
-            "[&_[name='message']]:min-h-[120px] [&_[name='message']]:pt-1",
+            hasHeaderItems &&
+            "[&_[name='message']]:min-h-[120px]",
         )}
         disabled={disabled}
         globalDrop
@@ -464,14 +541,7 @@ export function InputBox({
           // </div>
           <div></div>
         )}
-        <PromptInputAttachments
-          className={cn(
-            "relative z-10",
-            attachmentsUnderHeader && "px-[23px] pt-[58px] pb-1",
-          )}
-        >
-          {(attachment) => <PromptInputAttachment data={attachment} />}
-        </PromptInputAttachments>
+        {!attachmentsNearFooter ? headerItems : null}
         <PromptInputBody className="absolute top-0 right-0 left-0 z-3">
           <PromptInputTextarea
             className={cn("size-full")}
@@ -481,7 +551,10 @@ export function InputBox({
             defaultValue={initialValue}
           />
         </PromptInputBody>
-        <PromptInputFooter className="flex">
+        {attachmentsNearFooter ? headerItems : null}
+        <PromptInputFooter
+          className={cn("flex", attachmentsNearFooter && hasHeaderItems && "pt-0")}
+        >
           <PromptInputTools>
             {/* TODO: Add more connectors here
           <PromptInputActionMenu>

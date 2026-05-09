@@ -28,4 +28,6 @@ export type Account = {
   avatar?: string | null;
   /** Serialized platform cookies returned by the account API. */
   cookie?: string | null;
+  /** Platform-specific account options, such as proxy city settings. */
+  platformOptions?: Record<string, unknown> | null;
 };

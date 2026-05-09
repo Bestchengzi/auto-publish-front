@@ -54,6 +54,7 @@ function mapAccountResponseToAccount(a: accountsApi.AccountResponse): Account {
     avatarSeed: a.id,
     avatar: a.avatar ?? undefined,
     cookie: a.cookie ?? null,
+    platformOptions: a.platform_options ?? null,
   };
 }
 

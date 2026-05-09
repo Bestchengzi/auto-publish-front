@@ -21,9 +21,7 @@ import {
   type TopicDataListItemResponse,
 } from "@/lib/api/data-connectors";
 import { getApiErrorMessage } from "@/lib/request";
-import { stashPendingInitialMessage } from "@/lib/creation-center/pending-initial-message";
-import type { AgentThread } from "@/lib/langgraph/core/threads/types";
-import { createThread } from "@/lib/langgraph-client";
+import { stashPendingCreationDraft } from "@/lib/creation-center/pending-initial-message";
 import { useLocalSettings } from "@/lib/langgraph/core/settings";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { PageEmptyState } from "@/components/common/page-empty-state";
@@ -348,35 +346,9 @@ export function TopicCenterDataConnectorsPanel({
           payload.content_text ??
           ""
         ).trim();
-        const threadId = await createThread({ metadata: {} });
-        const now = new Date().toISOString();
-        const optimisticTitle = t("actions.newConversationTitle");
-        const optimisticThread = {
-          thread_id: threadId,
-          created_at: now,
-          updated_at: now,
-          metadata: {},
-          values: optimisticTitle ? { title: optimisticTitle } : {},
-        } as unknown as AgentThread;
 
-        queryClient.setQueriesData(
-          {
-            queryKey: ["threads", "search"],
-            exact: false,
-          },
-          (oldData: Array<AgentThread> | undefined) => {
-            if (!oldData || oldData.length === 0) {
-              return [optimisticThread];
-            }
-            const withoutCurrent = oldData.filter(
-              (thread) => thread.thread_id !== threadId,
-            );
-            return [optimisticThread, ...withoutCurrent];
-          },
-        );
-
-        stashPendingInitialMessage({
-          threadId,
+        stashPendingCreationDraft({
+          type: "news_item",
           text: t("actions.createFromArticlePrompt"),
           personaId: selectedPersonaId,
           additionalKwargs: {
@@ -388,7 +360,9 @@ export function TopicCenterDataConnectorsPanel({
             },
           },
         });
-        router.push(`/${appLocale}/creation-center/${threadId}`);
+        setDetailBoardId(null);
+        setDetailItem(null);
+        router.push(`/${appLocale}/creation-center/new`);
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : t("actions.divergeFailed"),
@@ -397,7 +371,7 @@ export function TopicCenterDataConnectorsPanel({
         setCreatingFromDetail(false);
       }
     },
-    [appLocale, creatingFromDetail, queryClient, router, selectedPersonaId, t],
+    [appLocale, creatingFromDetail, router, selectedPersonaId, t],
   );
 
   const showSectionSkeleton =

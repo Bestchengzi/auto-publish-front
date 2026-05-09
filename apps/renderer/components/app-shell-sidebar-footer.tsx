@@ -83,6 +83,9 @@ function getThreadIdFromPathname(pathname: string): string | null {
   return decodeURIComponent(threadId);
 }
 
+/** 左下角用户菜单里的「赚取积分」及原弹窗；默认关闭（入口在侧栏），需要恢复时改为 true */
+const SHOW_FOOTER_EARN_POINTS_LEGACY = false;
+
 export function AppShellSidebarFooter() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -267,13 +270,15 @@ export function AppShellSidebarFooter() {
               <SettingsIcon className="size-4" />
               {tSidebar("footer.profileSettings")}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="py-2"
-              onClick={() => setEarnPointsOpen(true)}
-            >
-              <GiftIcon className="size-4" />
-              {tSidebar("footer.earnPoints")}
-            </DropdownMenuItem>
+            {SHOW_FOOTER_EARN_POINTS_LEGACY ? (
+              <DropdownMenuItem
+                className="py-2"
+                onClick={() => setEarnPointsOpen(true)}
+              >
+                <GiftIcon className="size-4" />
+                {tSidebar("footer.earnPoints")}
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem
               className="py-2"
               onClick={() => setPlanDialogOpen(true)}
@@ -571,74 +576,76 @@ export function AppShellSidebarFooter() {
           defaultContact={userPhone}
           threadId={feedbackThreadId}
         />
-        <Dialog open={earnPointsOpen} onOpenChange={setEarnPointsOpen}>
-          <DialogContent className="max-w-xl p-0 overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
-              <div className="text-lg font-semibold text-foreground">
-                {tSidebar("footer.earnPointsDialog.title")}
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {tSidebar("footer.earnPointsDialog.description")}
-              </p>
-            </div>
-            <div className="space-y-5 px-6 py-5">
-              <div className="rounded-xl border border-border bg-muted/20 p-4">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                  <LinkIcon className="size-4 text-primary" />
-                  {tSidebar("footer.earnPointsDialog.shareTitle")}
+        {SHOW_FOOTER_EARN_POINTS_LEGACY ? (
+          <Dialog open={earnPointsOpen} onOpenChange={setEarnPointsOpen}>
+            <DialogContent className="max-w-xl overflow-hidden p-0">
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
+                <div className="text-lg font-semibold text-foreground">
+                  {tSidebar("footer.earnPointsDialog.title")}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                    <span className="block truncate">
-                      {inviteLink || tSidebar("footer.earnPointsDialog.emptyInviteCode")}
-                    </span>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {tSidebar("footer.earnPointsDialog.description")}
+                </p>
+              </div>
+              <div className="space-y-5 px-6 py-5">
+                <div className="rounded-xl border border-border bg-muted/20 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                    <LinkIcon className="size-4 text-primary" />
+                    {tSidebar("footer.earnPointsDialog.shareTitle")}
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!inviteLink}
-                    onClick={async () => {
-                      if (!inviteLink) return;
-                      try {
-                        await navigator.clipboard.writeText(inviteLink);
-                        toast.success(tSidebar("footer.earnPointsDialog.copySuccess"));
-                      } catch {
-                        toast.error(tSidebar("footer.earnPointsDialog.copyFailed"));
-                      }
-                    }}
-                  >
-                    <CopyIcon className="size-4" />
-                    {tSidebar("footer.earnPointsDialog.copy")}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+                      <span className="block truncate">
+                        {inviteLink || tSidebar("footer.earnPointsDialog.emptyInviteCode")}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!inviteLink}
+                      onClick={async () => {
+                        if (!inviteLink) return;
+                        try {
+                          await navigator.clipboard.writeText(inviteLink);
+                          toast.success(tSidebar("footer.earnPointsDialog.copySuccess"));
+                        } catch {
+                          toast.error(tSidebar("footer.earnPointsDialog.copyFailed"));
+                        }
+                      }}
+                    >
+                      <CopyIcon className="size-4" />
+                      {tSidebar("footer.earnPointsDialog.copy")}
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="text-sm font-medium text-foreground">
-                  {tSidebar("footer.earnPointsDialog.stepsTitle")}
-                </div>
-                {(["step1", "step2", "step3"] as const).map((stepKey, index) => (
-                  <div
-                    key={stepKey}
-                    className="flex items-start gap-3 rounded-lg border border-border bg-background p-3"
-                  >
-                    <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">
-                        {tSidebar(`footer.earnPointsDialog.${stepKey}.title`)}
-                      </div>
-                      <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                        {tSidebar(`footer.earnPointsDialog.${stepKey}.description`)}
-                      </div>
-                    </div>
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-foreground">
+                    {tSidebar("footer.earnPointsDialog.stepsTitle")}
                   </div>
-                ))}
+                  {(["step1", "step2", "step3"] as const).map((stepKey, index) => (
+                    <div
+                      key={stepKey}
+                      className="flex items-start gap-3 rounded-lg border border-border bg-background p-3"
+                    >
+                      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">
+                          {tSidebar(`footer.earnPointsDialog.${stepKey}.title`)}
+                        </div>
+                        <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                          {tSidebar(`footer.earnPointsDialog.${stepKey}.description`)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        ) : null}
       </>
     );
   }

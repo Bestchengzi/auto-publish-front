@@ -58,14 +58,17 @@ import { listPersonas } from "@/lib/api/personas";
 import { formatBillingPoints } from "@/lib/billing-points";
 import { cn } from "@/lib/utils";
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
+import {
+  getLangGraphThread,
+  readThreadRootPlatform,
+  THREAD_METADATA_PLATFORM_REDNOTE,
+} from "@/lib/langgraph-client";
 
 type InsufficientBalanceInfo = {
   message: string;
   availablePoints?: number;
   requiredPoints?: number;
 };
-
-const IMAGE_CARDS_GRAPH_ID = "image_cards";
 
 const IMAGE_EXTENSIONS = new Set([
   "png",
@@ -106,13 +109,6 @@ function normalizeThreadRunOptions(
 ): ThreadRunOptions | undefined {
   const streamMode = runOptions?.streamMode?.filter(isThreadRunStreamMode);
   return streamMode && streamMode.length > 0 ? { streamMode } : undefined;
-}
-
-function readMetadataGraphId(
-  state: { metadata?: Record<string, unknown> | null },
-): string | undefined {
-  const graphId = state.metadata?.graph_id;
-  return typeof graphId === "string" ? graphId : undefined;
 }
 
 function readMetadataSize(
@@ -464,8 +460,25 @@ export function CreationCenterLanggraphChat() {
         : undefined,
     [pendingContextOverrides],
   );
-  const isPendingImageCardsThread =
-    pendingRunOptions?.assistantId === IMAGE_CARDS_GRAPH_ID;
+
+  const shouldLoadThreadRootMeta = Boolean(threadId) && canUseAuthFeatures;
+
+  const { data: threadRootRecord, isFetched: isThreadRootQueryFetched } =
+    useQuery({
+      queryKey: ["langgraph", "threads", threadId],
+      queryFn: () => getLangGraphThread(threadId),
+      enabled: shouldLoadThreadRootMeta,
+    });
+
+  const isThreadRootMetaFetched =
+    !shouldLoadThreadRootMeta || isThreadRootQueryFetched;
+
+  const threadRootPlatform = useMemo(() => {
+    if (!shouldLoadThreadRootMeta) return undefined;
+    return readThreadRootPlatform(threadRootRecord);
+  }, [shouldLoadThreadRootMeta, threadRootRecord]);
+  const isRednoteThreadUi =
+    threadRootPlatform === THREAD_METADATA_PLATFORM_REDNOTE;
 
   const [thread, sendMessage, isUploading] = useThreadStream({
     threadId: threadId || undefined,
@@ -494,10 +507,6 @@ export function CreationCenterLanggraphChat() {
       }
     },
   });
-  const historyGraphId = useMemo(
-    () => thread.history.map(readMetadataGraphId).find(Boolean),
-    [thread.history],
-  );
   const rednoteImageSize = useMemo(
     () => thread.history.map(readMetadataSize).find(Boolean) ?? null,
     [thread.history],
@@ -506,12 +515,8 @@ export function CreationCenterLanggraphChat() {
     () => thread.history.map(readMetadataInputImages).find(Boolean) ?? null,
     [thread.history],
   );
-  const showInputBox =
-    !isPendingImageCardsThread &&
-    typeof historyGraphId === "string" &&
-    historyGraphId !== IMAGE_CARDS_GRAPH_ID;
-  const isImageCardsDisplay =
-    isPendingImageCardsThread || historyGraphId === IMAGE_CARDS_GRAPH_ID;
+  const showInputBox = isThreadRootMetaFetched && !isRednoteThreadUi;
+  const showRednoteShell = isThreadRootMetaFetched && isRednoteThreadUi;
   const rednoteContent = useMemo(() => {
     const latest = normalizeRednoteContent(thread.values.rednote_content);
     if (latest) return latest;
@@ -649,7 +654,7 @@ export function CreationCenterLanggraphChat() {
         <div className="relative flex size-full min-h-0 justify-between">
           <main className="flex min-h-0 max-w-full flex-1 flex-col">
             <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden">
-              {isImageCardsDisplay ? (
+              {showRednoteShell ? (
                 <Conversation className="min-h-0 flex-1 pt-6">
                   <ConversationContent className="mx-auto w-full max-w-6xl gap-6 px-6 py-8">
                     {rednoteHumanMessages.length > 0 ? (

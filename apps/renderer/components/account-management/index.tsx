@@ -86,6 +86,7 @@ export function AccountManagement() {
     null,
   );
   const [editingGroupIds, setEditingGroupIds] = React.useState<string[]>([]);
+  const [editingProxyCity, setEditingProxyCity] = React.useState<string[]>([]);
   const [pendingDeleteAccountId, setPendingDeleteAccountId] = React.useState<
     string | null
   >(null);
@@ -170,10 +171,13 @@ export function AccountManagement() {
     t,
     selectedIds,
     setSelectedIds,
+    accounts,
     editingAccountId,
     setEditingAccountId,
     editingGroupIds,
     setEditingGroupIds,
+    editingProxyCity,
+    setEditingProxyCity,
     newGroupName,
     setNewGroupName,
     editingGroupId,
@@ -864,6 +868,8 @@ export function AccountManagement() {
           editableGroups={editDrawerGroups}
           selectedGroupIds={editingGroupIds}
           onSelectedGroupIdsChange={setEditingGroupIds}
+          proxyCityValue={editingProxyCity}
+          onProxyCityValueChange={setEditingProxyCity}
           onSave={saveEditAccount}
           platform={activeEditingPlatform}
         />
