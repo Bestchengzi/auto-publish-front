@@ -42,7 +42,6 @@ export type ExternalTabApi = {
     cb: (tabId: string, code: number, description: string, validatedUrl: string) => void,
   ) => () => void;
   onFailLoadClear: (cb: (tabId: string) => void) => () => void;
-  onDownloadStarted: (cb: (tabId: string) => void) => () => void;
   onOpenInTab: (cb: (url: string) => void) => () => void;
   onPlatformAuthTabRequest: (cb: (platformId: string, loginUrl: string) => void) => () => void;
   onPlatformAuthCompleted: (cb: (tabId: string, result: PlatformAuthResult) => void) => () => void;
@@ -181,8 +180,6 @@ const api: DesktopApi = {
       ),
     onFailLoadClear: (cb) =>
       subscribe("external-tab:fail-load-clear", (tabId) => cb(tabId as string)),
-    onDownloadStarted: (cb) =>
-      subscribe("external-tab:download-started", (tabId) => cb(tabId as string)),
     onOpenInTab: (cb) => subscribe("open-in-tab", (url) => cb(url as string)),
     onPlatformAuthTabRequest: (cb) =>
       subscribe("open-platform-auth-tab", (platformId, loginUrl) => cb(platformId as string, loginUrl as string)),

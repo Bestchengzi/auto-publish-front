@@ -69,7 +69,6 @@ declare global {
           cb: (tabId: string, code: number, description: string, validatedUrl: string) => void,
         ) => () => void;
         onFailLoadClear: (cb: (tabId: string) => void) => () => void;
-        onDownloadStarted: (cb: (tabId: string) => void) => () => void;
         onOpenInTab: (cb: (url: string) => void) => () => void;
         onPlatformAuthTabRequest: (cb: (platformId: string, loginUrl: string) => void) => () => void;
         onPlatformAuthCompleted: (cb: (tabId: string, result: PlatformAuthResult) => void) => () => void;

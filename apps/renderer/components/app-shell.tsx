@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  GiftIcon,
   ImagesIcon,
   LightbulbIcon,
   ListIcon,
@@ -127,12 +126,6 @@ export function AppShell({
                 active={activeKey === "autoPublish"}
                 icon={<SendIcon className="size-4" />}
                 label={t("sidebar.items.autoPublish")}
-              />
-              <AppShellProtectedNavItem
-                href={`/${locale}/earn-points`}
-                active={activeKey === "earnPoints"}
-                icon={<GiftIcon className="size-4" />}
-                label={t("sidebar.items.earnPoints")}
               />
             </div>
 

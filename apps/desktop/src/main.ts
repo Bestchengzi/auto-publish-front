@@ -35,12 +35,6 @@ type UpdateState = {
   checkedAt?: number;
 };
 
-type WillDownloadListener = (
-  event: Electron.Event,
-  item: Electron.DownloadItem,
-  webContents: Electron.WebContents,
-) => void;
-
 type PendingAuthRequest = {
   requesterWebContentsId: number;
   cookie: string | null;
@@ -494,22 +488,6 @@ function createExternalView(win: BrowserWindow, tabId: string) {
   const send = (channel: string, ...args: unknown[]) => {
     safeSendToWindow(win, channel, ...args);
   };
-  const onWillDownload: WillDownloadListener = (_event, _item, wc) => {
-    const hostWc = bv.webContents;
-    // 共享 persist session 上挂了多个监听；视图销毁后仍可能收到 will-download，避免读已释放的 webContents.id
-    if (!hostWc || hostWc.isDestroyed()) return;
-    if (!wc || typeof wc.id !== "number" || wc.id !== hostWc.id) return;
-    send("external-tab:download-started", tabId);
-  };
-  bv.webContents.session.on("will-download", onWillDownload);
-  bv.webContents.once("destroyed", () => {
-    try {
-      bv.webContents.session.removeListener("will-download", onWillDownload);
-    } catch {
-      // ignore cleanup errors
-    }
-  });
-
   bv.webContents.on("page-title-updated", (_e, title) => {
     send("external-tab:title-changed", tabId, title);
   });

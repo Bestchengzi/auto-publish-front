@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ChevronRightIcon,
@@ -49,7 +50,7 @@ import {
 import { useAuthLoggedIn } from "@/hooks/use-auth-logged-in";
 import { getBillingAccount } from "@/lib/api/billing";
 import { clearAuthRelatedQueryCache } from "@/lib/auth/query-cache";
-import { clearAuthStorage, getAuthUser } from "@/lib/auth/session";
+import { clearAuthStorage, getAuthToken, getAuthUser } from "@/lib/auth/session";
 import { formatBillingPoints } from "@/lib/billing-points";
 import {
   ACCENT_STORAGE_KEY,
@@ -212,6 +213,21 @@ export function AppShellSidebarFooter() {
         : "";
     return (
       <>
+        <div className="px-3 pt-3 pb-2">
+          <Link
+            href={`/${locale}/earn-points`}
+            onClick={(event) => {
+              if (getAuthToken()) return;
+              event.preventDefault();
+              window.dispatchEvent(new Event("media-auth-open-login"));
+            }}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-3 text-sm font-semibold text-white shadow-sm shadow-red-500/20 transition-all hover:bg-red-600 hover:shadow-md hover:shadow-red-500/25 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:outline-none dark:bg-red-500 dark:hover:bg-red-400"
+          >
+            <GiftIcon className="size-4" />
+            {t("earnPoints")}
+          </Link>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

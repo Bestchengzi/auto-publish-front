@@ -165,25 +165,6 @@ export function useBrowserTabIpc({
 
   React.useEffect(() => {
     const desktop = getDesktop();
-    if (!desktop?.externalTab?.onDownloadStarted) return;
-    return desktop.externalTab.onDownloadStarted((tabId) => {
-      const prev = tabsRef.current;
-      const target = prev.find((t) => t.id === tabId);
-      if (!target) return;
-      const next = prev.filter((t) => t.id !== tabId);
-      const wasActive = activeIdRef.current === tabId;
-      setTabs(next);
-      if (wasActive) {
-        const idx = prev.findIndex((t) => t.id === tabId);
-        const newActive = next[Math.max(0, idx - 1)] ?? next[0];
-        setActiveId(newActive?.id ?? null);
-      }
-      getDesktop()?.externalTab?.close?.(tabId);
-    });
-  }, [activeIdRef, setActiveId, setTabs, tabsRef]);
-
-  React.useEffect(() => {
-    const desktop = getDesktop();
     if (!desktop?.externalTab?.onPlatformAuthTabRequest) return;
     return desktop.externalTab.onPlatformAuthTabRequest((platformId, loginUrl) => {
       const domain = getDomainFromUrl(loginUrl);
