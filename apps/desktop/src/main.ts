@@ -133,6 +133,23 @@ function safeSendToWindow(
   }
 }
 
+function isHttpUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
+function loadWindowOpenUrlInCurrentView(
+  target: Electron.WebContents,
+  url: string,
+  onError?: (message: string) => void,
+) {
+  if (!isHttpUrl(url)) return;
+  void target.loadURL(url).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("ERR_ABORTED") || message.includes("(-3)")) return;
+    onError?.(message);
+  });
+}
+
 function getWindowWebContentsId(win: BrowserWindow | undefined | null): number | undefined {
   try {
     if (!win || win.isDestroyed()) return undefined;
@@ -254,7 +271,7 @@ async function createMainWindow() {
   }
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+    if (typeof url === "string" && isHttpUrl(url)) {
       safeSendToWindow(win, "open-in-tab", url);
     }
     return { action: "deny" };
@@ -530,8 +547,10 @@ function createExternalView(win: BrowserWindow, tabId: string) {
   });
 
   bv.webContents.setWindowOpenHandler(({ url }) => {
-    if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
-      send("open-in-tab", url);
+    if (typeof url === "string") {
+      loadWindowOpenUrlInCurrentView(bv.webContents, url, (message) => {
+        send("external-tab:fail-load", tabId, -2, message, url);
+      });
     }
     return { action: "deny" };
   });
@@ -742,8 +761,10 @@ function createPlatformAuthView(
     send("external-tab:loading", tabId, false);
   });
   bv.webContents.setWindowOpenHandler(({ url }) => {
-    if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
-      send("open-in-tab", url);
+    if (typeof url === "string") {
+      loadWindowOpenUrlInCurrentView(bv.webContents, url, (message) => {
+        send("external-tab:fail-load", tabId, -2, message, url);
+      });
     }
     return { action: "deny" };
   });

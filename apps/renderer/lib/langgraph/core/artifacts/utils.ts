@@ -5,12 +5,22 @@ export function urlOfArtifact({
   filepath,
   threadId,
   download = false,
+  downloadType,
 }: {
   filepath: string;
   threadId: string;
   download?: boolean;
+  downloadType?: "doc";
 }) {
-  return `${getBackendBaseURL()}/api/threads/${threadId}/artifacts${filepath}${download ? "?download=true" : ""}`;
+  const params = new URLSearchParams();
+  if (download) {
+    params.set("download", "true");
+  }
+  if (downloadType) {
+    params.set("type", downloadType);
+  }
+  const query = params.size > 0 ? `?${params.toString()}` : "";
+  return `${getBackendBaseURL()}/api/threads/${threadId}/artifacts${filepath}${query}`;
 }
 
 export function extractArtifactsFromThread(thread: AgentThread) {

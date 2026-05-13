@@ -1,7 +1,5 @@
-import { DownloadIcon } from "lucide-react";
 import { useCallback } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -9,8 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { urlOfArtifact } from "@/lib/langgraph/core/artifacts/utils";
-import { useI18n } from "@/lib/langgraph/core/i18n/hooks";
 import {
   getFileExtensionDisplayName,
   getFileIcon,
@@ -19,6 +15,7 @@ import {
 } from "@/lib/langgraph/core/utils/files";
 import { cn } from "@/lib/utils";
 
+import { ArtifactDownloadButton } from "./artifact-download-button";
 import { useArtifacts } from "./context";
 
 export function ArtifactFileList({
@@ -30,7 +27,6 @@ export function ArtifactFileList({
   files: string[];
   threadId: string;
 }) {
-  const { t } = useI18n();
   const { select: selectArtifact, setOpen } = useArtifacts();
   const displayableFiles = files.filter(isDisplayableArtifactFile);
 
@@ -65,20 +61,7 @@ export function ArtifactFileList({
               {getFileExtensionDisplayName(file)} file
             </CardDescription>
             <CardAction>
-              <a
-                href={urlOfArtifact({
-                  filepath: file,
-                  threadId: threadId,
-                  download: true,
-                })}
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button variant="ghost">
-                  <DownloadIcon className="size-4" />
-                  {t.common.download}
-                </Button>
-              </a>
+              <ArtifactDownloadButton filepath={file} threadId={threadId} />
             </CardAction>
           </CardHeader>
         </Card>

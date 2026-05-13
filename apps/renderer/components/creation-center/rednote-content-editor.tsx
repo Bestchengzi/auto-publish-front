@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import dayjs from "dayjs";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   DownloadIcon,
+  EyeIcon,
   ImageIcon,
   ImageOffIcon,
   PencilIcon,
@@ -31,6 +33,7 @@ import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePublishFlow } from "@/components/publish";
+import { RednotePreviewDialog } from "./rednote-preview-dialog";
 import type { PublishEditResponse } from "@/lib/api/publish";
 import {
   createThreadImageTask,
@@ -415,10 +418,24 @@ function saveBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function formatDownloadTimestamp(date = new Date()) {
+  return dayjs(date).format("YYYYMMDDHHmm");
+}
+
+function sanitizeDownloadFilenamePart(value: string) {
+  return value
+    .replace(/[\\/:*?"<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[. ]+$/g, "")
+    .slice(0, 80);
+}
+
 export function RednoteContentEditor({
   rednoteContent,
   className,
   threadId,
+  threadTitle,
   imageSize,
   inputImages,
   userInput,
@@ -427,6 +444,7 @@ export function RednoteContentEditor({
   rednoteContent: RednoteContent | null;
   className?: string;
   threadId: string;
+  threadTitle?: string | null;
   imageSize?: string | null;
   inputImages?: string[] | null;
   userInput?: string | null;
@@ -471,6 +489,7 @@ export function RednoteContentEditor({
     src: string;
     alt: string;
   } | null>(null);
+  const [rednotePreviewOpen, setRednotePreviewOpen] = useState(false);
   /** 一旦本线程发起过图片生成（含接口失败），禁止再增加图文卡片，仅保留生成前的增删能力。 */
   const [imageGenLayoutLocked, setImageGenLayoutLocked] = useState(false);
 
@@ -673,7 +692,7 @@ export function RednoteContentEditor({
           ? "generate"
           : hasCompletedImageResults
             ? "publish"
-            : null;
+            : "generate";
 
   useEffect(() => {
     if (!hasImageTaskHistory) {
@@ -1009,13 +1028,27 @@ export function RednoteContentEditor({
         threadId,
         firstCompletedImageTaskId,
       );
-      saveBlob(blob, `rednote-images-${firstCompletedImageTaskId}.zip`);
+      const title =
+        sanitizeDownloadFilenamePart(threadTitle ?? "") ||
+        sanitizeDownloadFilenamePart(draft.title) ||
+        "未命名对话";
+      saveBlob(blob, `${formatDownloadTimestamp()}-${title}.zip`);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "下载失败，请稍后重试。"));
     } finally {
       setIsDownloadingImageTask(false);
     }
-  }, [firstCompletedImageTaskId, isDownloadingImageTask, threadId]);
+  }, [
+    draft.title,
+    firstCompletedImageTaskId,
+    isDownloadingImageTask,
+    threadId,
+    threadTitle,
+  ]);
+  const handleOpenRednotePreview = useCallback(() => {
+    if (!canPublishRednote) return;
+    setRednotePreviewOpen(true);
+  }, [canPublishRednote]);
 
   if (!rednoteContent) {
     return null;
@@ -1358,6 +1391,16 @@ export function RednoteContentEditor({
           <Button
             type="button"
             className="h-10 gap-2 rounded-full bg-[#ff2442] px-6 font-semibold text-white shadow-sm hover:bg-[#e51f3b]"
+            disabled={!canPublishRednote}
+            onClick={handleOpenRednotePreview}
+            title="预览"
+          >
+            <EyeIcon className="size-4" />
+            <span>预览</span>
+          </Button>
+          <Button
+            type="button"
+            className="hidden h-10 gap-2 rounded-full bg-[#ff2442] px-6 font-semibold text-white shadow-sm hover:bg-[#e51f3b]"
             disabled={!canPublishRednote || isPreparingPublishPreview}
             onClick={handlePublishRednote}
             title="发布"
@@ -1374,6 +1417,14 @@ export function RednoteContentEditor({
         }}
         src={previewImage?.src?.trim() ?? ""}
         alt={previewImage?.alt ?? "preview-image"}
+      />
+      <RednotePreviewDialog
+        open={rednotePreviewOpen}
+        onOpenChange={setRednotePreviewOpen}
+        title={draft.title.trim()}
+        content={draft.content.trim()}
+        images={publishImages}
+        dialogTitle={draft.title.trim() || "小红书图文预览"}
       />
       <DeleteConfirmDialog
         open={deletePromptIndex !== null}

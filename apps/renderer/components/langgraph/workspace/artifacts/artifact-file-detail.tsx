@@ -1,6 +1,5 @@
 import {
   CopyIcon,
-  DownloadIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
@@ -50,7 +49,7 @@ import {
   ArtifactTitle,
 } from "@/components/langgraph/ai-elements/artifact";
 import { ImagePickerSheet } from "@/components/common/image-picker-sheet";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as mediaApi from "@/lib/api/media";
 import { getBackendBaseURL } from "@/lib/langgraph/core/config";
@@ -69,6 +68,7 @@ import { getApiErrorMessage, request } from "@/lib/request";
 import { cn } from "@/lib/utils";
 import { usePublishFlow } from "@/components/publish";
 import { useArtifacts } from "./context";
+import { ArtifactDownloadButton } from "./artifact-download-button";
 import { useThread } from "../messages/context";
 import { createArtifactTurndownService } from "./artifact-editor-turndown";
 import { artifactEditorContentClassName } from "./artifact-editor-prosemirror-classes";
@@ -1145,20 +1145,7 @@ export function ArtifactFileDetail({
               }}
             />
             {!isWriteFile && (
-              <a
-                href={urlOfArtifact({ filepath, threadId, download: true })}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={t.common.download}
-                aria-label={t.common.download}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  "text-muted-foreground hover:text-foreground inline-flex h-8 items-center gap-1.5 rounded-lg px-2",
-                )}
-              >
-                <DownloadIcon className="size-4 shrink-0" />
-                <span className="text-sm font-normal">{t.common.download}</span>
-              </a>
+              <ArtifactDownloadButton filepath={filepath} threadId={threadId} />
             )}
             {!isWriteFile && (
               <Button

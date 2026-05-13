@@ -672,6 +672,7 @@ export function CreationCenterLanggraphChat() {
                       className="mt-4 px-0 py-0"
                       rednoteContent={rednoteContent}
                       threadId={threadId}
+                      threadTitle={thread.values.title}
                       imageSize={rednoteImageSize}
                       inputImages={rednoteInputImages}
                       userInput={rednoteUserInput}

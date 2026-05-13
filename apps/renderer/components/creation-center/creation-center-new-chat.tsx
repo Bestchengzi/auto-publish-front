@@ -588,7 +588,7 @@ export function CreationCenterNewChat() {
   const [isStarting, setIsStarting] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<ContentAgentId>("rednote");
   const [articleLength, setArticleLength] = useState("");
-  const [imageModeId, setImageModeId] = useState<ImageModeId>("ai");
+  const [imageModeId, setImageModeId] = useState<ImageModeId>("search");
   const [rednoteStyleId, setRednoteStyleId] =
     useState<RednoteStyleId | "">("");
   const [rednoteContentStrategyId, setRednoteContentStrategyId] =

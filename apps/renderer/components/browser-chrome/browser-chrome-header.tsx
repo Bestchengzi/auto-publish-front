@@ -89,13 +89,17 @@ export function BrowserChromeHeader({
       >
         <div
           className={cn(
-            "flex min-w-0 max-w-[70%] shrink-0 items-center gap-0.5 overflow-x-auto",
+            "flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden",
             // 约三颗交通灯宽度 + 与内容的间距，与常见 Electron 壳一致
             darwinTabLeading && "pl-[78px]",
           )}
-          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         >
-          {tabs.map((tab) => {
+          <div
+            className="flex min-w-0 max-w-full items-center gap-0.5 overflow-hidden"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
+            {tabs.map((tab) => {
             const displayTitle =
               tab.title ?? (tab.isExternal ? tab.titleKey : t(tab.titleKey));
             return (
@@ -105,14 +109,14 @@ export function BrowserChromeHeader({
                 aria-selected={tab.id === activeId}
                 onClick={() => onSelectTab(tab)}
                 className={cn(
-                  "group flex min-w-0 max-w-[180px] shrink-0 cursor-default items-center gap-1.5 rounded-t-md px-3 py-1.5 transition-colors",
+                  "group flex w-[180px] min-w-[56px] shrink cursor-default items-center gap-1.5 overflow-hidden rounded-t-md px-3 py-1.5 transition-colors",
                   tab.id === activeId
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}
               >
                 <TabIcon tab={tab} />
-                <span className="min-w-0 truncate text-sm">{displayTitle}</span>
+                <span className="min-w-0 flex-1 truncate text-sm">{displayTitle}</span>
                 {tab.id !== initialTabId && (
                   <button
                     type="button"
@@ -125,19 +129,29 @@ export function BrowserChromeHeader({
                 )}
               </div>
             );
-          })}
-          <button
-            type="button"
-            onClick={onAddTab}
-            className="ml-0.5 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t("browserChrome.newTab")}
-          >
-            <PlusIcon className="size-4" />
-          </button>
+            })}
+            <div
+              aria-hidden="true"
+              className="mx-1 h-4 w-px shrink-0 bg-border"
+            />
+            <button
+              type="button"
+              onClick={onAddTab}
+              className="ml-0.5 shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+              aria-label={t("browserChrome.newTab")}
+            >
+              <PlusIcon className="size-4" />
+            </button>
+          </div>
+          <div
+            aria-hidden="true"
+            className="w-8 shrink-0"
+            style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+          />
         </div>
 
         <div
-          className="min-h-full min-w-6 flex-1"
+          className="min-h-full w-2 shrink-0"
           style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
         />
 
