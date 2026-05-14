@@ -701,7 +701,6 @@ export function CreationCenterNewChat() {
     clearPendingCreationDraft();
     setPendingCreationDraft(draft);
     setSelectedAgentId("news");
-    setImageModeId("ai");
     setArticleLength("");
     promptInput.textInput.setInput(draft.text);
     if (typeof draft.personaId === "string") {
@@ -1113,10 +1112,12 @@ export function CreationCenterNewChat() {
         <div
           className={cn(
             styles.fadeUp,
-            "relative w-full max-w-[1080px] [animation-delay:260ms]",
+            "flex w-full max-w-[1080px] flex-col [animation-delay:260ms]",
+            composerBorderClass,
+            "overflow-hidden rounded-[26px] border bg-transparent transition-colors",
           )}
         >
-          <div className="absolute left-6 right-6 top-5 z-20 flex flex-wrap items-center gap-2">
+          <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 px-6 pt-4 pb-1.5">
             {isRednoteAgent ? (
               <Select
                 key="rednote-aspect-ratio"
@@ -1304,21 +1305,19 @@ export function CreationCenterNewChat() {
           >
             <InputBox
               className={cn(
-                composerBorderClass,
-                "relative w-full overflow-hidden rounded-[26px] border bg-transparent transition-colors",
-                "[&_[data-slot='input-group']]:rounded-[26px] [&_[data-slot='input-group']]:border-0 [&_[data-slot='input-group']]:bg-transparent",
+                "relative w-full min-h-0 overflow-hidden rounded-none border-0 bg-transparent shadow-none transition-colors",
+                "[&_[data-slot='input-group']]:rounded-none [&_[data-slot='input-group']]:border-0 [&_[data-slot='input-group']]:bg-transparent",
                 (isStarting || isTopicUnsupportedAgent) &&
                   "[&_[data-slot='input-group']:has([data-slot=input-group-control]:disabled)]:!bg-muted/30 dark:[&_[data-slot='input-group']:has([data-slot=input-group-control]:disabled)]:!bg-muted/15",
                 "[&_[data-slot='input-group']]:!outline-none [&_[data-slot='input-group']]:!ring-0 [&_[data-slot='input-group']]:!ring-transparent",
-                "[&_[name='message']]:min-h-[190px]",
+                "[&_[name='message']]:min-h-[132px]",
                 "[&_[name='message']]:border-0",
                 "[&_[name='message']]:bg-transparent",
                 "[&_[name='message']]:rounded-none",
                 "[&_[name='message']]:focus-visible:ring-0",
                 "[&_[name='message']]:resize-none",
                 "[&_[name='message']]:px-6",
-                "[&_[name='message']]:pt-[66px]",
-                "[&_[name='message']]:pb-12",
+                "[&_[name='message']]:py-3",
                 "[&_[name='message']]:text-base",
                 "[&_[name='message']]:placeholder:text-base",
                 "[&_[data-slot='input-group-addon']]:px-5 [&_[data-slot='input-group-addon']]:text-sm [&_[data-slot='input-group-addon']_*]:text-sm",

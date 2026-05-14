@@ -679,7 +679,8 @@ export function CreationCenterLanggraphChat() {
                       locale={locale}
                     />
                     {!rednoteContent &&
-                    (thread.isLoading || thread.isThreadLoading) ? (
+                    !thread.isThreadLoading &&
+                    thread.isLoading ? (
                       <RednoteGenerationProgress
                         stage={rednoteGenerationStage}
                       />

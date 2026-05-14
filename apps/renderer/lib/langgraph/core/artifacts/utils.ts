@@ -10,7 +10,7 @@ export function urlOfArtifact({
   filepath: string;
   threadId: string;
   download?: boolean;
-  downloadType?: "doc";
+  downloadType?: "docx";
 }) {
   const params = new URLSearchParams();
   if (download) {

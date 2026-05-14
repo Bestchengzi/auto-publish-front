@@ -39,7 +39,7 @@ export function ArtifactDownloadButton({
   const wordUrl = urlOfArtifact({
     filepath,
     threadId,
-    downloadType: "doc",
+    downloadType: "docx",
   });
   const buttonClassName = cn(
     buttonVariants({ variant: "ghost", size: "sm" }),
