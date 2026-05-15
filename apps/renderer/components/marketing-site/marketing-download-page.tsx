@@ -24,8 +24,7 @@ function getVersionIcon(type: string): ComponentType<{ className?: string }> {
 }
 
 function getVersionFormat(type: string): string {
-  if (type === "mac/x64") return ".dmg / .zip (x64)";
-  if (type === "mac/arm64") return ".dmg / .zip (arm64)";
+  if (type === "mac/x64" || type === "mac/arm64") return ".dmg";
   return ".exe";
 }
 
