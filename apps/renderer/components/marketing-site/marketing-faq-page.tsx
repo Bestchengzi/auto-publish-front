@@ -12,13 +12,10 @@ export function MarketingFaqPage() {
   const reduceMotion = useReducedMotion();
   const sm = sectionMotion(Boolean(reduceMotion));
 
-  const faqs = [
-    { q: t("faq1Q"), a: t("faq1A") },
-    { q: t("faq2Q"), a: t("faq2A") },
-    { q: t("faq3Q"), a: t("faq3A") },
-    { q: t("faq4Q"), a: t("faq4A") },
-    { q: t("faq5Q"), a: t("faq5A") },
-  ];
+  const faqs = Array.from({ length: 12 }, (_, index) => {
+    const i = index + 1;
+    return { q: t(`faq${i}Q`), a: t(`faq${i}A`) };
+  });
 
   return (
     <section className="border-b border-slate-200/50 py-16 dark:border-zinc-800/80 sm:py-20" aria-labelledby="faq-page-heading">
@@ -45,7 +42,7 @@ export function MarketingFaqPage() {
                   <ChevronDownIcon className="size-5 shrink-0 text-slate-400 transition group-open:rotate-180 dark:text-zinc-500" />
                 </summary>
                 <div className="border-t border-slate-200/60 px-5 pb-4 pt-0 text-sm leading-relaxed text-slate-600 dark:border-zinc-700 dark:text-zinc-400">
-                  <p className="pt-3">{item.a}</p>
+                  <p className="whitespace-pre-line pt-3">{item.a}</p>
                 </div>
               </details>
             </motion.div>

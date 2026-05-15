@@ -10,14 +10,10 @@ export function MarketingGuidePage() {
   const reduceMotion = useReducedMotion();
   const sm = sectionMotion(Boolean(reduceMotion));
 
-  const guideSteps = [
-    { title: t("guideStep1Title"), desc: t("guideStep1Desc") },
-    { title: t("guideStep2Title"), desc: t("guideStep2Desc") },
-    { title: t("guideStep3Title"), desc: t("guideStep3Desc") },
-    { title: t("guideStep4Title"), desc: t("guideStep4Desc") },
-    { title: t("guideStep5Title"), desc: t("guideStep5Desc") },
-    { title: t("guideStep6Title"), desc: t("guideStep6Desc") },
-  ];
+  const guideSteps = [1, 2, 3, 4, 5, 6, 7].map((i) => ({
+    title: t(`guideStep${i}Title`),
+    desc: t(`guideStep${i}Desc`),
+  }));
 
   return (
     <section className="border-b border-slate-200/50 py-16 dark:border-zinc-800/80 sm:py-20" aria-labelledby="guide-page-heading">
@@ -44,7 +40,9 @@ export function MarketingGuidePage() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{step.title}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-zinc-400">{step.desc}</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                  {step.desc}
+                </p>
               </div>
             </motion.li>
           ))}

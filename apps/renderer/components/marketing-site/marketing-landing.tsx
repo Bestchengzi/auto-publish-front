@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  ArrowRightIcon,
+  BookOpenTextIcon,
   CalendarClockIcon,
+  FileTextIcon,
+  LightbulbIcon,
+  ListChecksIcon,
   QuoteIcon,
   ImagePlusIcon,
   MessageCircleMoreIcon,
   MessageSquareTextIcon,
+  NewspaperIcon,
   RocketIcon,
   ShieldCheckIcon,
   UserRoundIcon,
@@ -19,6 +25,7 @@ import { sectionMotion } from "@/components/marketing-site/marketing-shared";
 import { buttonVariants } from "@/components/ui/button-variants";
 import type { AppLocale } from "@/i18n/config";
 import { marketingSubPath } from "@/lib/marketing/paths";
+import { platformSeoPages, scenarioSeoPages } from "@/lib/marketing/seo-pages";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -32,19 +39,34 @@ export function MarketingLanding() {
 
   const spots = [
     {
-      title: t("spotlightChatTitle"),
-      desc: t("spotlightChatDesc"),
-      icon: MessageCircleMoreIcon,
-    },
-    {
       title: t("spotlightPersonaTitle"),
       desc: t("spotlightPersonaDesc"),
       icon: UserRoundIcon,
     },
     {
+      title: t("spotlightBrandPersonaTitle"),
+      desc: t("spotlightBrandPersonaDesc"),
+      icon: ShieldCheckIcon,
+    },
+    {
       title: t("spotlightTopicsTitle"),
       desc: t("spotlightTopicsDesc"),
+      icon: LightbulbIcon,
+    },
+    {
+      title: t("spotlightChatTitle"),
+      desc: t("spotlightChatDesc"),
       icon: MessageSquareTextIcon,
+    },
+    {
+      title: t("spotlightEditorTitle"),
+      desc: t("spotlightEditorDesc"),
+      icon: FileTextIcon,
+    },
+    {
+      title: t("spotlightWorkflowTitle"),
+      desc: t("spotlightWorkflowDesc"),
+      icon: ListChecksIcon,
     },
     {
       title: t("spotlightImageTitle"),
@@ -63,7 +85,21 @@ export function MarketingLanding() {
     },
   ];
 
-  const audienceCards = [1, 2, 3, 4].map((i) => ({
+  const platformCards = [
+    { title: t("platformRednoteTitle"), desc: t("platformRednoteDesc"), icon: ImagePlusIcon },
+    { title: t("platformZhihuTitle"), desc: t("platformZhihuDesc"), icon: MessageCircleMoreIcon },
+    { title: t("platformWechatTitle"), desc: t("platformWechatDesc"), icon: BookOpenTextIcon },
+    { title: t("platformToutiaoTitle"), desc: t("platformToutiaoDesc"), icon: NewspaperIcon },
+    { title: t("platformCsdnTitle"), desc: t("platformCsdnDesc"), icon: FileTextIcon },
+    { title: t("platformBaijiahaoTitle"), desc: t("platformBaijiahaoDesc"), icon: RocketIcon },
+  ];
+
+  const workflowItems = [1, 2, 3, 4, 5].map((i) => ({
+    title: t(`workflow${i}Title`),
+    desc: t(`workflow${i}Desc`),
+  }));
+
+  const audienceCards = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
     title: t(`audience${i}Title`),
     desc: t(`audience${i}Desc`),
   }));
@@ -72,6 +108,20 @@ export function MarketingLanding() {
     { title: t("choosePoint1Title"), desc: t("choosePoint1Desc"), icon: ZapIcon },
     { title: t("choosePoint2Title"), desc: t("choosePoint2Desc"), icon: ShieldCheckIcon },
   ];
+  const seoLinkGroups = [
+    {
+      title: t("seoPlatformLinksTitle"),
+      desc: t("seoPlatformLinksDesc"),
+      kind: "platforms",
+      pages: platformSeoPages,
+    },
+    {
+      title: t("seoScenarioLinksTitle"),
+      desc: t("seoScenarioLinksDesc"),
+      kind: "scenarios",
+      pages: scenarioSeoPages,
+    },
+  ] as const;
   const getInitial = (name: string) => name.trim().charAt(0).toUpperCase();
 
   return (
@@ -91,8 +141,8 @@ export function MarketingLanding() {
               id="hero-heading"
               className="mx-auto mt-6 max-w-5xl font-bold leading-[1.14] tracking-tight text-slate-900 dark:text-white"
             >
-              <span className="block text-5xl md:text-[64px]">{t("heroName")}</span>
-              <span className="mt-4 block text-3xl md:text-[64px]">
+              <span className="block text-4xl md:text-[56px]">{t("heroName")}</span>
+              <span className="mt-4 block text-3xl md:text-[56px]">
                 {t("heroTitlePrefix")}
                 <span className="text-blue-600 dark:text-cyan-300">{t("heroTitleHighlight")}</span>
                 {t("heroTitleSuffix")}
@@ -137,7 +187,7 @@ export function MarketingLanding() {
       </section>
 
       <section
-        className="border-b border-slate-200/50 bg-[#fcfdff] py-16 dark:border-zinc-800/80 dark:bg-zinc-950 sm:py-20"
+        className="border-b border-slate-200/50 bg-white py-16 dark:border-zinc-800/80 dark:bg-zinc-900/35 sm:py-20"
         aria-labelledby="spotlights-heading"
       >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -178,6 +228,139 @@ export function MarketingLanding() {
                   </p>
                 </article>
               </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="border-b border-slate-200/60 bg-[#f7faff] py-16 dark:border-zinc-800/80 dark:bg-zinc-950 sm:py-20"
+        aria-labelledby="platforms-heading"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <motion.div {...sm} className="mx-auto max-w-3xl text-center">
+            <h2
+              id="platforms-heading"
+              className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+            >
+              {t("platformsTitle")}
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-zinc-400">
+              {t("platformsSubtitle")}
+            </p>
+          </motion.div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {platformCards.map((item, i) => (
+              <motion.article
+                key={item.title}
+                {...sm}
+                transition={
+                  sm.transition
+                    ? { ...sm.transition, delay: reduceMotion ? 0 : i * 0.05 }
+                    : undefined
+                }
+                className="rounded-2xl border border-slate-200/90 bg-white/95 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-900/65"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/[0.1] text-blue-700 dark:bg-cyan-500/15 dark:text-cyan-300">
+                    <item.icon className="size-5" aria-hidden />
+                  </div>
+                  <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                    {item.title}
+                  </h3>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-zinc-300">{item.desc}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="border-b border-slate-200/60 bg-white py-16 dark:border-zinc-800/80 dark:bg-zinc-900/35 sm:py-20"
+        aria-labelledby="seo-guides-heading"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <motion.div {...sm} className="mx-auto max-w-3xl text-center">
+            <h2
+              id="seo-guides-heading"
+              className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+            >
+              {t("seoGuidesTitle")}
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-zinc-400">
+              {t("seoGuidesSubtitle")}
+            </p>
+          </motion.div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            {seoLinkGroups.map((group) => (
+              <article
+                key={group.kind}
+                className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-900/65"
+              >
+                <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                  {group.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                  {group.desc}
+                </p>
+                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                  {group.pages.map((page) => (
+                    <Link
+                      key={page.slug}
+                      href={`/${locale}/site/${group.kind}/${page.slug}`}
+                      className="group flex min-h-14 items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-zinc-800 dark:bg-zinc-950/35 dark:text-zinc-200 dark:hover:border-cyan-500/40 dark:hover:text-cyan-200"
+                    >
+                      <span>{page.heading[locale]}</span>
+                      <ArrowRightIcon className="size-4 shrink-0 opacity-60 transition group-hover:translate-x-0.5" aria-hidden />
+                    </Link>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="border-b border-slate-200/60 bg-[#f7faff] py-16 dark:border-zinc-800/80 dark:bg-zinc-950 sm:py-20"
+        aria-labelledby="workflow-heading"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <motion.div {...sm} className="max-w-3xl">
+            <h2
+              id="workflow-heading"
+              className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+            >
+              {t("workflowTitle")}
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-zinc-400">
+              {t("workflowSubtitle")}
+            </p>
+          </motion.div>
+
+          <div className="mt-9 grid gap-4 lg:grid-cols-5">
+            {workflowItems.map((item, i) => (
+              <motion.article
+                key={item.title}
+                {...sm}
+                transition={
+                  sm.transition
+                    ? { ...sm.transition, delay: reduceMotion ? 0 : i * 0.05 }
+                    : undefined
+                }
+                className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-zinc-900/60"
+              >
+                <div className="flex size-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white dark:bg-cyan-500">
+                  {i + 1}
+                </div>
+                <h3 className="mt-4 text-base font-semibold tracking-tight text-slate-900 dark:text-white">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-zinc-300">{item.desc}</p>
+              </motion.article>
             ))}
           </div>
         </div>
