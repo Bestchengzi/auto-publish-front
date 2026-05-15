@@ -35,6 +35,19 @@ type UpdateState = {
   checkedAt?: number;
 };
 
+type VersionManifestEntry = {
+  name: string;
+  description: string;
+  type: string;
+  downloadUrl: string;
+  ymlUrl: string;
+};
+
+type UpdateFeedConfig = {
+  url: string;
+  channel?: string;
+};
+
 type PendingAuthRequest = {
   requesterWebContentsId: number;
   cookie: string | null;
@@ -47,26 +60,11 @@ let updateState: UpdateState = {
 };
 
 let autoUpdaterInitialized = false;
-/** OSS 桶根（与 electron-builder `publish.url` 一致）；Windows 的 `latest.yml` 与安装包放此根下 */
-const UPDATE_DOWNLOAD_BASE_URL = "https://open-stack.oss-cn-shanghai.aliyuncs.com/";
+let currentVersionEntry: VersionManifestEntry | null = null;
+let currentUpdateFeedUrl: string | null = null;
 
-/** Mac：Intel / ARM 各一份 `latest-mac.yml`，OSS 上分目录避免覆盖；与官网下载直链前缀一致 */
-function getMacAutoUpdateFeedUrl(): string {
-  const root = UPDATE_DOWNLOAD_BASE_URL.endsWith("/")
-    ? UPDATE_DOWNLOAD_BASE_URL
-    : `${UPDATE_DOWNLOAD_BASE_URL}/`;
-  const sub = process.arch === "arm64" ? "mac/arm64/" : "mac/x64/";
-  return `${root}${sub}`;
-}
-
-/** 解析 yml / UpdateInfo 里相对路径时使用的基址（Mac 用架构子目录，Win 用桶根） */
 function getUpdateResolutionBaseUrl(): string {
-  if (process.platform === "darwin") {
-    return getMacAutoUpdateFeedUrl();
-  }
-  return UPDATE_DOWNLOAD_BASE_URL.endsWith("/")
-    ? UPDATE_DOWNLOAD_BASE_URL
-    : `${UPDATE_DOWNLOAD_BASE_URL}/`;
+  return currentUpdateFeedUrl ?? "";
 }
 
 function getRendererBaseUrl() {
@@ -75,6 +73,98 @@ function getRendererBaseUrl() {
     return envRendererUrl;
   }
   return app.isPackaged ? "https://keduck.cn" : "http://localhost:13200";
+}
+
+function getVersionsApiUrl(): string {
+  return `${getRendererBaseUrl().replace(/\/$/, "")}/media/api/versions`;
+}
+
+function getCurrentVersionType(): string | null {
+  if (process.platform === "win32") return "windows";
+  if (process.platform === "darwin") {
+    return process.arch === "arm64" ? "mac/arm64" : "mac/x64";
+  }
+  return null;
+}
+
+function isVersionManifestEntry(value: unknown): value is VersionManifestEntry {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.name === "string"
+    && typeof item.description === "string"
+    && typeof item.type === "string"
+    && typeof item.downloadUrl === "string"
+    && typeof item.ymlUrl === "string"
+  );
+}
+
+async function fetchVersionsManifest(): Promise<VersionManifestEntry[]> {
+  const response = await fetch(getVersionsApiUrl(), {
+    method: "GET",
+    headers: { "Cache-Control": "no-cache" },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch versions manifest: ${response.status}`);
+  }
+  const data = await response.json();
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid versions manifest response");
+  }
+  return data.filter(isVersionManifestEntry);
+}
+
+function getFeedConfigFromYmlUrl(ymlUrl: string): UpdateFeedConfig {
+  const url = new URL(ymlUrl);
+  const filename = url.pathname.split("/").filter(Boolean).pop() ?? "";
+  const lowerFilename = filename.toLowerCase();
+
+  if (!lowerFilename.endsWith(".yml")) {
+    return {
+      url: ymlUrl.endsWith("/") ? ymlUrl : `${ymlUrl}/`,
+    };
+  }
+
+  url.pathname = url.pathname.slice(0, -filename.length);
+  let channel = filename.slice(0, -".yml".length);
+  if (process.platform === "darwin" && channel.endsWith("-mac")) {
+    channel = channel.slice(0, -"-mac".length);
+  }
+  if (process.platform === "linux") {
+    channel = channel.replace(/-linux(?:-[^-]+)?$/, "");
+  }
+
+  return {
+    url: url.href.endsWith("/") ? url.href : `${url.href}/`,
+    channel,
+  };
+}
+
+async function configureAutoUpdaterFromVersions(): Promise<void> {
+  const versionType = getCurrentVersionType();
+  if (!versionType) {
+    throw new Error(`Unsupported update platform: ${process.platform}`);
+  }
+
+  const versions = await fetchVersionsManifest();
+  const entry = versions.find((item) => item.type === versionType);
+  if (!entry) {
+    throw new Error(`No update manifest entry for ${versionType}`);
+  }
+
+  const feedConfig = getFeedConfigFromYmlUrl(entry.ymlUrl);
+  currentVersionEntry = entry;
+  currentUpdateFeedUrl = feedConfig.url;
+  autoUpdater.setFeedURL({
+    provider: "generic",
+    url: feedConfig.url,
+    ...(feedConfig.channel ? { channel: feedConfig.channel } : {}),
+  });
+}
+
+async function checkForUpdatesFromDynamicFeed(): Promise<void> {
+  await configureAutoUpdaterFromVersions();
+  await autoUpdater.checkForUpdates();
 }
 
 function getUpdateDownloadUrl(info: UpdateInfo, extension: string): string | undefined {
@@ -95,7 +185,9 @@ function applyUpdateInfo(info: UpdateInfo, phase: UpdatePhase) {
   setUpdateState({
     phase,
     availableVersion: info.version,
-    downloadUrl: getUpdateDownloadUrl(info, process.platform === "darwin" ? "dmg" : "exe"),
+    downloadUrl:
+      currentVersionEntry?.downloadUrl
+      ?? getUpdateDownloadUrl(info, process.platform === "darwin" ? "dmg" : "exe"),
     message: undefined,
     checkedAt: Date.now(),
   });
@@ -172,13 +264,6 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = true;
-
-  if (process.platform === "darwin") {
-    autoUpdater.setFeedURL({
-      provider: "generic",
-      url: getMacAutoUpdateFeedUrl(),
-    });
-  }
 
   autoUpdater.on("checking-for-update", () => {
     setUpdateState({
@@ -291,7 +376,7 @@ ipcMain.handle("app:update:check", async () => {
     return { ok: false, reason: "not_packaged" as const };
   }
   try {
-    await autoUpdater.checkForUpdates();
+    await checkForUpdatesFromDynamicFeed();
     return { ok: true as const };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -855,7 +940,7 @@ app.whenReady().then(async () => {
 
   if (app.isPackaged) {
     setTimeout(() => {
-      void autoUpdater.checkForUpdates().catch((error: unknown) => {
+      void checkForUpdatesFromDynamicFeed().catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
         setUpdateState({ phase: "error", message, checkedAt: Date.now() });
       });

@@ -1141,6 +1141,7 @@
     "downloadPageTitle": "Download Client",
     "downloadPageSubtitle": "Choose the build that matches your device and start creating and publishing quickly.",
     "downloadNow": "Download now",
+    "downloadUnavailable": "Download links are temporarily unavailable. Please try again later.",
     "downloadWindows": "Windows",
     "downloadWindowsDesc": "Windows 10 64-bit or later",
     "downloadMacIntel": "macOS Intel",

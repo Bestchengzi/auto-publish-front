@@ -15,7 +15,6 @@ win:
   icon: assets/icons/icon.ico
   target:
     - target: nsis
-  # 不含 version：固定 OSS 对象名，发版覆盖上传即可，官网直链无需随版本改
   artifactName: "KeduckAI-${os}-${arch}.${ext}"
 
 mac:
@@ -40,5 +39,6 @@ nsis:
 
 publish:
   provider: generic
-  # Windows：`latest.yml` + 安装包放在桶根。Mac：运行时改为 `mac/x64/`、`mac/arm64/`（见 main.ts），上传 OSS 时按架构分目录。
-  url: "https://open-stack.oss-cn-shanghai.aliyuncs.com/"
+  # Build-time only: GitHub Actions uses this to generate latest.yml/latest-mac.yml.
+  # Runtime update checks call /api/versions first and override the feed with ymlUrl.
+  url: "https://keduck.cn/"

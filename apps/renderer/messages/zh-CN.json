@@ -1141,6 +1141,7 @@
     "downloadPageTitle": "下载客户端",
     "downloadPageSubtitle": "选择与你设备匹配的版本，快速开始创作与发布",
     "downloadNow": "立即下载",
+    "downloadUnavailable": "暂时无法获取下载地址，请稍后再试",
     "downloadWindows": "Windows",
     "downloadWindowsDesc": "Win10 64 位及以上",
     "downloadMacIntel": "macOS Intel",

@@ -2650,6 +2650,32 @@
                 }
             }
         },
+        "/api/versions": {
+            "get": {
+                "tags": [
+                    "versions"
+                ],
+                "summary": "Get Versions Manifest",
+                "description": "Return the public versions.json manifest without requiring user authentication.",
+                "operationId": "get_versions_manifest_api_versions_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/VersionManifestEntry"
+                                    },
+                                    "type": "array",
+                                    "title": "Response Get Versions Manifest Api Versions Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/channels": {
             "get": {
                 "tags": [
@@ -12531,6 +12557,49 @@
                 ],
                 "title": "ValidationError"
             },
+            "VersionManifestEntry": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "title": "Name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 512,
+                        "minLength": 1,
+                        "title": "Description"
+                    },
+                    "type": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "minLength": 1,
+                        "title": "Type"
+                    },
+                    "downloadUrl": {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "minLength": 1,
+                        "title": "Downloadurl"
+                    },
+                    "ymlUrl": {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "minLength": 1,
+                        "title": "Ymlurl"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "description",
+                    "type",
+                    "downloadUrl",
+                    "ymlUrl"
+                ],
+                "title": "VersionManifestEntry"
+            },
             "WechatParamQrcodeResponse": {
                 "properties": {
                     "url": {
@@ -12692,6 +12761,10 @@
         {
             "name": "client_versions",
             "description": "Query the latest client version for one OS, architecture, and release channel"
+        },
+        {
+            "name": "versions",
+            "description": "Read the public client versions manifest from versions.json"
         },
         {
             "name": "health",
